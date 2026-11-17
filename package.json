@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test tests/runtime.test.mjs",
     "build": "node scripts/build.mjs",
-    "test:bundle": "node --test tests/bundle.test.mjs"
+    "test:bundle": "node --test tests/bundle.test.mjs",
+    "check:public": "node scripts/public-content-check.mjs"
   },
   "engines": {
     "node": ">=22"
