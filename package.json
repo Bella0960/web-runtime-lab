@@ -1,0 +1,14 @@
+{
+  "name": "web-runtime-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/runtime.test.mjs",
+    "build": "node scripts/build.mjs",
+    "test:bundle": "node --test tests/bundle.test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
