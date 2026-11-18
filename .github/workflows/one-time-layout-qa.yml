@@ -15,7 +15,7 @@ concurrency:
 jobs:
   check:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '099530a157bbcc83e2c559e8c50746ef772cf52a' && github.event.head_commit.message == 'ci: one-time layout QA' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '50ff327e48cc389e0e5d441d6abb25f28049e62f' && github.event.head_commit.message == 'ci: one-time layout QA' }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -67,8 +67,8 @@ jobs:
               exit 1
             fi
           }
+          run_closed regression node --test tests/chat-light-surfaces.test.mjs
           run_closed dependencies npm ci --no-audit
           run_closed build npm run build
-          run_closed regression node --test tests/chat-light-surfaces.test.mjs
           run_closed browser_setup npx playwright install --with-deps chromium
           run_closed browser node tests/chat-light-surfaces-browser.mjs
