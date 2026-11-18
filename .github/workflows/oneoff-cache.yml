@@ -15,7 +15,7 @@ concurrency:
 jobs:
   regression:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'd8a616416706353cc19eac45993f85f628107a87' && github.event.head_commit.message == 'ci: guarded numeric statusbar retry' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'b87966eb9b828b40b0b8a1a867db4f4e15ba9fb3' && github.event.head_commit.message == 'ci: verify adjusted statusbar contract' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
