@@ -13,7 +13,7 @@ permissions:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'e8af5b81a53baa4b6d37fc18df6ded6894b780f8' && github.event.head_commit.message == 'ci: classify exact group browser assertion line' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '1f11adcc44578f73ef8564065751134cd1eac3e4' && github.event.head_commit.message == 'ci: correct redacted group assertion locator' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -62,7 +62,7 @@ jobs:
             ];
             const label=names.find(([tag,needle])=>section.includes(needle))?.[0]||
               (section.includes('Timeout')?'timeout':section.includes('AssertionError')?'assertion':'other');
-            const loc=section.match(/group-chat-invite-e2e\\.test\\.mjs:(\\d+):(\\d+)/);
+            const loc=section.match(/group-chat-invite-e2e[.]test[.]mjs:([0-9]+):([0-9]+)/);
             console.log('failed-case: '+match[1]+' kind='+label+' source-line='+(loc?.[1]||'0'));
           }
           NODE
