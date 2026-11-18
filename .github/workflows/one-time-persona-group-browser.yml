@@ -10,7 +10,7 @@ permissions:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '3d2a47e18c3ab08328910b4e485db499f56e5404' && github.event.head_commit.message == 'ci: retry sealed persona group browser gate with latest source' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '8d3d8a8e5ea62e3960b2b314a41a941dd649631e' && github.event.head_commit.message == 'ci: classify source preflight for group browser' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -59,7 +59,10 @@ jobs:
               ['assertion','AssertionError']
             ];
             const reason=tags.find(([tag,pattern])=>section.includes(pattern))?.[0]||'other';
-            console.log('group-case-'+match[1]+': '+reason);
+            const preflight=section.match(/mandatory source check failed:[^\\n]{0,220}/);
+            const allowed=['character','persona-not-in-request','persona','protocol','worldbook-policy','worldbook-not-in-request','validator'];
+            const codes=preflight?allowed.filter(code=>preflight[0].includes(code)):[];
+            console.log('group-case-'+match[1]+': '+reason+' source-codes='+(codes.join(',')||'none'));
           }
           NODE
           rm -f "${RUNNER_TEMP}/sealed-deps.log" "${RUNNER_TEMP}/sealed-browser.log" "${RUNNER_TEMP}/sealed-group.log"
