@@ -2,6 +2,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readSync, statSync, openSync, closeSync, unlinkSync, realpathSync } from 'node:fs';
 import { summarizeSealedFailure } from './sealed-failure-summary.mjs';
+import { assertApprovedQaTarget } from './qa-target-guard.mjs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -34,6 +35,15 @@ if (!releaseSource.includes('preflightCheckout();') ||
 const environment = { ...process.env };
 const args = [script];
 if (mode === 'release') {
+  // Verify the immutable Worker identity and config before any deployment.
+  // Matching filenames or an --qa-only flag alone is insufficient.
+  const configPath = join(source, 'wrangler.qa.jsonc');
+  if (!existsSync(configPath)) {
+    throw new Error('Private QA deployment configuration missing');
+  }
+  const approvedWorker = assertApprovedQaTarget(
+    releaseSource, readFileSync(configPath, 'utf8')
+  );
   if (process.env.CANDIDATE_RELEASE_ACK !== 'qa-only' ||
       !environment.CLOUDFLARE_API_TOKEN || !environment.CLOUDFLARE_ACCOUNT_ID) {
     throw new Error('QA-only confirmation and scoped deployment credentials are required');
@@ -45,7 +55,10 @@ if (mode === 'release') {
   if (!worker || !confirmation) {
     throw new Error('QA-only target or confirmation contract was not verified');
   }
-  environment[confirmation[1]] = worker[1];
+  if (worker[1] !== approvedWorker) {
+    throw new Error('Release Worker name mismatch');
+  }
+  environment[confirmation[1]] = approvedWorker;
   args.push('--qa-only');
 }
 
