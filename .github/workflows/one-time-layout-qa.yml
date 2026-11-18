@@ -1,0 +1,74 @@
+name: Single-run layout QA
+
+on:
+  push:
+    branches:
+      - qa-candidate
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '099530a157bbcc83e2c559e8c50746ef772cf52a' && github.event.head_commit.message == 'ci: one-time layout QA' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public source boundary
+        run: npm run check:public
+      - name: Verify restricted source access
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" ]]; then
+            echo 'Missing source credentials.'
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Checkout temporary private candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+      - name: Validate layout in Node and Chromium
+        shell: bash
+        run: |
+          set -uo pipefail
+          logfile="$RUNNER_TEMP/sealed-layout-regression.log"
+          trap 'rm -f "$logfile"' EXIT
+          cd candidate
+          run_closed() {
+            label="$1"
+            shift
+            if "$@" > "$logfile" 2>&1; then
+              echo "Private ${label}: PASS"
+            else
+              echo "Private ${label}: FAIL (private logs withheld)"
+              exit 1
+            fi
+          }
+          run_closed dependencies npm ci --no-audit
+          run_closed build npm run build
+          run_closed regression node --test tests/chat-light-surfaces.test.mjs
+          run_closed browser_setup npx playwright install --with-deps chromium
+          run_closed browser node tests/chat-light-surfaces-browser.mjs
