@@ -1,4 +1,4 @@
-name: One-shot offline cache contract
+name: One-shot UI contract
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
 jobs:
   regression:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'f18b169cc0dfa82fb258a01b48b1e78fc6abce14' && github.event.head_commit.message == 'ci: one-shot lifecycle-only regression' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'ebb78c9c89e7ebdd3daa4e9a3f577cbc11a58282' && github.event.head_commit.message == 'ci: one-shot statusbar regression' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -47,17 +47,17 @@ jobs:
           path: candidate
           persist-credentials: false
           fetch-depth: 2
-      - name: Real Node navigation lifecycle regression
+      - name: Real Node statusbar regression
         shell: bash
         run: |
           set -u
           logfile="$RUNNER_TEMP/closed-lifecycle-test.log"
-          (cd candidate && node --test tests/sw-navigation-cache-lifecycle.test.mjs) > "$logfile" 2>&1
+          (cd candidate && node --test tests/global-statusbar-wiring.test.mjs) > "$logfile" 2>&1
           result=$?
           rm -f "$logfile"
           if [[ "$result" -eq 0 ]]; then
-            echo 'Scoped Node navigation regressions PASS'
+            echo 'Scoped Node statusbar regression PASS'
           else
-            echo 'Scoped Node navigation regressions FAIL; private logs withheld'
+            echo 'Scoped Node statusbar regression FAIL; private logs withheld'
           fi
           exit "$result"
