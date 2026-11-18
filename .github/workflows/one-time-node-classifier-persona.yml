@@ -1,0 +1,62 @@
+name: One-time sealed full Node failure classifier
+on:
+  push:
+    branches:
+      - qa-candidate
+    paths:
+      - .github/workflows/one-time-node-classifier-persona.yml
+permissions:
+  contents: read
+jobs:
+  classify:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '0151edaff1d762e759dcdc380e5e137b42c8eec3' && github.event.head_commit.message == 'ci: isolate full Node gate failure without private output' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout isolated private candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Run private Node suite and emit only failing case positions
+        shell: bash
+        run: |
+          set +e
+          set -u
+          set -o pipefail
+          umask 077
+          cd candidate
+          npm ci --no-audit --no-fund > "${RUNNER_TEMP}/deps-sealed.log" 2>&1
+          if [ "$?" -ne 0 ]; then echo 'deps: FAIL'; exit 1; fi
+          npm run build > "${RUNNER_TEMP}/build-sealed.log" 2>&1
+          if [ "$?" -ne 0 ]; then echo 'build: FAIL'; exit 1; fi
+          npx playwright install --with-deps chromium > "${RUNNER_TEMP}/browser-sealed.log" 2>&1
+          if [ "$?" -ne 0 ]; then echo 'browser-setup: FAIL'; exit 1; fi
+          echo 'prerequisites: PASS'
+          node --test > "${RUNNER_TEMP}/node-sealed.log" 2>&1
+          result=$?
+          NODE_LOG="${RUNNER_TEMP}/node-sealed.log" node --input-type=module <<'NODE'
+          import {readFileSync,readdirSync} from 'node:fs';
+          const log=readFileSync(process.env.NODE_LOG,'utf8');
+          const files=readdirSync('tests').filter(n=>n.endsWith('.test.mjs')).sort();
+          const errors=[...log.matchAll(/^not ok\s+(\d+)\s+-\s+(.+)$/gm)];
+          console.log('failing-case-count: '+errors.length);
+          for(const match of errors.slice(0,16)){
+            const segment=log.slice(match.index,Math.min(log.length,match.index+4500));
+            const ref=segment.match(/tests\/([a-z0-9_.-]+\.test\.mjs):(\d+)/i) ||
+              match[2].match(/tests\/([a-z0-9_.-]+\.test\.mjs)(?::(\d+))?/i);
+            const name=ref?ref[1]:'';
+            console.log('node-fail-number='+match[1]+' file-slot='+(name?files.indexOf(name)+1:0)+' line='+(ref?.[2]||'0'));
+          }
+          NODE
+          rm -f "${RUNNER_TEMP}/deps-sealed.log" "${RUNNER_TEMP}/build-sealed.log" "${RUNNER_TEMP}/browser-sealed.log" "${RUNNER_TEMP}/node-sealed.log"
+          if [ "$result" -ne 0 ]; then exit 1; fi
