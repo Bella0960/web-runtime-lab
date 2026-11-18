@@ -1,0 +1,69 @@
+name: One-time QA mandatory persona and worldbook release
+on:
+  push:
+    branches:
+      - qa-candidate
+    paths:
+      - .github/workflows/one-time-qa-persona-full-fixed.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  qa_release:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '5812fb261c6ae3634865b4dca6f9436e7a82833d' && github.event.head_commit.message == 'ci: approved one-time QA mandatory persona and worldbook source release' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout public release guard
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public metadata check
+        run: npm run check:public
+      - name: Check existing authorized source and QA-only credentials
+        shell: bash
+        env:
+          SRC: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SRC_REF: ${{ secrets.CANDIDATE_REF }}
+          SRC_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          QA_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          QA_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SRC" || -z "$SRC_REF" || -z "$SRC_TOKEN" || ! "$QA_ID" =~ ^[0-9a-f]{32}$ || ${#QA_TOKEN} -lt 20 ]]; then
+            echo "QA-only credentials missing"
+            exit 1
+          fi
+          echo "::add-mask::$SRC"
+          echo "::add-mask::${SRC##*/}"
+          echo "::add-mask::$SRC_REF"
+          echo 'Restricted QA credentials present'
+      - name: Checkout private QA candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Lock exact approved candidate snapshot
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'c8f5da78468a7af02ef36630e91a6370e0fd65e8'
+          echo 'Exact QA snapshot confirmed'
+      - name: Execute original security Node browser gates and QA-only publish
+        env:
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: node scripts/run-candidate.mjs release
