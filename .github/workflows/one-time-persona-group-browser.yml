@@ -10,7 +10,7 @@ permissions:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '8d3d8a8e5ea62e3960b2b314a41a941dd649631e' && github.event.head_commit.message == 'ci: classify source preflight for group browser' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '7bee1506e0f9fb086a961819594d9e33510cd6f6' && github.event.head_commit.message == 'ci: identify missing persona source from browser reply' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -62,7 +62,8 @@ jobs:
             const preflight=section.match(/mandatory source check failed:[^\\n]{0,220}/);
             const allowed=['character','persona-not-in-request','persona','protocol','worldbook-policy','worldbook-not-in-request','validator'];
             const codes=preflight?allowed.filter(code=>preflight[0].includes(code)):[];
-            console.log('group-case-'+match[1]+': '+reason+' source-codes='+(codes.join(',')||'none'));
+            const status=section.match(/no request; reason=([a-z-]+); roleModule=(true|false); defaultProtocol=(true|false); contextPolicy=(true|false); sendFunction=(true|false); errorEvents=([0-9]+)/);
+            console.log('group-case-'+match[1]+': '+reason+' source-codes='+(codes.join(',')||'none')+' state='+(status?status.slice(1).join('|'):'unknown'));
           }
           NODE
           rm -f "${RUNNER_TEMP}/sealed-deps.log" "${RUNNER_TEMP}/sealed-browser.log" "${RUNNER_TEMP}/sealed-group.log"
