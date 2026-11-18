@@ -31,7 +31,9 @@ jobs:
       - name: Narrow private Node checks (no private logs)
         shell: bash
         run: |
-          set -uo pipefail
+          set +e
+          set -u
+          set -o pipefail
           cd candidate
           umask 077
           npm ci --ignore-scripts --no-audit --no-fund > "${RUNNER_TEMP}/candidate-deps.log" 2>&1
@@ -48,9 +50,13 @@ jobs:
           c3=$?
           node --test tests/group-game-boundary.test.mjs tests/group-governance.test.mjs > "${RUNNER_TEMP}/probe4.log" 2>&1
           c4=$?
+          # Show only failing numeric subtest positions; never names, source, logs, or private paths.
           for n in 1 2 3 4; do
             result_var="c${n}"
-            if [ "${!result_var}" -eq 0 ]; then echo "probe-${n}: PASS"; else echo "probe-${n}: FAIL"; fi
+            if [ "${!result_var}" -eq 0 ]; then echo "probe-${n}: PASS"; else
+              echo "probe-${n}: FAIL"
+              grep -E "^not ok [0-9]+ " "${RUNNER_TEMP}/probe${n}.log" | sed -E "s/^not ok ([0-9]+) .*/probe-${n}-case-\1/" || true
+            fi
           done
           rm -f "${RUNNER_TEMP}/candidate-deps.log" "${RUNNER_TEMP}/probe1.log" "${RUNNER_TEMP}/probe2.log" "${RUNNER_TEMP}/probe3.log" "${RUNNER_TEMP}/probe4.log"
           if (( c1 || c2 || c3 || c4 )); then exit 1; fi
