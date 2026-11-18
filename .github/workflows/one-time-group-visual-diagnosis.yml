@@ -13,7 +13,7 @@ permissions:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'd0868f6549f17d7905768518bcac656604e320f5' && github.event.head_commit.message == 'ci: retest group roster and layout after minimal fix' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '47f2cc09965da12ed3cb23489276fc42e4b1fe26' && github.event.head_commit.message == 'ci: verify group nickname and visual layout after small fix' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
