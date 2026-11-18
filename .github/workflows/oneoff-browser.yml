@@ -1,0 +1,54 @@
+name: Single-run browser test isolation
+
+on:
+  push:
+    branches:
+      - qa-candidate
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'fd2d3838cfc429329e147493eb8014a4f5ba76cc' && github.event.head_commit.message == 'ci: isolate one browser regression' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public source guard
+        run: npm run check:public
+      - name: Confirm private checkout secret
+        shell: bash
+        env:
+          REPO: ${{ secrets.CANDIDATE_REPOSITORY }}
+          REF: ${{ secrets.CANDIDATE_REF }}
+          TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$REPO" || -z "$REF" || -z "$TOKEN" ]]; then
+            echo 'Read-only source not configured.'
+            exit 1
+          fi
+          echo "::add-mask::$REPO"
+          echo "::add-mask::${REPO##*/}"
+          echo "::add-mask::$REF"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 3
+      - name: Single browser regression
+        run: node scripts/oneoff-browser-diagnosis.mjs
