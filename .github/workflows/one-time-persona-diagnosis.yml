@@ -1,0 +1,58 @@
+name: One-time sealed persona source diagnosis
+
+on:
+  push:
+    branches:
+      - qa-candidate
+    paths:
+      - .github/workflows/one-time-persona-diagnosis.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '57c9aa4e8a570625559a83bb9795a72bd6f563db' && github.event.head_commit.message == 'ci: one-time sealed persona source regression diagnosis' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read-only private source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          persist-credentials: false
+          path: candidate
+          fetch-depth: 1
+      - name: Run only persona source tests; no private content in logs
+        shell: bash
+        run: |
+          set +e
+          set -u
+          set -o pipefail
+          umask 077
+          cd candidate
+          npm ci --ignore-scripts --no-audit --no-fund > "${RUNNER_TEMP}/deps-sealed.log" 2>&1
+          if [ "$?" -ne 0 ]; then echo 'deps: FAIL'; exit 1; fi
+          echo 'deps: PASS'
+          node --test tests/chat-persona-source-contract.test.mjs > "${RUNNER_TEMP}/probe-1.log" 2>&1
+          s1=$?
+          node --test tests/chat-rp-identity-runtime.test.mjs tests/chat-role-live-context.test.mjs > "${RUNNER_TEMP}/probe-2.log" 2>&1
+          s2=$?
+          node --test tests/chat-regression-contract.test.mjs tests/chat-reply-bubble-mode.test.mjs > "${RUNNER_TEMP}/probe-3.log" 2>&1
+          s3=$?
+          for i in 1 2 3; do
+            key="s${i}"
+            if [ "${!key}" -eq 0 ]; then echo "probe-${i}: PASS"; else
+              echo "probe-${i}: FAIL"
+              grep -E '^not ok [0-9]+ ' "${RUNNER_TEMP}/probe-${i}.log" | sed -E "s/^not ok ([0-9]+) .*/probe-${i}-case-\1/" || true
+            fi
+          done
+          rm -f "${RUNNER_TEMP}/deps-sealed.log" "${RUNNER_TEMP}/probe-1.log" "${RUNNER_TEMP}/probe-2.log" "${RUNNER_TEMP}/probe-3.log"
+          if (( s1 || s2 || s3 )); then exit 1; fi
