@@ -13,7 +13,7 @@ permissions:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '5cdf5cc6e8bdd0df97dc9b5e95b7467cf0daedcc' && github.event.head_commit.message == 'ci: select redacted failing assertion stack line' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'd0868f6549f17d7905768518bcac656604e320f5' && github.event.head_commit.message == 'ci: retest group roster and layout after minimal fix' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
