@@ -1,6 +1,7 @@
 // Execute an isolated, credential-scoped validation without exposing source logs.
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, openSync, closeSync, unlinkSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, readSync, statSync, openSync, closeSync, unlinkSync, realpathSync } from 'node:fs';
+import { summarizeSealedFailure } from './sealed-failure-summary.mjs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -62,8 +63,19 @@ try {
     timeout: 75 * 60 * 1000
   });
   if (result.error || result.status !== 0) {
-    // Do not echo raw stderr: even errors may include private identifiers.
-    throw new Error('Candidate validation did not pass; private logs were withheld');
+    // Read only a bounded tail of the sealed local log. The classification
+    // is a fixed generic label; no private output enters public Actions logs.
+    const size = statSync(outputPath).size;
+    const length = Math.min(size, 128 * 1024);
+    const bytes = Buffer.alloc(length);
+    const reader = openSync(outputPath, 'r');
+    try { if (length) readSync(reader, bytes, 0, length, size - length); }
+    finally { closeSync(reader); }
+    const stage = summarizeSealedFailure(releaseSource, bytes.toString('utf8'), {
+      timedOut: result.error?.code === 'ETIMEDOUT'
+    });
+    throw new Error('Candidate validation stopped at ' + stage +
+      '; private logs were withheld');
   }
   console.log(mode === 'release'
     ? 'Isolated QA-only release passed its private safety and origin checks.'
