@@ -17,7 +17,7 @@ concurrency:
 jobs:
   qa_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '877d043d50f3686db8af4c81ba797b7acf9186d0' && github.event.head_commit.message == 'ci: one-time QA enforce saved persona, protocol and worldbook sources' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '7426d554b97323cb975e49bf3c7eca12ead9174d' && github.event.head_commit.message == 'ci: QA release all coordinated persona-source fixes after branch head settled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'de321e198c593ad9ed5143870e6b4b8e4b9b208d'
+          test "$(git rev-parse HEAD)" = 'c81f6aba2bd32a05318bc2f5fbb44e5d978a76a1'
           echo 'Sealed QA source snapshot matches.'
       - name: Run existing complete QA-only security, Node and browser gates and deploy
         env:
