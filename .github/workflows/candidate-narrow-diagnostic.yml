@@ -1,0 +1,56 @@
+name: Candidate narrow diagnostics (one-time)
+
+on:
+  push:
+    branches:
+      - qa-candidate
+    paths:
+      - .github/workflows/candidate-narrow-diagnostic.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read-only isolated candidate checkout
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          persist-credentials: false
+          path: candidate
+          fetch-depth: 1
+      - name: Narrow private Node checks (no private logs)
+        shell: bash
+        run: |
+          set -uo pipefail
+          cd candidate
+          umask 077
+          npm ci --ignore-scripts --no-audit --no-fund > "${RUNNER_TEMP}/candidate-deps.log" 2>&1
+          if [ "$?" -ne 0 ]; then
+            echo "deps: FAIL"
+            exit 1
+          fi
+          echo "deps: PASS"
+          node --test tests/chat-continue-button.test.mjs > "${RUNNER_TEMP}/probe1.log" 2>&1
+          c1=$?
+          node --test tests/chat-reply-bubble-mode.test.mjs tests/chat-regression-contract.test.mjs tests/chat-role-live-context.test.mjs tests/chat-rp-identity-runtime.test.mjs > "${RUNNER_TEMP}/probe2.log" 2>&1
+          c2=$?
+          node --test tests/qa-release-live-version.test.mjs tests/qa-release-snapshot.test.mjs > "${RUNNER_TEMP}/probe3.log" 2>&1
+          c3=$?
+          node --test tests/group-game-boundary.test.mjs tests/group-governance.test.mjs > "${RUNNER_TEMP}/probe4.log" 2>&1
+          c4=$?
+          for n in 1 2 3 4; do
+            result_var="c${n}"
+            if [ "${!result_var}" -eq 0 ]; then echo "probe-${n}: PASS"; else echo "probe-${n}: FAIL"; fi
+          done
+          rm -f "${RUNNER_TEMP}/candidate-deps.log" "${RUNNER_TEMP}/probe1.log" "${RUNNER_TEMP}/probe2.log" "${RUNNER_TEMP}/probe3.log" "${RUNNER_TEMP}/probe4.log"
+          if (( c1 || c2 || c3 || c4 )); then exit 1; fi
