@@ -13,7 +13,7 @@ concurrency:
 jobs:
   qa_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '5812fb261c6ae3634865b4dca6f9436e7a82833d' && github.event.head_commit.message == 'ci: approved one-time QA mandatory persona and worldbook source release' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '965bbfab50ecf69ba45609fbe75cc7553d2a18b9' && github.event.head_commit.message == 'ci: approve validated persona source QA snapshot after gate repairs' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -59,7 +59,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'c8f5da78468a7af02ef36630e91a6370e0fd65e8'
+          test "$(git rev-parse HEAD)" = 'f15d3dfa80f0e2e4860c3fed0890c82a1c629310'
           echo 'Exact QA snapshot confirmed'
       - name: Execute original security Node browser gates and QA-only publish
         env:
