@@ -15,7 +15,7 @@ concurrency:
 jobs:
   inspect:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'fd2d3838cfc429329e147493eb8014a4f5ba76cc' && github.event.head_commit.message == 'ci: isolate one browser regression' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'f6024319353a1d8375cd8851d7323a71bed26e8c' && github.event.head_commit.message == 'ci: recheck visible send button' }}
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
