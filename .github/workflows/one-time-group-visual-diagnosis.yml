@@ -1,0 +1,69 @@
+name: Isolated group message browser regression
+
+on:
+  push:
+    branches:
+      - qa-candidate
+    paths:
+      - .github/workflows/one-time-group-visual-diagnosis.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'd3f8488395a10f3ff3edb19b2fd5b5178f282bbd' && github.event.head_commit.message == 'ci: isolate group message browser regression without private logs' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout isolated private QA source read-only
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Run only group browser tests with sealed logs
+        shell: bash
+        run: |
+          set +e
+          set -u
+          set -o pipefail
+          umask 077
+          cd candidate
+          npm ci --ignore-scripts --no-audit --no-fund > "${RUNNER_TEMP}/deps-sealed.log" 2>&1
+          deps=$?
+          if [ "$deps" -ne 0 ]; then echo "setup-deps: FAIL"; exit 1; fi
+          npx playwright install --with-deps chromium > "${RUNNER_TEMP}/browser-sealed.log" 2>&1
+          browser=$?
+          if [ "$browser" -ne 0 ]; then echo "setup-browser: FAIL"; exit 1; fi
+          echo "browser-prerequisites: PASS"
+          node --test tests/group-chat-invite-e2e.test.mjs > "${RUNNER_TEMP}/group-e2e-sealed.log" 2>&1
+          result=$?
+          GROUP_E2E_LOG="${RUNNER_TEMP}/group-e2e-sealed.log" node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const log=readFileSync(process.env.GROUP_E2E_LOG,'utf8');
+          const fail=[...log.matchAll(/^not ok\s+(\d+)\s+-\s+(.+)$/gm)];
+          console.log('group-browser-failures: '+fail.length);
+          for(const match of fail){
+            const section=log.slice(match.index,Math.min(log.length,match.index+5500));
+            const names=[
+              ['avatar-left','avatar must sit left of name'],['name-align','name and message must share left edge'],
+              ['grid-display','group message must use two-column layout'],['vertical-order','sender name must appear above'],
+              ['overflow','bubble must stay within viewport'],['persona','selected member persona must anchor'],
+              ['wrong-identity','identity lock must use'],['missing-message','msg-row.received.group-member-row']
+            ];
+            const label=names.find(([tag,needle])=>section.includes(needle))?.[0]||
+              (section.includes('Timeout')?'timeout':section.includes('AssertionError')?'assertion':'other');
+            console.log('failed-case: '+match[1]+' kind='+label);
+          }
+          NODE
+          rm -f "${RUNNER_TEMP}/deps-sealed.log" "${RUNNER_TEMP}/browser-sealed.log" "${RUNNER_TEMP}/group-e2e-sealed.log"
+          if [ "$result" -ne 0 ]; then exit 1; fi
