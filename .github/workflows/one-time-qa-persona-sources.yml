@@ -1,0 +1,73 @@
+name: One-time QA persona-source fidelity release
+
+on:
+  push:
+    branches:
+      - qa-candidate
+    paths:
+      - .github/workflows/one-time-qa-persona-sources.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+
+jobs:
+  qa_release:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '877d043d50f3686db8af4c81ba797b7acf9186d0' && github.event.head_commit.message == 'ci: one-time QA enforce saved persona, protocol and worldbook sources' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout public release guard
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public metadata and source safety checks
+        run: npm run check:public
+      - name: Confirm existing sealed QA-only credentials
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          QA_ACCOUNT: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          QA_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" || ! "$QA_ACCOUNT" =~ ^[0-9a-f]{32}$ || ${#QA_TOKEN} -lt 20 ]]; then
+            echo 'QA-only source or deployment authorization missing.'
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+          echo 'QA-only source and deployment credentials confirmed.'
+      - name: Checkout isolated private QA candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          persist-credentials: true
+          path: candidate
+          fetch-depth: 100
+      - name: Lock immutable approved QA source
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'de321e198c593ad9ed5143870e6b4b8e4b9b208d'
+          echo 'Sealed QA source snapshot matches.'
+      - name: Run existing complete QA-only security, Node and browser gates and deploy
+        env:
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: node scripts/run-candidate.mjs release
