@@ -14,7 +14,8 @@ concurrency:
 
 jobs:
   diagnose:
-    if: ${{ github.actor == 'Bella0960' && github.event.before == 'fa7634fdf56ffa6aed00e29d0247a895b654dde8' && github.event.head_commit.message == 'ci: one-time sealed diagnostic' }}
+    if: >-
+      ${{ github.actor == 'Bella0960' && github.event.before == '8117f4237211b0cc8c65c99c8b9c7bc1c3723e9e' && github.event.head_commit.message == 'ci: one-time sealed diagnostic' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
