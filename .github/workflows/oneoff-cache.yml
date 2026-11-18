@@ -15,7 +15,7 @@ concurrency:
 jobs:
   regression:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '1d74a4413a668e03a56ca888da852bb2a1eef3ed' && github.event.head_commit.message == 'ci: numeric-only statusbar diagnosis' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'd8a616416706353cc19eac45993f85f628107a87' && github.event.head_commit.message == 'ci: guarded numeric statusbar retry' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -52,8 +52,8 @@ jobs:
         run: |
           set -u
           logfile="$RUNNER_TEMP/closed-lifecycle-test.log"
-          (cd candidate && node --test tests/global-statusbar-wiring.test.mjs) > "$logfile" 2>&1
-          result=$?
+          result=0
+          (cd candidate && node --test tests/global-statusbar-wiring.test.mjs) > "$logfile" 2>&1 || result=$?
           if [[ "$result" -ne 0 ]]; then
             cases="$(sed -n 's/^not ok \([0-9][0-9]*\) -.*/\1/p' "$logfile" | tr '\n' ',' | sed 's/,$//')"
             echo "Failing numeric test cases: ${cases:-unavailable}"
