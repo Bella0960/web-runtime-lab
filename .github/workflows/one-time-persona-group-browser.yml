@@ -1,0 +1,66 @@
+name: One-time persona group browser gate diagnosis
+on:
+  push:
+    branches:
+      - qa-candidate
+    paths:
+      - .github/workflows/one-time-persona-group-browser.yml
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'fb263a0292727697a74f529a8c7dbf7f23917669' && github.event.head_commit.message == 'ci: isolate persona group browser gate' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read-only private QA source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Group E2E in isolation, redacted failure classification
+        shell: bash
+        run: |
+          set +e
+          set -u
+          set -o pipefail
+          umask 077
+          cd candidate
+          npm ci --ignore-scripts --no-audit --no-fund > "${RUNNER_TEMP}/sealed-deps.log" 2>&1
+          if [ "$?" -ne 0 ]; then echo "deps: FAIL"; exit 1; fi
+          npx playwright install --with-deps chromium > "${RUNNER_TEMP}/sealed-browser.log" 2>&1
+          if [ "$?" -ne 0 ]; then echo "browser: FAIL"; exit 1; fi
+          echo 'browser-preflight: PASS'
+          node --test tests/group-chat-invite-e2e.test.mjs > "${RUNNER_TEMP}/sealed-group.log" 2>&1
+          result=$?
+          NODE_LOG="${RUNNER_TEMP}/sealed-group.log" node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const log=readFileSync(process.env.NODE_LOG,'utf8');
+          const failures=[...log.matchAll(/^not ok\s+(\d+)\s+-\s+(.+)$/gm)];
+          console.log('failed-cases: '+failures.length);
+          for(const match of failures){
+            const section=log.slice(match.index,Math.min(log.length,match.index+6500));
+            const tags=[
+              ['missing-api','no /chat/completions request captured'],
+              ['nickname','sender name'],
+              ['role-identity','identity lock'],
+              ['role-persona','persona must anchor'],
+              ['context','group member roster'],
+              ['timeout','Timeout'],
+              ['assertion','AssertionError']
+            ];
+            const reason=tags.find(([tag,pattern])=>section.includes(pattern))?.[0]||'other';
+            console.log('group-case-'+match[1]+': '+reason);
+          }
+          NODE
+          rm -f "${RUNNER_TEMP}/sealed-deps.log" "${RUNNER_TEMP}/sealed-browser.log" "${RUNNER_TEMP}/sealed-group.log"
+          if [ "$result" -ne 0 ]; then exit 1; fi
