@@ -10,7 +10,7 @@ permissions:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'fb263a0292727697a74f529a8c7dbf7f23917669' && github.event.head_commit.message == 'ci: isolate persona group browser gate' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '3d2a47e18c3ab08328910b4e485db499f56e5404' && github.event.head_commit.message == 'ci: retry sealed persona group browser gate with latest source' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
