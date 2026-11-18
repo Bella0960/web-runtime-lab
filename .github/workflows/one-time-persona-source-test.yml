@@ -1,0 +1,45 @@
+name: One-time mandatory persona source test
+
+on:
+  push:
+    branches:
+      - qa-candidate
+    paths:
+      - .github/workflows/one-time-persona-source-test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'fb263a0292727697a74f529a8c7dbf7f23917669' && github.event.head_commit.message == 'ci: isolated mandatory persona source test' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          persist-credentials: false
+          path: candidate
+      - name: Run persona-source contracts, without leaking private tests
+        shell: bash
+        run: |
+          set +e
+          set -u
+          set -o pipefail
+          umask 077
+          cd candidate
+          node --test tests/chat-persona-sources-mandatory.test.mjs > "${RUNNER_TEMP}/persona-cases.log" 2>&1
+          code=$?
+          if [ "$code" -eq 0 ]; then echo 'persona-source-regression: PASS'; else
+            echo 'persona-source-regression: FAIL'
+            grep -E '^not ok [0-9]+ ' "${RUNNER_TEMP}/persona-cases.log" | sed -E 's/^not ok ([0-9]+) .*/failed-case-\1/' || true
+          fi
+          rm -f "${RUNNER_TEMP}/persona-cases.log"
+          exit "$code"
