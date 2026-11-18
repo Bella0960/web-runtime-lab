@@ -10,7 +10,7 @@ permissions:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '7bee1506e0f9fb086a961819594d9e33510cd6f6' && github.event.head_commit.message == 'ci: identify missing persona source from browser reply' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'a6dd87cd2d0c8a543d21711b8e803cafd85b053a' && github.event.head_commit.message == 'ci: verify fixed legacy RP lookup in group browser' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
