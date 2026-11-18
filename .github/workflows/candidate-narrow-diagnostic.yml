@@ -1,4 +1,5 @@
 name: Candidate narrow diagnostics (one-time)
+# Repeat only focused Node probes after the candidate's bubble contract fix.
 
 on:
   push:
