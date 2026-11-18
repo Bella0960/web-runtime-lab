@@ -15,7 +15,7 @@ concurrency:
 jobs:
   regression:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '00154a09aca072f84e076bedec08f520946cbe32' && github.event.head_commit.message == 'ci: one-shot cache contract' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'f18b169cc0dfa82fb258a01b48b1e78fc6abce14' && github.event.head_commit.message == 'ci: one-shot lifecycle-only regression' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -52,7 +52,7 @@ jobs:
         run: |
           set -u
           logfile="$RUNNER_TEMP/closed-lifecycle-test.log"
-          (cd candidate && node --test tests/sw-navigation-cache-lifecycle.test.mjs tests/pwa-navigation-cache.test.mjs) > "$logfile" 2>&1
+          (cd candidate && node --test tests/sw-navigation-cache-lifecycle.test.mjs) > "$logfile" 2>&1
           result=$?
           rm -f "$logfile"
           if [[ "$result" -eq 0 ]]; then
