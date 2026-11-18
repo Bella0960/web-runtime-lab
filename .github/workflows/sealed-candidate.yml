@@ -25,6 +25,9 @@ concurrency:
 
 jobs:
   candidate:
+    # No private deployment credentials enter an unapproved verify-only run.
+    if: >-
+      ${{ inputs.operation == 'verify' || (inputs.operation == 'release' && github.actor == github.repository_owner && inputs.confirmation == 'qa-only') }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -44,22 +47,11 @@ jobs:
           SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
           SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
           SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
-          DEPLOY_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
           OPERATION: ${{ inputs.operation }}
-          CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
           if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" ]]; then
             echo 'Missing restricted source configuration.'
-            exit 1
-          fi
-          if [[ "$OPERATION" == 'release' ]] && {
-            [[ "$CONFIRMATION" != 'qa-only' ]] ||
-            [[ -z "$ACCOUNT_ID" ]] ||
-            [[ -z "$DEPLOY_TOKEN" ]]
-          }; then
-            echo 'Missing QA-only confirmation or deployment credentials.'
             exit 1
           fi
           echo "::add-mask::$SOURCE_REPOSITORY"
