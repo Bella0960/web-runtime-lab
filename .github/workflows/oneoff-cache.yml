@@ -15,7 +15,7 @@ concurrency:
 jobs:
   regression:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'ebb78c9c89e7ebdd3daa4e9a3f577cbc11a58282' && github.event.head_commit.message == 'ci: one-shot statusbar regression' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '1d74a4413a668e03a56ca888da852bb2a1eef3ed' && github.event.head_commit.message == 'ci: numeric-only statusbar diagnosis' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -54,6 +54,10 @@ jobs:
           logfile="$RUNNER_TEMP/closed-lifecycle-test.log"
           (cd candidate && node --test tests/global-statusbar-wiring.test.mjs) > "$logfile" 2>&1
           result=$?
+          if [[ "$result" -ne 0 ]]; then
+            cases="$(sed -n 's/^not ok \([0-9][0-9]*\) -.*/\1/p' "$logfile" | tr '\n' ',' | sed 's/,$//')"
+            echo "Failing numeric test cases: ${cases:-unavailable}"
+          fi
           rm -f "$logfile"
           if [[ "$result" -eq 0 ]]; then
             echo 'Scoped Node statusbar regression PASS'
