@@ -12,7 +12,7 @@ concurrency:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '3602e20152604a66fa2f117a1a70350bedf83b18' && github.event.head_commit.message == 'ci: diagnose only sealed persona test ordinals' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'ab070ba25711f0113d69c86d72d3c72c55663184' && github.event.head_commit.message == 'ci: isolate fixed persona and group regression with source guards' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -47,6 +47,6 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'b18e4991b2674a08e81f8dcf7f30f2d5cc945faa'
+          test "$(git rev-parse HEAD)" = '0ce7487b9aa3eb73dcdd4276c37e5b3e31dcd279'
       - name: Report only test ordinals (private output sealed)
         run: node scripts/sealed-chat-suite-isolator.mjs persona
