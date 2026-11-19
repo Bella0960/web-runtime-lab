@@ -1,0 +1,65 @@
+name: One-time sealed offline role binding regression
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-offline-binding-verify-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '8a587d7dc274ea0c595c8d79f9b1a3320d8c7037' && github.event.head_commit.message == 'ci: sealed offline role binding regression from fixed candidate' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check public metadata privacy
+        run: npm run check:public
+      - name: Check existing private source authorization
+        shell: bash
+        env:
+          SRC_REPO: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SRC_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SRC_REPO"
+          test -n "$SRC_TOKEN"
+          echo "::add-mask::$SRC_REPO"
+          echo "::add-mask::${SRC_REPO##*/}"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: task-CHAT-WORLDBOOK-001/offline-binding-parity-20261119
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Require fixed private candidate
+        working-directory: candidate
+        run: |
+          test "$(git rev-parse HEAD)" = 'e8bf9c415d2f64a7697f14199f2d240327999366'
+          echo 'Isolated source snapshot confirmed.'
+      - name: Run role-binding and full chat Node contracts without private logs
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! node --test tests/offline-worldbook-binding-parity.test.mjs > /tmp/isolated-focus.log 2>&1; then
+            echo 'Focused synthetic behavior regression failed (private test logs withheld).'
+            exit 1
+          fi
+          echo 'Focused synthetic offline worldbook behavior passed.'
+          if ! npm run test:chat:contract > /tmp/isolated-chat.log 2>&1; then
+            echo 'Existing full chat contract failed (private test logs withheld).'
+            exit 1
+          fi
+          echo 'Complete chat Node contract passed.'
