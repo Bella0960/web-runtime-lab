@@ -1,0 +1,57 @@
+name: One-time guarded direct role contract revalidation
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-direct-role-fixed-verify-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '96e21c52850592d006b9ecebab5c4d4bc45cb468' && github.event.head_commit.message == 'ci: verify strict updated direct-role output contract' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check public content isolation
+        run: npm run check:public
+      - name: Ensure authorized restricted candidate is configured
+        shell: bash
+        env:
+          REPO: ${{ secrets.CANDIDATE_REPOSITORY }}
+          REF: ${{ secrets.CANDIDATE_REF }}
+          TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$REPO"
+          test -n "$REF"
+          test -n "$TOKEN"
+          echo "::add-mask::$REPO"
+          echo "::add-mask::${REPO##*/}"
+          echo "::add-mask::$REF"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Pin exact newly reviewed QA commit and branch
+        shell: bash
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'a3d41261b4b7cc57a4460e15cb91a13d6814fb27'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Run original full private Node Vite Chromium QA gates without deploying
+        run: node scripts/run-candidate.mjs verify
