@@ -1,0 +1,63 @@
+name: One-time sealed MAOMAO NPC QA candidate verification
+on:
+  push:
+    branches:
+      - qa-candidate
+    paths:
+      - .github/workflows/one-time-npc-qa-verify-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'c14c94a630bdb7a59d1a5f991321d6274b5a68f4' && github.event.head_commit.message == 'ci: one-time sealed NPC QA verification' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout original public safety scripts
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify public source isolation
+        run: npm run check:public
+      - name: Verify restricted QA source is configured
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" ]]; then
+            echo 'Restricted QA candidate is not configured.'
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Checkout original private QA branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Check exact QA candidate snapshot and branch
+        shell: bash
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '2cfaf458ade30c66e0bce2344c6cbe7a67f478a3'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+          echo 'Pinned NPC QA candidate confirmed.'
+      - name: Run original private Node Vite Chromium and security gates
+        run: node scripts/run-candidate.mjs verify
