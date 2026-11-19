@@ -17,7 +17,7 @@ concurrency:
 jobs:
   qa_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '445dcd3c70da26ec0b46cc803de082fb81dfeb1a' && github.event.head_commit.message == 'ci: one-time isolated candidate release after contract repair' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '80495076e9bba4a56f8956d51dce5dd226d9294e' && github.event.head_commit.message == 'ci: one-time isolated candidate release after layout gate repair' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '967bef7b0f04424634d3ee5aa158f74de4922641'
+          test "$(git rev-parse HEAD)" = '52e109269598f15f2ac62e64b81da46dda8b7ba5'
           echo 'Approved candidate snapshot matched.'
       - name: Execute full private gates and publish only existing QA
         env:
