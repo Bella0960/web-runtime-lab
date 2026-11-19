@@ -1,4 +1,4 @@
-name: One-time isolated contract index diagnosis
+name: One-time isolated validation gate audit
 
 on:
   push:
@@ -15,9 +15,9 @@ concurrency:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'bd9ee54f6c4226a38fd054fcf0d144af0d130a77' && github.event.head_commit.message == 'ci: one-time isolated contract verification after patch' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'cd56fe6a0b149813fcfab4aa7fc4cac54a1801ed' && github.event.head_commit.message == 'ci: one-time isolated remaining gate audit' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,8 +37,8 @@ jobs:
           persist-credentials: false
       - name: Lock approved snapshot
         working-directory: candidate
-        run: test "$(git rev-parse HEAD)" = 'ea5517e07ba2cd1172f438d08e085ed258db24e8'
-      - name: Diagnose failed contract by numeric index only
+        run: test "$(git rev-parse HEAD)" = '52e109269598f15f2ac62e64b81da46dda8b7ba5'
+      - name: Scan remaining small tests without exposing their output
         shell: bash
         run: |
           set -euo pipefail
@@ -46,34 +46,41 @@ jobs:
           import { spawnSync } from 'node:child_process';
           import { readFileSync } from 'node:fs';
           const cwd = 'candidate';
-          const install = spawnSync('npm', ['ci', '--no-audit', '--no-fund'], { cwd, encoding:'utf8', maxBuffer: 10*1024*1024 });
-          if (install.status !== 0) { console.log('dependencies: unavailable'); process.exit(1); }
-          const config = JSON.parse(readFileSync(cwd + '/package.json', 'utf8'));
-          const files = config.scripts['test:chat:contract'].split(/\s+/).filter(x => x.endsWith('.mjs'));
-          let errors = 0;
-          for (let i = 0; i < files.length; i++) {
-            const result = spawnSync('node', ['--test', files[i]], { cwd, encoding: 'utf8', maxBuffer: 16*1024*1024 });
-            if (result.status !== 0) {
-              const numbers = [...String(result.stdout || '').matchAll(/^not ok (\d+)\b/gm)].map(m=>m[1]);
-              errors++;
-              const matches = [...String(result.stdout || '').matchAll(/^not ok (\d+) - [^\n]+/gm)];
-              for (let n = 0; n < matches.length; n++) {
-                const portion = result.stdout.slice(matches[n].index, n + 1 < matches.length ? matches[n+1].index : undefined);
-                const where = portion.match(/\.test\.mjs:(\d+):(\d+)/);
-                const operator = portion.match(/operator:\s*['"]([A-Za-z]+)['"]/);
-                console.log('failure-file=' + (i+1) + ' case=' + matches[n][1] + ' line=' + (where?.[1] || 'unknown') + ' op=' + (operator?.[1] || 'unknown'));
-              }
-              console.log('failed-file-index=' + (i + 1) + ' failed-case-index=' + (numbers.join(',') || 'unknown'));
+          const pkg = JSON.parse(readFileSync(cwd+'/package.json', 'utf8'));
+          const run = (cmd,args) => spawnSync(cmd,args,{
+            cwd, encoding:'utf8',maxBuffer:32*1024*1024,timeout:22*60*1000
+          });
+          const setup = run('npm',['ci','--no-audit','--no-fund']);
+          if (setup.status !== 0) { console.log('setup=failed');process.exit(1); }
+          let failures = 0;
+          function report(label,result) {
+            if (result.status === 0) { console.log(label+'=pass');return; }
+            failures++;
+            const text = String(result.stdout || '');
+            const matches = [...text.matchAll(/^not ok (\d+) - [^\n]+/gm)];
+            if (!matches.length) { console.log(label+'=fail');return; }
+            for(let i=0;i<matches.length;i++) {
+              const part=text.slice(matches[i].index,matches[i+1]?.index);
+              const line=part.match(/\.test\.mjs:(\d+):\d+/);
+              const op=part.match(/operator:\s*['"]([A-Za-z]+)['"]/);
+              console.log(label+' case='+matches[i][1]+' line='+(line?.[1]||'unknown')+' op='+(op?.[1]||'unknown'));
             }
           }
-          if (!errors) {
-            const combined = spawnSync('npm', ['run', 'test:chat:contract'], { cwd, encoding: 'utf8', maxBuffer: 16*1024*1024 });
-            if (combined.status !== 0) {
-              const numbers = [...String(combined.stdout || '').matchAll(/^not ok (\d+)\b/gm)].map(m=>m[1]);
-              console.log('combined-only-error case-index=' + (numbers.join(',') || 'unknown'));
-              errors++;
-            }
+          function fileList(script) {
+            return String(pkg.scripts[script]||'').split(/\s+/).filter(x=>x.endsWith('.mjs'));
           }
-          console.log('contract-files=' + files.length + ' failing-files=' + errors);
-          if (errors) process.exitCode = 1;
+          for(const [idx,path] of fileList('test:group:governance').entries()) {
+            report('gate8-file'+(idx+1),run('node',['--test',path]));
+          }
+          report('gate9',run('node',['--test','tests/qa-cloud-settings-integration.test.mjs']));
+          const built=run('npm',['run','build']);
+          report('gate10',built);
+          report('gate11',run('npm',['run','test:encounter']));
+          if(built.status===0) {
+            for(const [idx,path] of fileList('test:pwa:navigation').entries()) {
+              report('gate12-file'+(idx+1),run('node',['--test',path]));
+            }
+          }else console.log('gate12=blocked-by-build');
+          console.log('audit-failure-count='+failures);
+          if(failures)process.exitCode=1;
           DIAG
