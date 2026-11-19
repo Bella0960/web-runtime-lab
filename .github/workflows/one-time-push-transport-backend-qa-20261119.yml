@@ -1,0 +1,82 @@
+name: One-time push transport backend QA only
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-push-transport-backend-qa-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  qa_release:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '3ae7cb6509547e96b67a44c793b81310fde257c4' && github.event.head_commit.message == 'ci: guarded push transport backend QA-only 20261119' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout existing public isolation guard
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public source isolation
+        run: npm run check:public
+      - name: Require original restricted QA-only authorization
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          QA_ACCOUNT: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          QA_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" || ! "$QA_ACCOUNT" =~ ^[0-9a-f]{32}$ || ${#QA_TOKEN} -lt 20 ]]; then
+            echo 'Restricted QA-only authorization unavailable'
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Checkout original private QA candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Pin original source and verify clean worktree
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '3c09698a6d9a05c76fa0ee5cbb097867aecf2561'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+          test -z "$(git status --porcelain)"
+      - name: Sealed backend-only Web Push transport and privacy tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          log="$RUNNER_TEMP/qa-push-transport-focused.log"
+          trap 'rm -f "$log"' EXIT
+          if (cd candidate && node --test tests/push-transport-guards.test.mjs tests/push-real-empty-mode.test.mjs) >"$log" 2>&1; then
+            echo 'Backend Web Push transport and privacy gate: PASS'
+          else
+            echo 'Backend Web Push transport gate: FAILED; private logs withheld'
+            sed -n 's/^not ok \([0-9][0-9]*\).*/Failed case \1/p' "$log" | tail -10 || true
+            exit 1
+          fi
+      - name: Full original private Node Vite Chromium and QA-only Worker release gates
+        env:
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: node scripts/run-candidate.mjs release
