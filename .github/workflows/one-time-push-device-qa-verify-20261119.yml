@@ -1,4 +1,4 @@
-name: One-time MAOMAO push device focused QA verification
+name: One-time push device focused QA verification
 on:
   push:
     branches: [qa-candidate]
@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '2b22cac8c4d802faeddd8caadee5570f94eab65a' && github.event.head_commit.message == 'ci: guarded push device subscription verification 20261119' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '6c07d699c72258d955fb9c9df39530c8e4ec16c4' && github.event.head_commit.message == 'ci: guarded push device subscription verification 20261119' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
