@@ -1,0 +1,99 @@
+name: One-time public welcome asset HTTP header audit
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-welcome-cache-http-audit-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'ae0ed359b1d2577952d2e4abf31536644c13728f' && github.event.head_commit.message == 'ci: read only welcome CDN cache headers audit 20261119' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout original public safety repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public isolation gate
+        run: npm run check:public
+      - name: Validate original restricted source access
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" ]]; then
+            echo 'Restricted source unavailable'
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Checkout existing approved QA source read only
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 5
+      - name: Pin exact deployed QA source
+        working-directory: candidate
+        run: |
+          test "$(git rev-parse HEAD)" = '64994911e96afcea48c087a635fba867d01f1b9c'
+          test -z "$(git status --porcelain)"
+      - name: Read live welcome HTML and versioned CSS and images with cache headers
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const read = p => readFileSync(p,'utf8');
+          const runbook=read('docs/engineering/QA_TEST_RELEASE_RUNBOOK.md');
+          const origin=runbook.match(/https:\/\/preview\.[a-z0-9.-]+\//)?.[0];
+          if (!origin) throw Error('Expected QA origin missing');
+          const sourceHtml=read('account/index.html'), sourceCss=read('account/ivory-entry.css');
+          const css=[...sourceHtml.matchAll(/<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["']/g)].map(m=>m[1]);
+          const hero=sourceHtml.match(/<img[^>]*class=["']hero-image["'][^>]*src=["']([^"']+)["']/)?.[1];
+          const frame=sourceCss.match(/--frame:url\(["']([^"']+)/)?.[1];
+          const foliage=sourceCss.match(/--foliage:url\(["']([^"']+)/)?.[1];
+          const entries=[
+            ['welcome',new URL('account/index.html',origin),'html'],
+            ['css-base',new URL(css[0],origin),'css'],
+            ['css-visual',new URL(css[1],origin),'css'],
+            ['hero',new URL(hero,origin+'account/'),'webp'],
+            ['ornament',new URL(frame,origin+'account/ivory-entry.css'),'webp'],
+            ['foliage',new URL(foliage,origin+'account/ivory-entry.css'),'webp']
+          ];
+          let allHealthy=true;
+          for(const [label,u,type] of entries){
+            try{
+              const r=await fetch(u,{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(13000)});
+              const body=await r.arrayBuffer();
+              const mime=r.headers.get('content-type')||'(missing)';
+              const cc=r.headers.get('cache-control')||'(missing)';
+              const edge=r.headers.get('cf-cache-status')||'(missing)';
+              const valid=r.status===200&&body.byteLength>0 &&
+                (type==='html'?mime.includes('text/html'):type==='css'?mime.includes('text/css'):mime.includes('image/'));
+              console.log('HTTP '+label+' '+(valid?'OK':'BAD')+' status='+r.status+
+                ' type='+mime+' bytes='+body.byteLength+' cache-control='+cc+' cf-cache-status='+edge);
+              if(!valid)allHealthy=false;
+            }catch(e){allHealthy=false;console.log('HTTP '+label+' UNAVAILABLE reason='+e.name);}
+          }
+          console.log('LIVE WELCOME ASSET HTTP AUDIT '+(allHealthy?'PASS':'FAIL'));
+          if(!allHealthy)process.exitCode=1;
+          JS
