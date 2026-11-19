@@ -1,0 +1,63 @@
+name: One-time sealed offline source regression
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-offline-source-focused-20261119.yml]
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  focused:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'e5d00d2654becd2846212ba25826dc9c406d17fb' && github.event.head_commit.message == 'ci: diagnose exact offline source contracts with real shared bindings' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify public source privacy
+        run: npm run check:public
+      - name: Verify existing private source authorization
+        shell: bash
+        env:
+          SRC: ${{ secrets.CANDIDATE_REPOSITORY }}
+          TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SRC" && test -n "$TOKEN"
+          echo "::add-mask::$SRC"
+          echo "::add-mask::${SRC##*/}"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: task-CHAT-WORLDBOOK-001/offline-full-node-regression-20261119
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Require exact private source commit
+        working-directory: candidate
+        run: test "$(git rev-parse HEAD)" = 'd9863dcb7cbb40890c3492b16b23ff70a55dca70'
+      - name: Run focused real Node and full chat contract
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/chat-offline-source-contract.test.mjs tests/offline-worldbook-binding-parity.test.mjs tests/chat-persona-sources-mandatory.test.mjs > /tmp/focus.log 2>&1 || {
+            awk '/^not ok [0-9]+ / {print "focused-failed-case-" $3}' /tmp/focus.log
+            echo 'Real Node offline source regression failed; private details withheld'
+            exit 1
+          }
+          echo 'Real Node offline source regression passed.'
+          npm run test:chat:contract > /tmp/chat.log 2>&1 || {
+            awk '/^not ok [0-9]+ / {print "chat-failed-case-" $3}' /tmp/chat.log
+            echo 'Full chat contract failed; private details withheld'
+            exit 1
+          }
+          echo 'Full chat contract passed.'
