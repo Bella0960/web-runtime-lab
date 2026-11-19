@@ -1,0 +1,66 @@
+name: One-time sealed group persona Node test locator
+on:
+  push:
+    branches:
+      - qa-candidate
+    paths:
+      - .github/workflows/one-time-group-persona-diagnose-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'af3324f5604df519c535f99e8a8db3a96f2b85aa' && github.event.head_commit.message == 'ci: isolate group persona node regression without private logs' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public safety check
+        run: npm run check:public
+      - name: Checkout isolated approved private QA
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Pin candidate SHA
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'd44947be55095e04370e354e362dcf11376c143e'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Sealed targeted Node assertion diagnosis
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          const result=spawnSync('node',['--test','tests/group-persona-memory-audit.test.mjs'],{
+            cwd:'candidate',encoding:'utf8',timeout:150000,maxBuffer:6*1024*1024,
+            env:{...process.env}
+          });
+          const log=String(result.stdout||'')+'\n'+String(result.stderr||'');
+          const failed=[...log.matchAll(/^\s*not ok\s+(\d+)\s+-[^\n]*$/gm)];
+          console.log('target=group-persona-audit exit='+result.status+' cases='+failed.length);
+          for(const match of failed.slice(0,16)){
+            const next=log.indexOf('\n  ...',match.index);
+            const segment=log.slice(match.index,next>match.index?Math.min(next+6,match.index+2500):match.index+2500);
+            const line=(segment.match(/group-persona-memory-audit\.test\.mjs:(\d+)/)||[])[1]||'0';
+            const type=/AssertionError/.test(segment)?'assertion':/SyntaxError/.test(segment)?'syntax':/TypeError/.test(segment)?'type':'other';
+            console.log('case='+match[1]+' line='+line+' type='+type);
+          }
+          if(result.error) console.log('process=error');
+          if(result.status!==0) process.exitCode=1;
+          NODE
