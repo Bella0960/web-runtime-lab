@@ -12,7 +12,7 @@ concurrency:
 jobs:
   locate:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '7f45627ebf7b73134f8cace5f9805e60daa31daf' && github.event.head_commit.message == 'ci: locate private full regression assertion indices safely' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '49ba386583298a5fec9818a7313a473507450ef6' && github.event.head_commit.message == 'ci: keep scoped checkout access for original sealed regression preflight' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -44,7 +44,7 @@ jobs:
           ref: ${{ secrets.CANDIDATE_REF }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
-          persist-credentials: false
+          persist-credentials: true
           fetch-depth: 100
       - name: Require exact QA revision
         working-directory: candidate
