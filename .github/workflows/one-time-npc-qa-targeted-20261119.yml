@@ -1,0 +1,79 @@
+name: One-time sealed NPC QA Node and Vite verification
+on:
+  push:
+    branches:
+      - qa-candidate
+    paths:
+      - .github/workflows/one-time-npc-qa-targeted-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  npc_targeted:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '6e7740bc20863ace81b6e6b930e0e61f1dc2efac' && github.event.head_commit.message == 'ci: sealed NPC QA targeted runtime checks' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout public guard
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Protect public repository
+        run: npm run check:public
+      - name: Confirm restricted private checkout
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SOURCE_REPOSITORY" && test -n "$SOURCE_REF" && test -n "$SOURCE_TOKEN"
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Read original private QA candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+      - name: Exact private QA candidate
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'fa3927f462cdc4c940182df0698cd05ac9d59d8e'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+          echo 'Pinned candidate confirmed.'
+      - name: Actual Node 22 and Vite tests, private output sealed
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd candidate
+          log="$RUNNER_TEMP/sealed-npc-targeted.log"
+          trap 'rm -f "$log"' EXIT
+          if ! node --test tests/npc-social.test.mjs tests/npc-qa-integration.test.mjs tests/offline-worldbook-binding-parity.test.mjs >"$log" 2>&1; then
+            echo 'targeted-node: failure (private logs withheld)'
+            exit 1
+          fi
+          echo 'targeted-node: success'
+          if ! npm ci --no-audit --no-fund >"$log" 2>&1; then
+            echo 'npm-ci: failure (private logs withheld)'
+            exit 1
+          fi
+          echo 'npm-ci: success'
+          if ! npm run build >"$log" 2>&1; then
+            echo 'vite-build: failure (private logs withheld)'
+            exit 1
+          fi
+          echo 'vite-build: success'
