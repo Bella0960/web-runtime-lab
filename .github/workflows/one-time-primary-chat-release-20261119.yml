@@ -1,0 +1,64 @@
+name: One-time primary chat guarded QA-only release
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-primary-chat-release-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  qa_release:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'f5e06a831cb62a5f96039bcc52f3a3e54ae4256b' && github.event.head_commit.message == 'ci: release fully verified guarded primary chat to existing QA only' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public-source isolation gate
+        run: npm run check:public
+      - name: Validate existing restricted source and scoped QA-only authorization
+        shell: bash
+        env:
+          SOURCE_REPO: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          QA_ACCOUNT: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          QA_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPO" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" || ! "$QA_ACCOUNT" =~ ^[0-9a-f]{32}$ || ${#QA_TOKEN} -lt 20 ]]; then
+            echo 'Existing restricted QA-only credentials unavailable'
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_REPO"
+          echo "::add-mask::${SOURCE_REPO##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Require exact fully verified private QA revision and branch
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '23821dea67a92e4c970bf7389751eb1b05a5d448'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Repeat full original gates and deploy only pre-existing QA web Worker
+        env:
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: node scripts/run-candidate.mjs release
