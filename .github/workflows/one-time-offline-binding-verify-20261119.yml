@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '8a587d7dc274ea0c595c8d79f9b1a3320d8c7037' && github.event.head_commit.message == 'ci: sealed offline role binding regression from fixed candidate' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'ade89bc8aa55f868fa991b34bbb1ea59f4aaab75' && github.event.head_commit.message == 'ci: locate isolated offline binding regression ordinals' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -54,11 +54,13 @@ jobs:
         run: |
           set -euo pipefail
           if ! node --test tests/offline-worldbook-binding-parity.test.mjs > /tmp/isolated-focus.log 2>&1; then
+            awk '/^not ok [0-9]+ / {print "focused-fail-ordinal-" $3}' /tmp/isolated-focus.log
             echo 'Focused synthetic behavior regression failed (private test logs withheld).'
             exit 1
           fi
           echo 'Focused synthetic offline worldbook behavior passed.'
           if ! npm run test:chat:contract > /tmp/isolated-chat.log 2>&1; then
+            awk '/^not ok [0-9]+ / {print "chat-fail-ordinal-" $3}' /tmp/isolated-chat.log
             echo 'Existing full chat contract failed (private test logs withheld).'
             exit 1
           fi
