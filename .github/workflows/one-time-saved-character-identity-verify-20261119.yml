@@ -1,0 +1,55 @@
+name: One-time character identity QA full verification
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-saved-character-identity-verify-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'c98495b6ce16fec7b40369093df65ca10ef5c151' && github.event.head_commit.message == 'ci: verify saved character identity responses in original QA' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate public source isolation
+        run: npm run check:public
+      - name: Ensure scoped private checkout source is configured
+        env:
+          REPO: ${{ secrets.CANDIDATE_REPOSITORY }}
+          REF: ${{ secrets.CANDIDATE_REF }}
+          TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$REPO" && test -n "$REF" && test -n "$TOKEN"
+          echo "::add-mask::$REPO"
+          echo "::add-mask::${REPO##*/}"
+          echo "::add-mask::$REF"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Verify the one exact original QA candidate
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '82befda4afb717c29914f8f487ea4b4678c246cf'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Run original complete Node Vite Chromium safety gates
+        run: node scripts/run-candidate.mjs verify
