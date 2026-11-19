@@ -12,7 +12,7 @@ concurrency:
 jobs:
   qa_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'f6720680d6481e7686e020df7f61dfe02d86686e' && github.event.head_commit.message == 'ci: guarded welcome cache fixture QA release 20261119' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '4367c79c9382d524c8b05d72e3dfa40cb184fab7' && github.event.head_commit.message == 'ci: guarded welcome cache scoped release corrected 20261119' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
