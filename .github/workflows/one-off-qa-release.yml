@@ -15,7 +15,7 @@ concurrency:
 jobs:
   qa_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'e39d362a1e3704878554c6a22a97255e4097f884' && github.event.head_commit.message == 'ci: authorized one-time QA-only release' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'd1fbb66d7fb59fb0a0ce5d0e3faf5b029072eb92' && github.event.head_commit.message == 'ci: authorized one-time QA-only release' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -61,7 +61,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'd22cbb03849f49cd5be73a1b04fa746176a020a8'
+          test "$(git rev-parse HEAD)" = '8ce6153de12f2c296a4dc1b46e8ca848ecd35c38'
           echo 'Approved QA source snapshot verified.'
       - name: Execute complete sealed QA-only validation and deployment
         env:
