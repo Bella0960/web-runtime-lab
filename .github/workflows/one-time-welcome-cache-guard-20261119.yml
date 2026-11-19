@@ -12,7 +12,7 @@ concurrency:
 jobs:
   qa_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'b511ae50042c24a6a0fa5ecb25cf63f6d6e0add5' && github.event.head_commit.message == 'ci: guarded welcome static cache QA only 20261119' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'f6720680d6481e7686e020df7f61dfe02d86686e' && github.event.head_commit.message == 'ci: guarded welcome cache verify after build 20261119' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -68,7 +68,7 @@ jobs:
           umask 077
           log="$RUNNER_TEMP/welcome-cache-focused.log"
           trap 'rm -f "$log"' EXIT
-          if (cd candidate && npm ci --no-audit --no-fund && node --test tests/qa-release-live-version.test.mjs tests/account-qa-bootstrap-route.test.mjs tests/qa-identity-reconnect.test.mjs tests/pwa-navigation-cache.test.mjs && npm run build) > "$log" 2>&1; then
+          if (cd candidate && npm ci --no-audit --no-fund && npm run build && node --test tests/qa-release-live-version.test.mjs tests/account-qa-bootstrap-route.test.mjs tests/qa-identity-reconnect.test.mjs tests/pwa-navigation-cache.test.mjs) > "$log" 2>&1; then
             echo 'Welcome cache focused regression and full Vite build PASS'
           else
             echo 'Focused regression or build FAILED; sealed diagnostics withheld'
