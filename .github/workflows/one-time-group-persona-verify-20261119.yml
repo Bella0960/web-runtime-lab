@@ -1,0 +1,63 @@
+name: One-time sealed human group persona QA verification
+on:
+  push:
+    branches:
+      - qa-candidate
+    paths:
+      - .github/workflows/one-time-group-persona-verify-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'bb729649a8fa97b9016d10abe8948181aa1c5899' && github.event.head_commit.message == 'ci: sealed verify human group reply contract exact QA 20261119' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout original public guard scripts
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify public source isolation
+        run: npm run check:public
+      - name: Check restricted candidate source
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" ]]; then
+            echo 'Restricted private candidate not configured.'
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Checkout approved original private QA branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Confirm exact approved private QA candidate
+        shell: bash
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '6399431fb4d03937ea090b5f6708e2f19cfdc480'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+          echo 'Exact QA commit matched; running full private gates.'
+      - name: Original complete Node Vite Chromium and security verification
+        run: node scripts/run-candidate.mjs verify
