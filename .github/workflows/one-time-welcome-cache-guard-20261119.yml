@@ -12,7 +12,7 @@ concurrency:
 jobs:
   qa_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'f6720680d6481e7686e020df7f61dfe02d86686e' && github.event.head_commit.message == 'ci: guarded welcome cache verify after build 20261119' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'f6720680d6481e7686e020df7f61dfe02d86686e' && github.event.head_commit.message == 'ci: guarded welcome cache fixture QA release 20261119' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -57,7 +57,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '3c4708f361d6d6f5e6d71a852f7c69565a4989aa'
+          test "$(git rev-parse HEAD)" = '64994911e96afcea48c087a635fba867d01f1b9c'
           test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
           test -z "$(git status --porcelain)"
           echo 'QA revision pinned; working tree clean.'
