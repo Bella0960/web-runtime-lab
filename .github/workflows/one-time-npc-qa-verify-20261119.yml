@@ -1,4 +1,4 @@
-name: One-time sealed MAOMAO NPC QA candidate verification
+name: One-time sealed NPC QA candidate verification
 on:
   push:
     branches:
@@ -13,7 +13,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'c14c94a630bdb7a59d1a5f991321d6274b5a68f4' && github.event.head_commit.message == 'ci: one-time sealed NPC QA verification' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '2bc76cb3691a66945962c40b91cf8945f6051eab' && github.event.head_commit.message == 'ci: correct sealed NPC verifier public-surface metadata' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
