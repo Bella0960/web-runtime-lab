@@ -12,7 +12,7 @@ concurrency:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'b253a6bc1d9ad1bb3efb488b97036323c40a520f' && github.event.head_commit.message == 'ci: rerun sealed ordinal chat gate classifier with fixed parser' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '3602e20152604a66fa2f117a1a70350bedf83b18' && github.event.head_commit.message == 'ci: diagnose only sealed persona test ordinals' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -47,6 +47,6 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'f3f447d961d9113d6565774a65a7473e49741780'
+          test "$(git rev-parse HEAD)" = 'b18e4991b2674a08e81f8dcf7f30f2d5cc945faa'
       - name: Report only test ordinals (private output sealed)
-        run: node scripts/sealed-chat-suite-isolator.mjs
+        run: node scripts/sealed-chat-suite-isolator.mjs persona
