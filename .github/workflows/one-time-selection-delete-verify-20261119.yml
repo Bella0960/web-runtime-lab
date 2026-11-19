@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '55816567167f05ff581748424a83f3efdb52f7cd' && github.event.head_commit.message == 'ci: sealed verify selected-message atomic delete exact QA' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '7c2bef3c250a3bc46cefce4055036bd2c0a8e61b' && github.event.head_commit.message == 'ci: restore scoped private git credential for original QA head check' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -44,7 +44,7 @@ jobs:
           ref: ${{ secrets.CANDIDATE_REF }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
-          persist-credentials: false
+          persist-credentials: true
           fetch-depth: 100
       - name: Require exact original QA and fixed review snapshot
         shell: bash
