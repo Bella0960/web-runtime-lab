@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'e9452442fb542cfd826fbec227a65a66feeac3f9' && github.event.head_commit.message == 'ci: pinpoint selected-delete regression before full QA validation' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '80fe8916d918efc2f4b4cc2424146f5a11fc8636' && github.event.head_commit.message == 'ci: classify chat contract failure by test ordinal without private logs' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -67,5 +67,19 @@ jobs:
           console.log('Failed test ordinals: '+(ids.length?ids.join(','):'none-detected'));
           if(result.status!==0) process.exit(1);
           EOF
-      - name: Run original complete Node Vite Chromium gates
-        run: node scripts/run-candidate.mjs verify
+      - name: Classify exact contract test ordinals without private logs
+        shell: bash
+        run: |
+          node --input-type=module <<'EOF'
+          import { spawnSync } from 'node:child_process';
+          const result=spawnSync('npm',['run','test:chat:contract'],{
+            cwd:'candidate',encoding:'utf8',maxBuffer:16*1024*1024,timeout:240000
+          });
+          const output=String(result.stdout||'')+'\n'+String(result.stderr||'');
+          const ids=[...output.matchAll(/^\s*not ok\s+(\d+)\s+-/gm)].map(x=>Number(x[1]));
+          const count=[...output.matchAll(/^\s*# tests\s+(\d+)/gm)].map(x=>Number(x[1])).at(-1)||0;
+          console.log('Chat contract status: '+(result.status===0?'PASS':'FAIL'));
+          console.log('Chat contract test count: '+count);
+          console.log('Chat contract failed ordinals: '+(ids.length?ids.join(','):'none-detected'));
+          if(result.status!==0)process.exit(1);
+          EOF
