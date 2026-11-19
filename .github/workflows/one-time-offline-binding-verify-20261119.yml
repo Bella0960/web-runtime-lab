@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '5c32ffee4e337c9ee687ce548503f92313b4f85c' && github.event.head_commit.message == 'ci: sealed verify corrected offline worldbook binding fixtures' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'f34a1cab28d64fabfce240e51e458ed386909483' && github.event.head_commit.message == 'ci: verify offline binding parity and updated identity cache contract' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -46,7 +46,7 @@ jobs:
       - name: Require fixed private candidate
         working-directory: candidate
         run: |
-          test "$(git rev-parse HEAD)" = 'b4a9e6c548b8152bdca1e1e88f0c8035cb7cd175'
+          test "$(git rev-parse HEAD)" = '5a6c3b7d0ab77e105df83cd3cf44572a6de780b3'
           echo 'Isolated source snapshot confirmed.'
       - name: Run role-binding and full chat Node contracts without private logs
         working-directory: candidate
