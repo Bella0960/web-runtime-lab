@@ -12,7 +12,7 @@ concurrency:
 jobs:
   qa_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '4367c79c9382d524c8b05d72e3dfa40cb184fab7' && github.event.head_commit.message == 'ci: guarded welcome cache scoped release corrected 20261119' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'f05d7a9d9a5ca0032655b66047a68b466ea39d1b' && github.event.head_commit.message == 'ci: verify fingerprinted Vite welcome asset and release 20261119' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -91,7 +91,14 @@ jobs:
           if (!html.includes('navigator.serviceWorker.getRegistration()') ||
               !html.includes('registration.update()') ||
               html.includes('registration.unregister()')) throw Error('Non-destructive welcome SW update contract missing');
-          if (!builtHtml || !builtHtml.includes('hero.webp?v=')) throw Error('Built welcome HTML lacks versioned hero');
+          const renderedHero = builtHtml.match(/<img[^>]*class=["']hero-image["'][^>]*src=["']([^"']+)["']/)?.[1];
+          if (!renderedHero) throw Error('Built welcome HTML missing hero resource');
+          const resolvedHeroPath = new URL(renderedHero,'https://static.invalid/account/index.html').pathname;
+          if (!resolvedHeroPath.startsWith('/assets/') ||
+              !existsSync(resolve('dist','.'+resolvedHeroPath))) {
+            throw Error('Fingerprint or versioned hero file missing from the dist output');
+          }
+          console.log('BUILT WELCOME HERO URL REFERENCES A PRESENT DIST ASSET');
           const hero = html.match(/<img[^>]*class=["']hero-image["'][^>]*src=["']([^"']+)["']/)?.[1];
           const sources = [['hero.webp',hero],['ornament.webp',css.match(/--frame:url\(["']([^"']+)/)?.[1]],['leafshadow.webp',css.match(/--foliage:url\(["']([^"']+)/)?.[1]]];
           for(const [name,u] of sources){
