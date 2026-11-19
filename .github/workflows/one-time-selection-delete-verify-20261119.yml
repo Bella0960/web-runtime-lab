@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '7c2bef3c250a3bc46cefce4055036bd2c0a8e61b' && github.event.head_commit.message == 'ci: restore scoped private git credential for original QA head check' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'e9452442fb542cfd826fbec227a65a66feeac3f9' && github.event.head_commit.message == 'ci: pinpoint selected-delete regression before full QA validation' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -53,5 +53,19 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = '7fa607d14faf16c5c1abdf7e711d081a4b44fba6'
           test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Diagnose single target test without exposing private logs
+        shell: bash
+        run: |
+          node --input-type=module <<'EOF'
+          import { spawnSync } from 'node:child_process';
+          const result=spawnSync(process.execPath,['--test','tests/chat-selection-delete-atomic.test.mjs'],{
+            cwd:'candidate',encoding:'utf8',maxBuffer:4*1024*1024,timeout:120000
+          });
+          const output=String(result.stdout||'')+'\n'+String(result.stderr||'');
+          const ids=[...output.matchAll(/^not ok\s+(\d+)\s+-/gm)].map(x=>Number(x[1]));
+          console.log('Synthetic selection-delete tests: '+(result.status===0?'PASS':'FAIL'));
+          console.log('Failed test ordinals: '+(ids.length?ids.join(','):'none-detected'));
+          if(result.status!==0) process.exit(1);
+          EOF
       - name: Run original complete Node Vite Chromium gates
         run: node scripts/run-candidate.mjs verify
