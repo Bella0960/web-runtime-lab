@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '80fe8916d918efc2f4b4cc2424146f5a11fc8636' && github.event.head_commit.message == 'ci: classify chat contract failure by test ordinal without private logs' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '448f3bb55b36f5f2cec203a43ae3c59796f16aab' && github.event.head_commit.message == 'ci: validate fixed image cleanup contract and full original QA gates' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -51,7 +51,7 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '7fa607d14faf16c5c1abdf7e711d081a4b44fba6'
+          test "$(git rev-parse HEAD)" = '7060d2bd32e346513518c0e8ef9398afe817b6d9'
           test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
       - name: Diagnose single target test without exposing private logs
         shell: bash
@@ -83,3 +83,5 @@ jobs:
           console.log('Chat contract failed ordinals: '+(ids.length?ids.join(','):'none-detected'));
           if(result.status!==0)process.exit(1);
           EOF
+      - name: Run original complete Node Vite Chromium gates
+        run: node scripts/run-candidate.mjs verify
