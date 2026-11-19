@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'ade89bc8aa55f868fa991b34bbb1ea59f4aaab75' && github.event.head_commit.message == 'ci: locate isolated offline binding regression ordinals' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '5c32ffee4e337c9ee687ce548503f92313b4f85c' && github.event.head_commit.message == 'ci: sealed verify corrected offline worldbook binding fixtures' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -46,7 +46,7 @@ jobs:
       - name: Require fixed private candidate
         working-directory: candidate
         run: |
-          test "$(git rev-parse HEAD)" = 'e8bf9c415d2f64a7697f14199f2d240327999366'
+          test "$(git rev-parse HEAD)" = 'b4a9e6c548b8152bdca1e1e88f0c8035cb7cd175'
           echo 'Isolated source snapshot confirmed.'
       - name: Run role-binding and full chat Node contracts without private logs
         working-directory: candidate
