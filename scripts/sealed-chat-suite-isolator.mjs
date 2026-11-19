@@ -1,8 +1,8 @@
 // Minimal private-suite triage: never emit or persist private stdout, file paths,
 // assertion text, source files, environment values or user data.
 import {spawnSync} from 'node:child_process';
-import {readFileSync, existsSync} from 'node:fs';
-import {resolve, realpathSync} from 'node:path';
+import {readFileSync, existsSync, realpathSync} from 'node:fs';
+import {resolve} from 'node:path';
 const root = realpathSync(resolve(process.env.GITHUB_WORKSPACE || '.', 'candidate'));
 const script = JSON.parse(readFileSync(resolve(root,'package.json'),'utf8')).scripts['test:chat:contract'];
 const files = String(script || '').split(/\s+/).filter(x => /^tests\/[A-Za-z0-9._\/-]+\.mjs$/.test(x));
