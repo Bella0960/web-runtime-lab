@@ -1,0 +1,72 @@
+name: One-time isolated contract index diagnosis
+
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-contract-diagnosis-20261119.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'ad65278f52c22000af147ee6713673b63774d5ce' && github.event.head_commit.message == 'ci: one-time isolated contract index diagnosis' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check public surface
+        run: npm run check:public
+      - name: Checkout isolated candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+      - name: Lock approved snapshot
+        working-directory: candidate
+        run: test "$(git rev-parse HEAD)" = '5fe61aaba558b32a966d63cc353708b56e7a70f1'
+      - name: Diagnose failed contract by numeric index only
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'DIAG'
+          import { spawnSync } from 'node:child_process';
+          import { readFileSync } from 'node:fs';
+          const cwd = 'candidate';
+          const install = spawnSync('npm', ['ci', '--no-audit', '--no-fund'], { cwd, encoding:'utf8', maxBuffer: 10*1024*1024 });
+          if (install.status !== 0) { console.log('dependencies: unavailable'); process.exit(1); }
+          const config = JSON.parse(readFileSync(cwd + '/package.json', 'utf8'));
+          const files = config.scripts['test:chat:contract'].split(/\s+/).filter(x => x.endsWith('.mjs'));
+          let errors = 0;
+          for (let i = 0; i < files.length; i++) {
+            const result = spawnSync('node', ['--test', files[i]], { cwd, encoding: 'utf8', maxBuffer: 16*1024*1024 });
+            if (result.status !== 0) {
+              const numbers = [...String(result.stdout || '').matchAll(/^not ok (\d+)\b/gm)].map(m=>m[1]);
+              errors++;
+              console.log('failed-file-index=' + (i + 1) + ' failed-case-index=' + (numbers.join(',') || 'unknown'));
+            }
+          }
+          if (!errors) {
+            const combined = spawnSync('npm', ['run', 'test:chat:contract'], { cwd, encoding: 'utf8', maxBuffer: 16*1024*1024 });
+            if (combined.status !== 0) {
+              const numbers = [...String(combined.stdout || '').matchAll(/^not ok (\d+)\b/gm)].map(m=>m[1]);
+              console.log('combined-only-error case-index=' + (numbers.join(',') || 'unknown'));
+              errors++;
+            }
+          }
+          console.log('contract-files=' + files.length + ' failing-files=' + errors);
+          if (errors) process.exitCode = 1;
+          DIAG
