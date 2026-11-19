@@ -1,0 +1,67 @@
+name: One-time primary-chat fixed QA verification
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-primary-send-postfix-verify-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '91ef041f09c5bc9862811734d1fb7db8e15c0972' && github.event.head_commit.message == 'ci: verify updated protected primary chat and original QA safety gates' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate public guard
+        run: npm run check:public
+      - name: Check existing scoped QA credentials
+        shell: bash
+        env:
+          SOURCE_REPO: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SOURCE_REPO"
+          test -n "$SOURCE_REF"
+          test -n "$SOURCE_TOKEN"
+          echo "::add-mask::$SOURCE_REPO"
+          echo "::add-mask::${SOURCE_REPO##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Require exact reviewed QA snapshot
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '23821dea67a92e4c970bf7389751eb1b05a5d448'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Check exact fixed 7 tests and atomic send contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          if (cd candidate && node --test tests/forum-chat-blockers.test.mjs tests/chat-primary-send-lock.test.mjs > /dev/null 2>&1); then
+            echo 'Existing forum/chat and atomic-send assertions all passed.'
+          else
+            echo 'Focused tests failed; private output withheld.'
+            exit 1
+          fi
+      - name: Run original full Node Vite Chromium release gates, verify-only
+        run: node scripts/run-candidate.mjs verify
