@@ -12,7 +12,7 @@ concurrency:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'be6f61fc2605633d2db6725b822387494f88ec73' && github.event.head_commit.message == 'ci: pinpoint private full suite failure without exposing logs' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '89db7df9275502705a0d0a469773fd90d5c531af' && github.event.head_commit.message == 'ci: correct sealed full-suite index-only diagnostic' }}
     runs-on: ubuntu-latest
     timeout-minutes: 75
     steps:
@@ -66,7 +66,7 @@ jobs:
           import {spawnSync} from 'node:child_process';
           import {readdirSync} from 'node:fs';
           const repo='candidate';
-          const paths=readdirSync(repo+'/tests').filter(x=>/\\.test\\.mjs$/.test(x)).sort();
+          const paths=readdirSync(repo+'/tests').filter(x=>x.endsWith('.test.mjs')).sort();
           const out=spawnSync(process.execPath,['--test','--test-concurrency=1'],{
             cwd:repo,env:process.env,encoding:'utf8',maxBuffer:40*1024*1024,timeout:35*60*1000
           });
@@ -75,7 +75,7 @@ jobs:
           const failed=content.split(/\r?\n/).filter(x=>/^\s*not ok\s+\d+\s*-/.test(x));
           const hits=new Set();
           for(const line of failed){
-            const normalized=line.replace(/\\\\/g,'/');
+            const normalized=line.replaceAll(String.fromCharCode(92),'/');
             for(let i=0;i<paths.length;i++){
               if(normalized.includes('tests/'+paths[i]))hits.add(i+1);
             }
