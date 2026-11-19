@@ -1,0 +1,91 @@
+name: One-time sealed regression location check
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-direct-role-suite-locate-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  locate:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '7f45627ebf7b73134f8cace5f9805e60daa31daf' && github.event.head_commit.message == 'ci: locate private full regression assertion indices safely' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public content safety gate
+        run: npm run check:public
+      - name: Verify existing restricted candidate
+        shell: bash
+        env:
+          REPO: ${{ secrets.CANDIDATE_REPOSITORY }}
+          REF: ${{ secrets.CANDIDATE_REF }}
+          TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$REPO"
+          test -n "$REF"
+          test -n "$TOKEN"
+          echo "::add-mask::$REPO"
+          echo "::add-mask::${REPO##*/}"
+          echo "::add-mask::$REF"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 100
+      - name: Require exact QA revision
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'a3d41261b4b7cc57a4460e15cb91a13d6814fb27'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Run original full tests and print only anonymous failed source ordinals
+        run: |
+          node --input-type=module <<'EOF'
+          import {spawnSync} from 'node:child_process';
+          import {readdirSync} from 'node:fs';
+          const files=readdirSync('candidate/tests')
+            .filter(x=>x.endsWith('.test.mjs')).sort();
+          const result=spawnSync(process.execPath,['scripts/qa-direct-release.mjs'],{
+            cwd:'candidate',env:process.env,encoding:'utf8',
+            maxBuffer:128*1024*1024,timeout:75*60*1000
+          });
+          if(result.status===0&&!result.error){
+            console.log('full-original-suite-success');process.exit(0);
+          }
+          const log=String(result.stdout||'')+'\n'+String(result.stderr||'');
+          const lines=log.split(String.fromCharCode(10));
+          const failed=lines.map((line,index)=>({line,index}))
+            .filter(x=>/^\s*not ok\s+\d+\s*-/.test(x.line));
+          const matched=new Set();
+          const unmatched=[];
+          for(const entry of failed){
+            const text=lines.slice(entry.index,Math.min(entry.index+80,lines.length)).join(' ')
+              .replaceAll(String.fromCharCode(92),'/');
+            let found=false;
+            for(let i=0;i<files.length;i++){
+              if(text.includes('tests/'+files[i])){matched.add(i+1);found=true;}
+            }
+            if(!found)unmatched.push(entry.line.match(/not ok\s+(\d+)/)?.[1]||'unknown');
+          }
+          console.log('original-suite-status=FAIL');
+          console.log('failed-test-count='+failed.length);
+          console.log('failed-file-ordinals='+([...matched].sort((a,b)=>a-b).join(',')||'unclassified'));
+          console.log('unmapped-tap-indices='+(unmatched.join(',')||'none'));
+          console.log('test-file-count='+files.length);
+          console.log('failure-type='+(result.error?'runner-error':'test-assertion'));
+          process.exit(1);
+          EOF
