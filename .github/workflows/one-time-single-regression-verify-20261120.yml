@@ -1,0 +1,54 @@
+name: One-time isolated unrelated regression verification
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-single-regression-verify-20261120.yml]
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '7dfa844c5a405c71205b367d1142581f9c588921' && github.event.head_commit.message == 'ci: isolate game receipt regression 20261120' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm run check:public
+      - name: Validate sealed source authorization
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          test -n "$SOURCE_REPOSITORY" && test -n "$SOURCE_REF" && test -n "$SOURCE_TOKEN"
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::$SOURCE_REF"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+      - name: Test unrelated existing receipt suite without touching code
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd candidate
+          test "$(git rev-parse HEAD)" = 'b37498572b30b2753d5f9536796de4ffe86e6473'
+          umask 077
+          log="$RUNNER_TEMP/existing-receipt-test.log"
+          trap 'rm -f "$log"' EXIT
+          if node --test tests/group-game-chat-receipts.test.mjs > "$log" 2>&1; then
+            echo 'Isolated receipt regression PASS'
+          else
+            echo 'Isolated receipt regression FAIL; private logs withheld'
+            sed -n 's/^not ok \([0-9][0-9]*\).*/failed case \1/p' "$log" | tail -8 || true
+            exit 1
+          fi
