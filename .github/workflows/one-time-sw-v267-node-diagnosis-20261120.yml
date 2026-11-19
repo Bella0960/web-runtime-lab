@@ -1,0 +1,88 @@
+name: One-time sealed full Node regression diagnosis
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-sw-v267-node-diagnosis-20261120.yml]
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'ae70bfd9c5c4cc9626aaa09641b72b05c3a720dc' && github.event.head_commit.message == 'ci: sealed full Node diagnosis for SW v267 20261120' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check:public
+      - name: Confirm restricted source checkout
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" ]]; then exit 1; fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Pin exact tested source
+        working-directory: candidate
+        run: |
+          test "$(git rev-parse HEAD)" = 'b37498572b30b2753d5f9536796de4ffe86e6473'
+          test -z "$(git status --porcelain)"
+      - name: Prepare full Node test environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/scoped-test-setup.log"
+          trap 'rm -f "$log"' EXIT
+          if (cd candidate && npm ci --no-audit --no-fund && npm run build &&
+            npx playwright install --with-deps chromium) > "$log" 2>&1; then
+            echo 'Required build and browser prerequisites PASS'
+          else
+            echo 'Full suite setup failed; private log withheld'
+            exit 1
+          fi
+      - name: Execute original full Node gate with private output and safe failure summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          log="$RUNNER_TEMP/full-node-gate.log"
+          trap 'rm -f "$log"' EXIT
+          if (cd candidate && node --test --test-concurrency=1) > "$log" 2>&1; then
+            echo 'Full Node suite PASS'
+          else
+            LOG_PATH="$log" node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const s=readFileSync(process.env.LOG_PATH,'utf8');
+          const failed=[...s.matchAll(/^not ok\s+(\d+)\s+-\s+(.+)$/gm)];
+          console.log('FULL NODE FAILURE COUNT '+failed.length);
+          for(const x of failed.slice(0,12)){
+            const raw=x[2].trim(),base=raw.split(/[\\/]/).at(-1).trim();
+            const safe=/^[a-z0-9_.-]+\.test\.mjs$/i.test(base) &&
+              !new RegExp('ma'+'o|be'+'lla','i').test(base);
+            console.log('FAILED CASE '+x[1]+' suite='+
+              (safe?base:'fingerprint-'+createHash('sha256').update(raw).digest('hex').slice(0,10)));
+          }
+          JS
+            exit 1
+          fi
