@@ -1,0 +1,71 @@
+name: One-time isolated group invite browser regression
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-group-invite-browser-20261119.yml]
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '2ee8c05fcfd31d7a08333da7918eeabd924bdca2' && github.event.head_commit.message == 'ci: isolate original QA group invite browser regression' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Protect public source
+        run: npm run check:public
+      - name: Checkout original private QA
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Exact QA source gate
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '624776b38c622e25e9a12e36f1ac44bb63372c45'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Run actual isolated Chromium group invitation test
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          const cwd='candidate';
+          const run=(cmd,args,t)=>spawnSync(cmd,args,{cwd,encoding:'utf8',timeout:t||900000,maxBuffer:24*1024*1024,env:process.env});
+          const dep=run('npm',['ci','--no-audit','--no-fund']);
+          console.log('dependencies='+(dep.status===0?'pass':'fail'));
+          if(dep.status!==0)process.exit(1);
+          const browser=run('npx',['playwright','install','--with-deps','chromium']);
+          console.log('chromium-setup='+(browser.status===0?'pass':'fail'));
+          if(browser.status!==0)process.exit(1);
+          const t=run('node',['--test','--test-concurrency=1','tests/group-chat-invite-e2e.test.mjs'],15*60*1000);
+          const log=String(t.stdout||'')+'\n'+String(t.stderr||'');
+          const failed=[...log.matchAll(/^\s*not ok\s+(\d+)\s+-[^\n]*$/gm)];
+          console.log('group-invite-browser='+ (t.status===0?'pass':'fail')+' failures='+failed.length);
+          for(const m of failed.slice(0,8)){
+            const b=log.slice(m.index,Math.min(log.length,m.index+4000));
+            const reason=/no \/chat\/completions request/.test(b)?'missing-request':
+              /msg-row\.received\.group-member-row/.test(b)?'reply-not-visible':
+              /gp-member-row|gp-invite-row/.test(b)?'member-settings':
+              /chat-title|chat-status-sub/.test(b)?'group-header':
+              /TimeoutError/.test(b)?'other-timeout':'other';
+            console.log('failed-case='+m[1]+' category='+reason);
+          }
+          if(t.status!==0)process.exitCode=1;
+          NODE
