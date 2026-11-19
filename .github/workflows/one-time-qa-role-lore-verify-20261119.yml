@@ -11,7 +11,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'fb5dfe14148c81a7e491d154fba61ca93c309c7b' && github.event.head_commit.message == 'ci: verify role lore candidate with authorized private ref freshness' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '40ffb1b811ec44527637a3e0d976958ec0a0fc89' && github.event.head_commit.message == 'ci: sealed full QA role lore verification after complete contract repair' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -49,7 +49,7 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '5a6c3b7d0ab77e105df83cd3cf44572a6de780b3'
+          test "$(git rev-parse HEAD)" = 'd9863dcb7cbb40890c3492b16b23ff70a55dca70'
           test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
           echo 'Exact private QA source pinned.'
       - name: Run existing complete private Node Vite Chromium security validation
