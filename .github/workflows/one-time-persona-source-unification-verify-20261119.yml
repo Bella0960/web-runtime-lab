@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '8a165172f6d38ecb746d8f9cc83fee8b8e6c763b' && github.event.head_commit.message == 'ci: verify canonical chat persona sources on original QA' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '22ea5a4df5364ae9c9ae6e1b04dc9c56081a6c57' && github.event.head_commit.message == 'ci: reverify canonical persona source after fixing preserved chat contracts' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -49,7 +49,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'f3f447d961d9113d6565774a65a7473e49741780'
+          test "$(git rev-parse HEAD)" = 'a4305e8b5a6ab0c291b36fba71bce580ac4aca82'
           test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
       - name: Execute complete sealed Node Vite Chromium and safety gates
         run: node scripts/run-candidate.mjs verify
