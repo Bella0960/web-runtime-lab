@@ -15,7 +15,7 @@ concurrency:
 jobs:
   qa_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '0000000000000000000000000000000000000000' && github.event.head_commit.message == 'ci: authorized one-time QA-only release' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '6c4673ffa4f788e574d1ae14a7f6d93889f684ce' && github.event.head_commit.message == 'ci: authorized one-time QA-only release' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
