@@ -1,0 +1,88 @@
+name: One-time sealed chat full-suite failure location
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-chat-suite-diagnostic-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'be6f61fc2605633d2db6725b822387494f88ec73' && github.event.head_commit.message == 'ci: pinpoint private full suite failure without exposing logs' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public safety check
+        run: npm run check:public
+      - name: Confirm scoped credentials
+        shell: bash
+        env:
+          SOURCE_REPO: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SOURCE_REPO"
+          test -n "$SOURCE_REF"
+          test -n "$SOURCE_TOKEN"
+          echo "::add-mask::$SOURCE_REPO"
+          echo "::add-mask::${SOURCE_REPO##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 30
+      - name: Require original QA and immutable candidate
+        working-directory: candidate
+        run: |
+          test "$(git rev-parse HEAD)" = '46e35e2ed830c1c57cf7cfe35cf88384ec68d40d'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Prepare same Node Vite Chromium environment as protected release
+        shell: bash
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund > /dev/null 2>&1 || { echo 'dependency-preflight-failed'; exit 1; }
+          npm run build > /dev/null 2>&1 || { echo 'vite-build-preflight-failed'; exit 1; }
+          npx playwright install --with-deps chromium > /dev/null 2>&1 || { echo 'chromium-preflight-failed'; exit 1; }
+      - name: Locate failing suite ordinal without publishing logs, names or paths
+        shell: bash
+        run: |
+          node --input-type=module <<'EOF'
+          import {spawnSync} from 'node:child_process';
+          import {readdirSync} from 'node:fs';
+          const repo='candidate';
+          const paths=readdirSync(repo+'/tests').filter(x=>/\\.test\\.mjs$/.test(x)).sort();
+          const out=spawnSync(process.execPath,['--test','--test-concurrency=1'],{
+            cwd:repo,env:process.env,encoding:'utf8',maxBuffer:40*1024*1024,timeout:35*60*1000
+          });
+          const content=String(out.stdout||'')+'\n'+String(out.stderr||'');
+          if(out.status===0&&!out.error){console.log('diagnostic-full-suite-success');process.exit(0)}
+          const failed=content.split(/\r?\n/).filter(x=>/^\s*not ok\s+\d+\s*-/.test(x));
+          const hits=new Set();
+          for(const line of failed){
+            const normalized=line.replace(/\\\\/g,'/');
+            for(let i=0;i<paths.length;i++){
+              if(normalized.includes('tests/'+paths[i]))hits.add(i+1);
+            }
+          }
+          console.log('full-suite-failed='+true+' failed-tap-items='+failed.length);
+          console.log('failing-file-ordinals='+([...hits].sort((a,b)=>a-b).join(',')||'unclassified'));
+          console.log('suite-file-count='+paths.length);
+          console.log('failure-kind='+(out.error?'process-error':out.signal?'process-signal':'assertion'));
+          process.exit(1);
+          EOF
