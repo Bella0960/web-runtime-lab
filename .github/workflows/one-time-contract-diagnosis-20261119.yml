@@ -15,7 +15,7 @@ concurrency:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '597dfbd9949c8a78393b7ca74dfd37fe71486c8e' && github.event.head_commit.message == 'ci: one-time isolated contract assertion locator' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '9d09f3ffdbbdf50e6dda7ab51a30f1c2c1aff39c' && github.event.head_commit.message == 'ci: one-time isolated contract location audit' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -56,11 +56,11 @@ jobs:
             if (result.status !== 0) {
               const numbers = [...String(result.stdout || '').matchAll(/^not ok (\d+)\b/gm)].map(m=>m[1]);
               errors++;
-              const matches = [...String(result.stdout || '').matchAll(/^not ok (\\d+) - [^\\n]+/gm)];
+              const matches = [...String(result.stdout || '').matchAll(/^not ok (\d+) - [^\n]+/gm)];
               for (let n = 0; n < matches.length; n++) {
                 const portion = result.stdout.slice(matches[n].index, n + 1 < matches.length ? matches[n+1].index : undefined);
-                const where = portion.match(/\\.test\\.mjs:(\\d+):(\\d+)/);
-                const operator = portion.match(/operator:\\s*['"]([A-Za-z]+)['"]/);
+                const where = portion.match(/\.test\.mjs:(\d+):(\d+)/);
+                const operator = portion.match(/operator:\s*['"]([A-Za-z]+)['"]/);
                 console.log('failure-file=' + (i+1) + ' case=' + matches[n][1] + ' line=' + (where?.[1] || 'unknown') + ' op=' + (operator?.[1] || 'unknown'));
               }
               console.log('failed-file-index=' + (i + 1) + ' failed-case-index=' + (numbers.join(',') || 'unknown'));
