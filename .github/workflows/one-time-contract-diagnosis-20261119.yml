@@ -1,4 +1,4 @@
-name: One-time isolated focused regression check
+name: One-time isolated focused and browser checks
 
 on:
   push:
@@ -14,9 +14,9 @@ concurrency:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'c310e7bdd0f31e071b0c96fb554b68ef7643eead' && github.event.head_commit.message == 'ci: one-time isolated focused regression check' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'a49d4466e830e3d7076bc1033803da8888717613' && github.event.head_commit.message == 'ci: one-time isolated focused and browser checks' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,8 +36,8 @@ jobs:
           persist-credentials: false
       - name: Lock candidate snapshot
         working-directory: candidate
-        run: test "$(git rev-parse HEAD)" = '9439c7ddd8e32810adde2c4aa553cd0c6d76ab52'
-      - name: Verify focused regression without exposing private test contents
+        run: test "$(git rev-parse HEAD)" = 'c40e1ad92c0344223cadf30bf69187b04a0c3929'
+      - name: Run independent validations with numbered, sealed diagnostics
         shell: bash
         run: |
           set -euo pipefail
@@ -47,26 +47,41 @@ jobs:
           const cwd='candidate';
           const tests=readdirSync(cwd+'/tests',{recursive:true})
             .filter(x=>/\.test\.(?:[cm]?js)$/.test(String(x))).map(String).sort();
-          function exec(cmd,args,timeout=12*60*1000){
-            return spawnSync(cmd,args,{cwd,encoding:'utf8',maxBuffer:32*1024*1024,timeout});
+          function execute(cmd,args,timeout=15*60*1000) {
+            return spawnSync(cmd,args,{cwd,encoding:'utf8',maxBuffer:48*1024*1024,timeout});
           }
-          const i=exec('npm',['ci','--no-audit','--no-fund']);
-          if(i.status!==0){console.log('npm-setup=fail');process.exit(1);}
+          if(execute('npm',['ci','--no-audit','--no-fund']).status!==0){
+            console.log('dependency-setup=failed');process.exit(1);
+          }
+          if(execute('npm',['run','build']).status!==0){
+            console.log('build=failed');process.exit(1);
+          }
           let failures=0;
-          for(const index of [22,38,39,41,45,47,57,70]){
-            const result=exec('node',['--test','tests/'+tests[index-1]]);
-            if(result.status===0){console.log('file='+index+' pass');continue;}
+          function checkFile(index){
+            const x=execute('node',['--test','tests/'+tests[index-1]],12*60*1000);
+            if(x.status===0){console.log('file-index='+index+' pass');return;}
             failures++;
-            const text=String(result.stdout||'');
-            const matches=[...text.matchAll(/^not ok (\d+) - [^\n]+/gm)];
-            for(let n=0;n<matches.length;n++){
-              const block=text.slice(matches[n].index,matches[n+1]?.index);
-              const line=block.match(/location:\s*['"]?[^\n]*?\/tests\/[^:\n'"]+:(\d+)/);
-              const kind=block.match(/failureType:\s*['"]([A-Za-z]+)['"]/);
-              console.log('file='+index+' case='+matches[n][1]+' line='+(line?.[1]||'?')+
-                ' kind='+(kind?.[1]||'?'));
+            const out=String(x.stdout||'');
+            const items=[...out.matchAll(/^not ok (\d+) - [^\n]+/gm)];
+            if(!items.length){
+              const kind=/Executable doesn't exist|browserType\.launch/i.test(out+String(x.stderr||'')) ? 'browser-launch' :
+                /TimeoutError|timeout/i.test(out+String(x.stderr||'')) ? 'timeout' : 'unknown';
+              console.log('file-index='+index+' error='+kind);
+              return;
+            }
+            for(let i=0;i<Math.min(items.length,35);i++){
+              const part=out.slice(items[i].index,items[i+1]?.index);
+              const location=part.match(/location:\s*['"]?[^\n]*?\/tests\/[^:\n'"]+:(\d+)/);
+              const kind=part.match(/failureType:\s*['"]([A-Za-z]+)['"]/);
+              console.log('file-index='+index+' case='+items[i][1]+
+                ' line='+(location?.[1]||'?')+' kind='+(kind?.[1]||'?'));
             }
           }
-          console.log('focus-failure-count='+failures);
+          for(const n of [22,38,39,41,45,47,57,70])checkFile(n);
+          const install=execute('npx',['playwright','install','--with-deps','chromium'],10*60*1000);
+          if(install.status===0){
+            for(const n of [49,65,76,78,84])checkFile(n);
+          }else{console.log('browser-setup=failed');failures++;}
+          console.log('targeted-failure-count='+failures);
           if(failures)process.exitCode=1;
           AUDIT
