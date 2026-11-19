@@ -1,0 +1,68 @@
+name: One-time sealed QA login cache test pinpoint
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-qa-login-cache-test-diagnose-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '0e610fd70212516f96d785315a8555d38caef22b' && github.event.head_commit.message == 'ci: diagnose targeted QA login cache test only' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check:public
+      - name: Confirm original private candidate source availability
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" ]]; then
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Require exact existing QA source head
+        working-directory: candidate
+        run: |
+          test "$(git rev-parse HEAD)" = '9a6c3b0ce39a3b086b4f668a1545e366b786aa95'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Diagnose original login recovery and release smoke tests separately
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          log="$RUNNER_TEMP/qa-login-test-diagnosis.log"
+          trap 'rm -f "$log"' EXIT
+          for fixture in qa-identity-reconnect.test.mjs qa-release-live-version.test.mjs; do
+            if (cd candidate && node --test "tests/$fixture") > "$log" 2>&1; then
+              echo "Sealed $fixture = PASS"
+            else
+              indices=$(sed -n 's/^not ok \([0-9][0-9]*\).*/\1/p' "$log" | paste -sd, -)
+              echo "Sealed $fixture = FAIL; test indices = ${indices:-unavailable} (no source or private diagnostics exported)"
+              exit 1
+            fi
+          done
