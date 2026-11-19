@@ -11,7 +11,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '81c9011269d91c9e9fc7069c5e53df2dcc0b4e31' && github.event.head_commit.message == 'ci: sealed verify fixed role lore QA candidate' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'fb5dfe14148c81a7e491d154fba61ca93c309c7b' && github.event.head_commit.message == 'ci: verify role lore candidate with authorized private ref freshness' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -42,7 +42,7 @@ jobs:
           ref: ${{ secrets.CANDIDATE_REF }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
-          persist-credentials: false
+          persist-credentials: true
           fetch-depth: 100
       - name: Require exact verified QA branch snapshot
         shell: bash
