@@ -14,7 +14,7 @@ concurrency:
 jobs:
   locate:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '814c99246ba404d47c744f34845e96bd208a5ffc' && github.event.head_commit.message == 'ci: one-time isolated group browser failure locator' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'ac29f88dd9ae929c45046239ee8344e5a0225398' && github.event.head_commit.message == 'ci: one-time isolated browser assertion frames' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -63,7 +63,7 @@ jobs:
             const errorKind=(block.match(/failureType:\s*['"]([A-Za-z]+)['"]/ )||[])[1]||'unknown';
             const operator=(block.match(/operator:\s*['"]([A-Za-z]+)['"]/ )||[])[1]||'unknown';
             const type=/TimeoutError/i.test(block)?'timeout':/AssertionError/i.test(block)?'assertion':/TypeError/i.test(block)?'type':'other';
-            console.log('case='+matched[i][1]+' call-line='+(frames[0]?.[1]||'?')+
+            console.log('case='+matched[i][1]+' call-line='+(frames.map(m=>m[1]).slice(0,6).join(',')||'?')+
               ' reason='+safeReason+' kind='+errorKind+' op='+operator+' type='+type);
           }
           console.log('target=fail cases='+matched.length);
