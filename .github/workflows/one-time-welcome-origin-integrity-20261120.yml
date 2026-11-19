@@ -1,0 +1,118 @@
+name: One-time public welcome origin integrity diagnostic
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-welcome-origin-integrity-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  readonly_audit:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '9ed9c1c47eba47c93791a07b8023fbe9e4793531' && github.event.head_commit.message == 'ci: guarded welcome origin asset integrity audit 20261120' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout existing isolated public runner
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public isolation gate
+        run: npm run check:public
+      - name: Validate existing restricted checkout
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" ]]; then
+            echo 'Restricted source unavailable'
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Checkout original private QA source without write credentials
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 5
+      - name: Pin original QA revision and build actual dist
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd candidate
+          test "$(git rev-parse HEAD)" = 'c493f53b82aaad16b36e8dc9be5b251b1eb388be'
+          test -z "$(git status --porcelain)"
+          umask 077
+          logfile="$RUNNER_TEMP/origin-integrity-build.log"
+          trap 'rm -f "$logfile"' EXIT
+          if (npm ci --no-audit --no-fund && npm run build) > "$logfile" 2>&1; then
+            echo 'Original QA dist build PASS'
+          else
+            echo 'Original QA dist build FAIL; sealed logs withheld'
+            exit 1
+          fi
+      - name: Audit deployed HTML/CSS/hero/decoration and service worker bytes
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          import { readFileSync, existsSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const read=p=>readFileSync(p,'utf8');
+          const base=read('docs/engineering/QA_TEST_RELEASE_RUNBOOK.md').match(/https:\/\/preview\.[a-z0-9.-]+\//)?.[0];
+          if(!base)throw Error('No approved QA origin');
+          const html=read('account/index.html'),css=read('account/ivory-entry.css');
+          const builtHtml=read('dist/account/index.html');
+          const hrefs=[...builtHtml.matchAll(/<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["']/g)].map(m=>m[1]);
+          const img=builtHtml.match(/<img[^>]*class=["']hero-image["'][^>]*src=["']([^"']+)["']/)?.[1];
+          const urls=[['html',new URL('account/index.html',base),'dist/account/index.html','text/html'],
+            ['sw',new URL('sw.js',base),'dist/sw.js','javascript']];
+          for(let i=0;i<hrefs.length;i++) {
+            const u=new URL(hrefs[i],base),local='dist'+u.pathname;
+            urls.push(['css'+(i+1),u,local,'text/css']);
+          }
+          if(img){const u=new URL(img,base+'account/');urls.push(['hero',u,'dist'+u.pathname,'image/']);}
+          for(const [tag,re] of [['frame',/--frame:url\(["']([^"']+)/],['foliage',/--foliage:url\(["']([^"']+)/]]) {
+            const match=css.match(re);
+            if(!match)throw Error('Missing '+tag+' CSS reference');
+            const u=new URL(match[1],base+'account/ivory-entry.css');
+            urls.push([tag,u,'dist'+u.pathname,'image/']);
+          }
+          let fail=false;
+          for(const [label,url,local,kind] of urls) {
+            try {
+              const res=await fetch(url,{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(15000)});
+              const bytes=Buffer.from(await res.arrayBuffer());
+              const localExists=existsSync(local);
+              const localBytes=localExists?readFileSync(local):Buffer.alloc(0);
+              const same=localExists&&localBytes.equals(bytes);
+              const type=res.headers.get('content-type')||'';
+              const cc=res.headers.get('cache-control')||'';
+              const isGood=res.status===200&&type.includes(kind)&&same;
+              console.log('ORIGIN '+label+' '+(isGood?'MATCH':'MISMATCH')+' HTTP='+res.status+
+                ' bytes='+bytes.length+' build_bytes='+localBytes.length+
+                ' cache_control='+cc+' cache_status='+(res.headers.get('cf-cache-status')||'none'));
+              if(!isGood)fail=true;
+            }catch(e){fail=true;console.log('ORIGIN '+label+' UNAVAILABLE cause='+e.name);}
+          }
+          const sourceSw=read('sw.js');
+          console.log('SW_CACHE_VERSION '+(sourceSw.match(/const CACHE_NAME = ['"]([^'"]+)/)?.[1]||'missing'));
+          console.log('ORIGIN INTEGRITY '+(fail?'FAILED':'PASS'));
+          if(fail)process.exitCode=1;
+          JS
