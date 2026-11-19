@@ -1,0 +1,98 @@
+name: One-time read-only original QA post-upload smoke classification
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-selected-delete-post-upload-smoke-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-postupload-smoke
+  cancel-in-progress: false
+jobs:
+  read_only:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '9cf7ed1f8a7f2687cd3bea83002348be07e72180' && github.event.head_commit.message == 'ci: classify read-only original QA post-upload smoke checks' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public source and history guard
+        run: npm run check:public
+      - name: Read only private source for original QA origin contract
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Verify exact QA commit and original anonymous smoke checks
+        env:
+          EXPECTED_SHA: '7060d2bd32e346513518c0e8ef9398afe817b6d9'
+        run: |
+          node --input-type=module <<'EOF'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const expected=process.env.EXPECTED_SHA;
+          const current=execFileSync('git',['-C','candidate','rev-parse','HEAD'],{encoding:'utf8'}).trim();
+          assert.equal(current,expected,'Private QA candidate changed');
+          const source=readFileSync('candidate/scripts/qa-direct-release.mjs','utf8');
+          const originLine=source.split(String.fromCharCode(10)).find(s=>s.includes("const origin = '"));
+          assert.ok(originLine,'Original QA source origin contract unavailable');
+          const origin=originLine.split("'")[1];
+          assert.ok(origin?.startsWith('https://'),'QA origin must be HTTPS');
+          const paths=[
+            '/api/admin/bootstrap/status','/account/index.html',
+            '/account/account.js?v=20261116-qa1',
+            '/account/ivory-entry.css?v=20261116-qa1',
+            '/account/bootstrap.html','/account/bootstrap.js?v=20261116-qa1'
+          ];
+          let failed=0;
+          const record=(key,value)=>{
+            console.log('Read-only original smoke '+key+': '+(value?'PASS':'FAIL'));
+            if(!value) failed++;
+          };
+          const responses=await Promise.all(paths.map(async path=>{
+            try {return await fetch(origin+path,{method:'GET',redirect:'manual',cache:'no-store',signal:AbortSignal.timeout(15000)});}
+            catch (_) {return null;}
+          }));
+          const statusCodes=responses.map(r=>r?.status||0);
+          statusCodes.forEach((code,i)=>record('route-'+(i+1)+'-HTTP-200',code===200));
+          if(responses[0]?.status===200){
+            const status=await responses[0].json().catch(()=>null);
+            record('identity-state',status?.ok===true && status?.identityMode==='delegated' &&
+              status?.qaIdentityCore===true && status?.identityAuthorityConnected===true &&
+              status?.identityAuthorityInitialized===true && status?.initialized===true &&
+              status?.configured===true && status?.signInReady===true && status?.qaSetupAllowed===false);
+          }
+          if(responses[1]?.status===200){
+            const html=await responses[1].text();
+            record('login-form',/<form\b[^>]*\bid=["']loginForm["']/i.test(html));
+            record('login-script-version',html.includes('/account/account.js?v=20261116-qa1'));
+            const links=[...html.matchAll(/<link\b(?=[^>]*\brel=["']stylesheet["'])[^>]*\bhref=["']([^"']+)["'][^>]*>/gi)].map(m=>m[1]);
+            record('login-stylesheets-declared',links.length>0);
+            let foundHint=false;
+            for(const href of links){
+              try{
+                const url=new URL(href,origin+'/account/index.html');
+                if(url.origin!==origin || !url.pathname.toLowerCase().endsWith('.css'))continue;
+                const css=await fetch(url.href,{cache:'no-store',redirect:'manual',signal:AbortSignal.timeout(15000)});
+                if(css.status===200 && (await css.text()).includes('qa-login-hint'))foundHint=true;
+              }catch(_){}
+            }
+            record('loaded-style-hint',foundHint);
+          }
+          if(responses[2]?.status===200)record('login-script-hint',(await responses[2].text()).includes("subtitle.classList.toggle('qa-login-hint'"));
+          if(responses[3]?.status===200)record('login-stylesheet-hint',(await responses[3].text()).includes('#loginPanel>.lead.qa-login-hint'));
+          if(responses[4]?.status===200)record('setup-html',(await responses[4].text()).includes('id="bootstrapUsernameLabel"'));
+          if(responses[5]?.status===200)record('setup-script',(await responses[5].text()).includes('usernameField.maxLength = qaSetup ? 28 : 24'));
+          if(failed)process.exitCode=1;
+          EOF
