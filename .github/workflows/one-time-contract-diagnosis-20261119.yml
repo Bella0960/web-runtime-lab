@@ -15,7 +15,7 @@ concurrency:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '9d09f3ffdbbdf50e6dda7ab51a30f1c2c1aff39c' && github.event.head_commit.message == 'ci: one-time isolated contract location audit' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'bd9ee54f6c4226a38fd054fcf0d144af0d130a77' && github.event.head_commit.message == 'ci: one-time isolated contract verification after patch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -37,7 +37,7 @@ jobs:
           persist-credentials: false
       - name: Lock approved snapshot
         working-directory: candidate
-        run: test "$(git rev-parse HEAD)" = '5fe61aaba558b32a966d63cc353708b56e7a70f1'
+        run: test "$(git rev-parse HEAD)" = 'ea5517e07ba2cd1172f438d08e085ed258db24e8'
       - name: Diagnose failed contract by numeric index only
         shell: bash
         run: |
