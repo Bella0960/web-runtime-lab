@@ -15,7 +15,7 @@ concurrency:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'cd56fe6a0b149813fcfab4aa7fc4cac54a1801ed' && github.event.head_commit.message == 'ci: one-time isolated remaining gate audit' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'e09a68fea8d0a8f075438150f55fe786de7f5788' && github.event.head_commit.message == 'ci: one-time remaining gate confirmation' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -37,7 +37,7 @@ jobs:
           persist-credentials: false
       - name: Lock approved snapshot
         working-directory: candidate
-        run: test "$(git rev-parse HEAD)" = '52e109269598f15f2ac62e64b81da46dda8b7ba5'
+        run: test "$(git rev-parse HEAD)" = '7af6c502352dba83dd58c4ccb7d7cb9b732eae13'
       - name: Scan remaining small tests without exposing their output
         shell: bash
         run: |
