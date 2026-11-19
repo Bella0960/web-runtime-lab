@@ -13,7 +13,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'ee23086d3bf37743fa63c16d445714f2d84f407e' && github.event.head_commit.message == 'ci: verified NPC QA full release gates' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '686764e58c52c1933bf7c0f9657d1303f63fd872' && github.event.head_commit.message == 'ci: sealed NPC QA full pass after focused repair' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -56,7 +56,7 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'fa3927f462cdc4c940182df0698cd05ac9d59d8e'
+          test "$(git rev-parse HEAD)" = 'a36bd4ae003dd99e4826982d722cd897f32bd90b'
           test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
           echo 'Pinned NPC QA candidate confirmed.'
       - name: Run original private Node Vite Chromium and security gates
