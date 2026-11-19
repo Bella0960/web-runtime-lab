@@ -1,0 +1,151 @@
+name: One-time scoped welcome SW v267 QA release
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-welcome-sw-v267-qa-release-20261120.yml]
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  qa_release:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '7a7f3d1c1c960485455b333487cb6078fb1718d2' && github.event.head_commit.message == 'ci: guarded welcome SW v267 QA-only release 20261120' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout established public safety runner
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public-source isolation gate
+        run: npm run check:public
+      - name: Validate original scoped QA-only credentials
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          QA_ACCOUNT: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          QA_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" || ! "$QA_ACCOUNT" =~ ^[0-9a-f]{32}$ || ${#QA_TOKEN} -lt 20 ]]; then exit 1; fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Checkout original private QA snapshot
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Pin original QA SHA and one-file diff
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'b37498572b30b2753d5f9536796de4ffe86e6473'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+          test -z "$(git status --porcelain)"
+          test "$(git diff --name-only c493f53b82aaad16b36e8dc9be5b251b1eb388be HEAD)" = 'sw.js'
+      - name: Full Vite build and existing SW navigation and push tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          log="$RUNNER_TEMP/welcome-v267-scoped.log"
+          trap 'rm -f "$log"' EXIT
+          if (cd candidate && npm ci --no-audit --no-fund && npm run build &&
+            node --test tests/sw-navigation-cache-lifecycle.test.mjs tests/pwa-navigation-cache.test.mjs tests/push-real-empty-mode.test.mjs) >"$log" 2>&1; then
+            echo 'Full Vite build, SW navigation lifecycle, PWA and push safety PASS'
+          else
+            echo 'Scoped regression FAILED; private logs withheld'
+            sed -n 's/^not ok \([0-9][0-9]*\).*/failed test \1/p' "$log" | tail -10 || true
+            exit 1
+          fi
+      - name: Exercise exact welcome resource fetch handler with network and offline
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { runInNewContext } from 'node:vm';
+          import assert from 'node:assert/strict';
+          const sw=readFileSync('sw.js','utf8');
+          assert.ok(sw.includes("phone-app-pwa-v267"));
+          assert.ok(!sw.includes('registration.unregister('));
+          const css=readFileSync('account/ivory-entry.css','utf8');
+          const ref=css.match(/--hero:url\('([^']+)'\)/)?.[1];
+          assert.ok(ref);
+          const heroPath=new URL(ref,'https://example.invalid/account/ivory-entry.css').pathname;
+          function dispatch({path,type='text/css',destination='style',referrer='',offline=false,
+            cached='old',fresh='new'}) {
+            const listeners={},calls=[],puts=[],lifetime=[];
+            const cache={
+              match:async()=>cached==null?null:new Response(cached,{headers:{'content-type':type}}),
+              put:async(req,res)=>{puts.push({req,res})},
+              add:async()=>{}
+            };
+            const cachesMock={
+              open:async()=>cache,
+              match:async()=>cached==null?null:new Response(cached,{headers:{'content-type':type}}),
+              keys:async()=>[],delete:async()=>true
+            };
+            const net=async(req,opts)=>{calls.push({req,opts});if(offline)throw Error('offline');
+              return new Response(fresh,{headers:{'content-type':type}})};
+            const origin='https://example.invalid/';
+            const owner={
+              location:new URL(origin),
+              registration:{scope:origin},
+              clients:{claim:async()=>{}},
+              skipWaiting:async()=>{},
+              addEventListener:(name,fn)=>{listeners[name]=fn}
+            };
+            runInNewContext(sw,{self:owner,caches:cachesMock,fetch:net,
+              URL,Request,Response,Headers,URLSearchParams,console,Promise});
+            const ev={request:{method:'GET',url:new URL(path,origin).href,
+                mode:'cors',destination,referrer},
+              respondWith(p){this.promise=Promise.resolve(p)},
+              waitUntil(p){lifetime.push(Promise.resolve(p))}};
+            listeners.fetch(ev);
+            return {ev,calls,puts,lifetime,listeners};
+          }
+          const online=dispatch({path:'/account/ivory-entry.css?v=recent'});
+          assert.equal(await (await online.ev.promise).text(),'new');
+          await Promise.all(online.lifetime);
+          assert.equal(online.calls[0].opts.cache,'no-store');
+          assert.equal(online.puts.length,1);
+          const offline=dispatch({path:'/account/account.css?v=recent',offline:true});
+          assert.equal(await (await offline.ev.promise).text(),'old');
+          const artwork=dispatch({path:heroPath+'?v=recent',type:'image/webp',destination:'image'});
+          assert.equal(await (await artwork.ev.promise).text(),'new');
+          await Promise.all(artwork.lifetime);
+          const bundle=dispatch({path:'/assets/index-fingerprint.css',
+            referrer:'https://example.invalid/account/index.html'});
+          assert.equal(await (await bundle.ev.promise).text(),'new');
+          await Promise.all(bundle.lifetime);
+          const elsewhere=dispatch({path:'/games/background.png',type:'image/png',destination:'image'});
+          assert.equal(await (await elsewhere.ev.promise).text(),'old');
+          assert.equal(typeof elsewhere.listeners.push,'function');
+          const invalid=dispatch({path:'/account/account.css',type:'text/html'});
+          await invalid.ev.promise;
+          await Promise.all(invalid.lifetime);
+          assert.equal(invalid.puts.length,0);
+          console.log('Welcome network-first, offline fallback, unrelated cache-first and push handler PASS');
+          JS
+      - name: Original complete Node Vite Chromium and QA-only release gates
+        env:
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: node scripts/run-candidate.mjs release
