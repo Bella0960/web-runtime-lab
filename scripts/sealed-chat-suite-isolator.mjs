@@ -1,11 +1,15 @@
 // Minimal private-suite triage: never emit or persist private stdout, file paths,
 // assertion text, source files, environment values or user data.
 import {spawnSync} from 'node:child_process';
-import {readFileSync, existsSync, realpathSync} from 'node:fs';
+import {readFileSync, existsSync, realpathSync, readdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 const root = realpathSync(resolve(process.env.GITHUB_WORKSPACE || '.', 'candidate'));
 const script = JSON.parse(readFileSync(resolve(root,'package.json'),'utf8')).scripts['test:chat:contract'];
-const files = String(script || '').split(/\s+/).filter(x => /^tests\/[A-Za-z0-9._\/-]+\.mjs$/.test(x));
+const files = process.argv[2] === 'persona'
+  ? readdirSync(resolve(root,'tests'))
+    .filter(x => /^(chat-|group-)/.test(x) && /(persona|protocol|role-live|source-delivery|scheduled)/.test(x) && x.endsWith('.test.mjs'))
+    .sort().map(x => 'tests/' + x)
+  : String(script || '').split(/\s+/).filter(x => /^tests\/[A-Za-z0-9._\/-]+\.mjs$/.test(x));
 if (!files.length || files.length > 40) throw Error('No approved test files');
 const failures=[];
 for(let i=0;i<files.length;i++){
