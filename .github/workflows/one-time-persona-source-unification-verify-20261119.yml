@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'a179136049a920ff849a5be01d7aa95fd474a293' && github.event.head_commit.message == 'ci: verify complete role sources with all legacy protocol tests retained' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '51f137776fa3e473fe9b6b35eb54c27093e3e4dd' && github.event.head_commit.message == 'ci: verify full persona source integration at fixed QA candidate' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -49,7 +49,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'b18e4991b2674a08e81f8dcf7f30f2d5cc945faa'
+          test "$(git rev-parse HEAD)" = '0ce7487b9aa3eb73dcdd4276c37e5b3e31dcd279'
           test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
       - name: Execute complete sealed Node Vite Chromium and safety gates
         run: node scripts/run-candidate.mjs verify
