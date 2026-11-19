@@ -1,0 +1,85 @@
+name: One-time deployed SW v267 read-only origin audit
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-sw-v267-origin-audit-20261120.yml]
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'fffcb7b91706f89cbe74b63b7989d3dc9b10e25c' && github.event.head_commit.message == 'ci: read only SW v267 QA origin audit 20261120' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm run check:public
+      - name: Validate sealed source checkout
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          test -n "$SOURCE_REPOSITORY" && test -n "$SOURCE_REF" && test -n "$SOURCE_TOKEN"
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::$SOURCE_REF"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 5
+      - name: Confirm live Worker SW, QA receipt and welcome asset responses
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'dede754746cb879eef627f01cb62e946fcf17d31'
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { strict as assert } from 'node:assert';
+          const runbook=readFileSync('docs/engineering/QA_TEST_RELEASE_RUNBOOK.md','utf8');
+          const origin=runbook.match(/https:\/\/preview\.[a-z0-9.-]+\//)?.[0];
+          assert.ok(origin,'QA origin unavailable');
+          const sw=readFileSync('sw.js','utf8');
+          const res=await fetch(origin+'sw.js?rev=267',{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(15000)});
+          const online=await res.text();
+          const swMatch=res.status===200 && online===sw && online.includes('phone-app-pwa-v267');
+          console.log('SW ORIGIN MATCH '+swMatch+' status='+res.status+
+            ' bytes='+online.length+' cache-control='+(res.headers.get('cache-control')||'absent'));
+          const receiptRes=await fetch(origin+'qa-build-receipt.json?commit=dede754746cb879eef627f01cb62e946fcf17d31',
+            {headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(15000)});
+          const receipt=await receiptRes.json().catch(()=>null);
+          const receiptMatch=receiptRes.status===200 && receipt?.sourceCommit==='dede754746cb879eef627f01cb62e946fcf17d31';
+          console.log('QA BUILD RECEIPT MATCH '+receiptMatch+' status='+receiptRes.status);
+          const pageRes=await fetch(origin+'account/index.html?audit=sw267',{signal:AbortSignal.timeout(15000)});
+          const html=await pageRes.text();
+          console.log('WELCOME HTML status='+pageRes.status+' type='+pageRes.headers.get('content-type'));
+          const hero=html.match(/<img[^>]*class=["']hero-image["'][^>]*src=["']([^"']+)["']/)?.[1];
+          let heroOk=false;
+          if(hero){
+            const image=await fetch(new URL(hero,origin+'account/'),{signal:AbortSignal.timeout(15000)});
+            heroOk=image.status===200 && (image.headers.get('content-type')||'').includes('image/');
+            console.log('WELCOME HERO status='+image.status+' valid='+heroOk);
+          }
+          const links=[...html.matchAll(/<link[^>]+>/g)].map(m=>m[0]);
+          const styles=links.filter(s=>/rel=["']stylesheet["']/.test(s))
+            .map(s=>s.match(/href=["']([^"']+)["']/)?.[1]).filter(Boolean);
+          let stylesOK=styles.length>0;
+          for(let i=0;i<styles.length;i++){
+            const css=await fetch(new URL(styles[i],origin+'account/index.html'),
+              {signal:AbortSignal.timeout(15000)});
+            const valid=css.status===200 && (css.headers.get('content-type')||'').includes('text/css');
+            console.log('WELCOME STYLESHEET '+(i+1)+' status='+css.status+' valid='+valid);
+            if(!valid)stylesOK=false;
+          }
+          if(!(swMatch&&receiptMatch&&pageRes.status===200&&heroOk&&stylesOK))process.exitCode=1;
+          JS
