@@ -1,0 +1,90 @@
+name: One-time sealed full Node regression classifier
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-full-node-classifier-20261119.yml]
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  classify:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '7bb313ae2c422a8c60e93b3978ce641a32dae89e' && github.event.head_commit.message == 'ci: classify full Node gate17 without exposing private test data' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public source isolation check
+        run: npm run check:public
+      - name: Checkout fixed original private QA snapshot
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Verify fixed candidate
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'd44947be55095e04370e354e362dcf11376c143e'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Inspect stale static references by anonymous file index
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync,readdirSync} from 'node:fs';
+          const fs=readdirSync('candidate/tests').filter(f=>f.endsWith('.test.mjs')).sort();
+          for(const [n,pattern] of ['20261118historypurity1','phone-app-pwa-v257'].entries()) {
+            const hits=fs.map((f,i)=>readFileSync('candidate/tests/'+f,'utf8').includes(pattern)?i+1:0).filter(Boolean);
+            console.log('old-ref-'+(n+1)+' file-slots='+hits.join(','));
+          }
+          console.log('test-file-count='+fs.length);
+          NODE
+      - name: Execute full Node regression and disclose only failing test positions
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          import {readdirSync} from 'node:fs';
+          const cwd='candidate';
+          const run=(cmd,args,timeout=20*60*1000)=>spawnSync(cmd,args,{cwd,encoding:'utf8',timeout,maxBuffer:48*1024*1024,env:process.env});
+          for(const [key,args] of [
+            ['deps',['ci','--no-audit','--no-fund']],
+            ['build',['run','build']]
+          ]) {
+            const x=run('npm',args);
+            console.log('setup-'+key+'='+ (x.status===0?'ok':'failed'));
+            if(x.status!==0)process.exit(1);
+          }
+          const install=run('npx',['playwright','install','--with-deps','chromium']);
+          console.log('browser-setup='+(install.status===0?'ok':'failed'));
+          if(install.status!==0)process.exit(1);
+          const out=run('node',['--test','--test-concurrency=1'],30*60*1000);
+          const log=String(out.stdout||'')+'\n'+String(out.stderr||'');
+          const files=readdirSync(cwd+'/tests').filter(f=>f.endsWith('.test.mjs')).sort();
+          const failed=[...log.matchAll(/^\s*not ok\s+(\d+)\s+-[^\n]*$/gm)];
+          console.log('node-exit='+out.status+' failure-count='+failed.length+' test-file-count='+files.length);
+          for(const match of failed.slice(0,24)){
+            const segment=log.slice(match.index,Math.min(log.length,match.index+7000));
+            const ref=segment.match(/tests\/([a-z0-9_.-]+\.test\.mjs):(\d+)/i);
+            const slot=ref?files.indexOf(ref[1])+1:0;
+            const kind=/AssertionError/.test(segment)?'assertion':/SyntaxError/.test(segment)?'syntax':/TimeoutError/.test(segment)?'timeout':/TypeError/.test(segment)?'type':'other';
+            console.log('failure case='+match[1]+' file-slot='+slot+' line='+(ref?.[2]||0)+' kind='+kind);
+          }
+          if(out.error)console.log('node-process-error');
+          if(out.status!==0)process.exitCode=1;
+          NODE
