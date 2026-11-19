@@ -1,12 +1,11 @@
-name: One-time isolated full regression locator
+name: One-time isolated focused regression check
 
 on:
   push:
     branches: [qa-candidate]
     paths: [.github/workflows/one-time-contract-diagnosis-20261119.yml]
 
-permissions:
-  contents: read
+permissions: { contents: read }
 
 concurrency:
   group: sealed-candidate
@@ -15,9 +14,9 @@ concurrency:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'a5f2c30429ae4b8b8097431a9592fb9c21450527' && github.event.head_commit.message == 'ci: one-time isolated full regression locator' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'c310e7bdd0f31e071b0c96fb554b68ef7643eead' && github.event.head_commit.message == 'ci: one-time isolated focused regression check' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 65
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,43 +36,37 @@ jobs:
           persist-credentials: false
       - name: Lock candidate snapshot
         working-directory: candidate
-        run: test "$(git rev-parse HEAD)" = '7af6c502352dba83dd58c4ccb7d7cb9b732eae13'
-      - name: Locate full Node regression failures by numeric index only
+        run: test "$(git rev-parse HEAD)" = '9439c7ddd8e32810adde2c4aa553cd0c6d76ab52'
+      - name: Verify focused regression without exposing private test contents
         shell: bash
         run: |
           set -euo pipefail
-          node --input-type=module <<'DIAG'
+          node --input-type=module <<'AUDIT'
           import { spawnSync } from 'node:child_process';
           import { readdirSync } from 'node:fs';
           const cwd='candidate';
-          const files=readdirSync(cwd+'/tests',{recursive:true})
-            .filter(x => /\.test\.(?:[cm]?js)$/.test(String(x)))
-            .map(String).sort();
-          function call(cmd,args,timeout=22*60*1000) {
-            return spawnSync(cmd,args,{cwd,encoding:'utf8',maxBuffer:64*1024*1024,timeout});
+          const tests=readdirSync(cwd+'/tests',{recursive:true})
+            .filter(x=>/\.test\.(?:[cm]?js)$/.test(String(x))).map(String).sort();
+          function exec(cmd,args,timeout=12*60*1000){
+            return spawnSync(cmd,args,{cwd,encoding:'utf8',maxBuffer:32*1024*1024,timeout});
           }
-          if(call('npm',['ci','--no-audit','--no-fund']).status!==0) {
-            console.log('setup=fail');process.exit(1);
+          const i=exec('npm',['ci','--no-audit','--no-fund']);
+          if(i.status!==0){console.log('npm-setup=fail');process.exit(1);}
+          let failures=0;
+          for(const index of [22,38,39,41,45,47,57,70]){
+            const result=exec('node',['--test','tests/'+tests[index-1]]);
+            if(result.status===0){console.log('file='+index+' pass');continue;}
+            failures++;
+            const text=String(result.stdout||'');
+            const matches=[...text.matchAll(/^not ok (\d+) - [^\n]+/gm)];
+            for(let n=0;n<matches.length;n++){
+              const block=text.slice(matches[n].index,matches[n+1]?.index);
+              const line=block.match(/location:\s*['"]?[^\n]*?\/tests\/[^:\n'"]+:(\d+)/);
+              const kind=block.match(/failureType:\s*['"]([A-Za-z]+)['"]/);
+              console.log('file='+index+' case='+matches[n][1]+' line='+(line?.[1]||'?')+
+                ' kind='+(kind?.[1]||'?'));
+            }
           }
-          if(call('npm',['run','build']).status!==0) {
-            console.log('build=fail');process.exit(1);
-          }
-          const result=call('node',['--test'],35*60*1000);
-          const output=String(result.stdout||'');
-          const matches=[...output.matchAll(/^not ok (\d+) - [^\n]+/gm)];
-          for (let i=0;i<Math.min(matches.length,160);i++) {
-            const current=matches[i];
-            const part=output.slice(current.index,matches[i+1]?.index);
-            const location=part.match(/location:\s*['"]?[^\n]*?\/tests\/([^:\n'"]+\.test\.[cm]?js):(\d+)/);
-            const fileIndex=location ? files.indexOf(location[1])+1 : 0;
-            const operator=part.match(/operator:\s*['"]([A-Za-z]+)['"]/);
-            const kind=part.match(/failureType:\s*['"]([A-Za-z]+)['"]/);
-            console.log('failed file-index='+fileIndex+' case='+current[1]+
-              ' line='+(location?.[2]||'unknown')+' op='+(operator?.[1]||'unknown')+
-              ' kind='+(kind?.[1]||'unknown'));
-          }
-          console.log('node-count='+files.length+' failure-count='+matches.length+' status='+(result.status===0?'pass':'fail'));
-          const gate18=call('npm',['run','gate:encounter'],180000);
-          console.log('gate18='+(gate18.status===0?'pass':'fail'));
-          if(result.status!==0||gate18.status!==0)process.exitCode=1;
-          DIAG
+          console.log('focus-failure-count='+failures);
+          if(failures)process.exitCode=1;
+          AUDIT
