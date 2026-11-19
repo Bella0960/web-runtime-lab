@@ -12,7 +12,7 @@ concurrency:
 jobs:
   qa_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '3ae7cb6509547e96b67a44c793b81310fde257c4' && github.event.head_commit.message == 'ci: guarded push transport backend QA-only 20261119' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'a6451da72878e48aaf6a898f4646f24c06094d54' && github.event.head_commit.message == 'ci: guarded push transport tested QA-only 20261119' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -57,7 +57,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '3c09698a6d9a05c76fa0ee5cbb097867aecf2561'
+          test "$(git rev-parse HEAD)" = 'c493f53b82aaad16b36e8dc9be5b251b1eb388be'
           test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
           test -z "$(git status --porcelain)"
       - name: Sealed backend-only Web Push transport and privacy tests
