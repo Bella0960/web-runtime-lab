@@ -1,0 +1,148 @@
+name: One-time welcome static cache guarded QA release
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-welcome-cache-guard-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  qa_release:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'b511ae50042c24a6a0fa5ecb25cf63f6d6e0add5' && github.event.head_commit.message == 'ci: guarded welcome static cache QA only 20261119' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout existing isolated safety runner
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify public source isolation
+        run: npm run check:public
+      - name: Check original restricted QA-only authorization
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          QA_ACCOUNT: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          QA_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" || ! "$QA_ACCOUNT" =~ ^[0-9a-f]{32}$ || ${#QA_TOKEN} -lt 20 ]]; then
+            echo 'Restricted QA-only credentials unavailable'
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Checkout exact original private QA source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Pin single QA revision without touching production sources
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '3c4708f361d6d6f5e6d71a852f7c69565a4989aa'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+          test -z "$(git status --porcelain)"
+          echo 'QA revision pinned; working tree clean.'
+      - name: Fresh install, focused regression and full Vite build
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          log="$RUNNER_TEMP/welcome-cache-focused.log"
+          trap 'rm -f "$log"' EXIT
+          if (cd candidate && npm ci --no-audit --no-fund && node --test tests/qa-release-live-version.test.mjs tests/account-qa-bootstrap-route.test.mjs tests/qa-identity-reconnect.test.mjs tests/pwa-navigation-cache.test.mjs && npm run build) > "$log" 2>&1; then
+            echo 'Welcome cache focused regression and full Vite build PASS'
+          else
+            echo 'Focused regression or build FAILED; sealed diagnostics withheld'
+            grep -E '^not ok [0-9]+' "$log" | sed -E 's/^(not ok [0-9]+).*/\1/' | tail -8 || true
+            exit 1
+          fi
+      - name: Check built CSS artwork and welcome-only SW refresh contract
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          import { readFileSync, statSync, existsSync } from 'node:fs';
+          import { resolve, relative, basename, sep } from 'node:path';
+          const html = readFileSync('account/index.html','utf8');
+          const css = readFileSync('account/ivory-entry.css','utf8');
+          const builtHtml = readFileSync('dist/account/index.html','utf8');
+          const stylesheetRefs = [...html.matchAll(/<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["']/g)].map(m=>m[1]);
+          if (stylesheetRefs.length !== 2 || !stylesheetRefs.every(u=>u.includes('?v='))) throw Error('Stylesheet version tokens missing');
+          if (!html.includes('navigator.serviceWorker.getRegistration()') ||
+              !html.includes('registration.update()') ||
+              html.includes('registration.unregister()')) throw Error('Non-destructive welcome SW update contract missing');
+          if (!builtHtml || !builtHtml.includes('hero.webp?v=')) throw Error('Built welcome HTML lacks versioned hero');
+          const hero = html.match(/<img[^>]*class=["']hero-image["'][^>]*src=["']([^"']+)["']/)?.[1];
+          const sources = [['hero.webp',hero],['ornament.webp',css.match(/--frame:url\(["']([^"']+)/)?.[1]],['leafshadow.webp',css.match(/--foliage:url\(["']([^"']+)/)?.[1]]];
+          for(const [name,u] of sources){
+            if (!u || !u.includes('?v=')) throw Error('Missing hashed artwork '+name);
+            const src = resolve('account',u.split('?')[0]);
+            const srcRel = relative(process.cwd(),src);
+            if (!srcRel.startsWith('assets'+sep) || basename(srcRel)!==name) throw Error('Unsafe asset source reference');
+            const dst=resolve('dist',srcRel);
+            if (!existsSync(dst)) throw Error('Missing built artwork '+name);
+            const a=readFileSync(src),b=readFileSync(dst);
+            if (!a.equals(b)||b.toString('ascii',0,4)!=='RIFF'||b.toString('ascii',8,12)!=='WEBP') throw Error('Built artwork failed byte integrity: '+name);
+            console.log('BUILD ASSET VERIFIED '+name+' '+b.length+' bytes');
+          }
+          for(const name of ['account.css','ivory-entry.css']){
+            const a=readFileSync('account/'+name),b=readFileSync('dist/account/'+name);
+            if(!a.equals(b)) throw Error('Built CSS failed byte integrity: '+name);
+            console.log('BUILD ASSET VERIFIED '+name+' '+b.length+' bytes');
+          }
+          JS
+      - name: Run original complete private Node Vite Chromium and QA-only release gates
+        env:
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: node scripts/run-candidate.mjs release
+      - name: Probe response headers for live welcome static assets after release
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const read = path => readFileSync(path,'utf8');
+          const origin = read('docs/engineering/QA_TEST_RELEASE_RUNBOOK.md').match(/https:\/\/preview\.[a-z0-9.-]+\//)?.[0];
+          if (!origin) throw Error('QA canonical origin unavailable');
+          const html = read('account/index.html'), css=read('account/ivory-entry.css');
+          const styles=[...html.matchAll(/<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["']/g)].map(m=>m[1]);
+          const hero=html.match(/<img[^>]*class=["']hero-image["'][^>]*src=["']([^"']+)["']/)?.[1];
+          const frames=[...css.matchAll(/url\(["'](\.\.\/assets\/[^"']+)["']\)/g)].map(m=>m[1]);
+          const paths=[...styles.map(u=>new URL(u,origin)),new URL(hero,origin+'account/'),...frames.map(u=>new URL(u,origin+'account/ivory-entry.css'))];
+          let failed=false;
+          for(const [i,url] of paths.entries()){
+            try{
+              const response=await fetch(url,{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(15000)});
+              const cc=response.headers.get('cache-control')||'(absent)';
+              const contentType=response.headers.get('content-type')||'(absent)';
+              const edge=response.headers.get('cf-cache-status')||'(absent)';
+              console.log('LIVE STATIC '+(i+1)+' status='+response.status+' type='+contentType+' cache-control='+cc+' edge='+edge);
+              if(response.status!==200) failed=true;
+              await response.arrayBuffer();
+            }catch(error){console.log('LIVE STATIC '+(i+1)+' unavailable ('+error.name+')');failed=true;}
+          }
+          if(failed) process.exitCode=1;
+          JS
