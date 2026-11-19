@@ -12,7 +12,7 @@ concurrency:
 jobs:
   diagnose:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '89db7df9275502705a0d0a469773fd90d5c531af' && github.event.head_commit.message == 'ci: correct sealed full-suite index-only diagnostic' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '659e28c076d652e45cee4a2844d14a51ae333995' && github.event.head_commit.message == 'ci: locate private failing file ordinals from error stacks' }}
     runs-on: ubuntu-latest
     timeout-minutes: 75
     steps:
@@ -72,14 +72,21 @@ jobs:
           });
           const content=String(out.stdout||'')+'\n'+String(out.stderr||'');
           if(out.status===0&&!out.error){console.log('diagnostic-full-suite-success');process.exit(0)}
-          const failed=content.split(/\r?\n/).filter(x=>/^\s*not ok\s+\d+\s*-/.test(x));
+          const lines=content.split(String.fromCharCode(10));
+          const failed=lines.map((line,index)=>({line,index})).filter(x=>/^\s*not ok\s+\d+\s*-/.test(x.line));
           const hits=new Set();
-          for(const line of failed){
-            const normalized=line.replaceAll(String.fromCharCode(92),'/');
+          const unmatched=[];
+          for(const failure of failed){
+            const block=lines.slice(failure.index,Math.min(lines.length,failure.index+65)).join(' ')
+              .replaceAll(String.fromCharCode(92),'/');
+            const indexes=[];
             for(let i=0;i<paths.length;i++){
-              if(normalized.includes('tests/'+paths[i]))hits.add(i+1);
+              if(block.includes('tests/'+paths[i])){ hits.add(i+1);indexes.push(i+1); }
             }
+            if(indexes.length===0)unmatched.push(failure.index);
           }
+          console.log('failing-stack-match-count='+(failed.length-unmatched.length));
+          console.log('unmatched-test-count='+unmatched.length);
           console.log('full-suite-failed='+true+' failed-tap-items='+failed.length);
           console.log('failing-file-ordinals='+([...hits].sort((a,b)=>a-b).join(',')||'unclassified'));
           console.log('suite-file-count='+paths.length);
