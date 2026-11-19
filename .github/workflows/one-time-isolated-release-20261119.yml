@@ -17,7 +17,7 @@ concurrency:
 jobs:
   qa_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '2aa4b3a291bafa10c8955077790881391cb31942' && github.event.head_commit.message == 'ci: one-time authorized isolated candidate refresh' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '25bfbca9233db5dd9bed04f6bc640c58d82a21df' && github.event.head_commit.message == 'ci: one-time isolated candidate retry after test repair' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '0ef444964acd4f00944d44c6908c84004d146764'
+          test "$(git rev-parse HEAD)" = '4db8cbf45e60b00457dc5197be72698b8bf52552'
           echo 'Approved candidate snapshot matched.'
       - name: Execute full private gates and publish only existing QA
         env:
