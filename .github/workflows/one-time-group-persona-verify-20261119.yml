@@ -13,7 +13,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'bb729649a8fa97b9016d10abe8948181aa1c5899' && github.event.head_commit.message == 'ci: sealed verify human group reply contract exact QA 20261119' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '7bbac1ba14ba332f8eff8795d845df660bd6fefb' && github.event.head_commit.message == 'ci: sealed verify corrected group persona QA candidate 20261119' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -56,7 +56,7 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '6399431fb4d03937ea090b5f6708e2f19cfdc480'
+          test "$(git rev-parse HEAD)" = 'd44947be55095e04370e354e362dcf11376c143e'
           test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
           echo 'Exact QA commit matched; running full private gates.'
       - name: Original complete Node Vite Chromium and security verification
