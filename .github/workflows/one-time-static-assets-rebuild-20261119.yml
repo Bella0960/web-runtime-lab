@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify_dist_then_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '14626fd090bd385c8f88528f145e2fe1a5538dd4' && github.event.head_commit.message == 'ci: scoped static assets full rebuild QA only 20261119' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '5294b159eae28daad373697d1cec0826e2389959' && github.event.head_commit.message == 'ci: scoped static assets rebuild private-path safe 20261119' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -80,34 +80,44 @@ jobs:
         run: |
           set -euo pipefail
           node --input-type=module <<'JS'
-          import { existsSync, readFileSync, statSync } from 'node:fs';
-          const items = [
-            ['assets/ivory-mao/hero.webp', 'webp'],
-            ['assets/ivory-mao/ornament.webp', 'webp'],
-            ['assets/ivory-mao/leafshadow.webp', 'webp'],
-            ['account/ivory-entry.css', 'css'],
-            ['account/account.css', 'css']
-          ];
-          let allValid = true;
-          for (const [relative, type] of items) {
-            const path = 'dist/' + relative;
-            if (!existsSync(path) || statSync(path).size <= 0) {
-              console.log('DIST FILE MISSING: ' + path);
-              allValid = false;
-              continue;
+          import { readFileSync, existsSync } from 'node:fs';
+          import { resolve, relative, basename, sep } from 'node:path';
+          const sourceHtml = readFileSync('account/index.html', 'utf8');
+          const sourceCss = readFileSync('account/ivory-entry.css', 'utf8');
+          const img = sourceHtml.match(/<img\b[^>]*class=["']hero-image["'][^>]*src=["']([^"']+)["']/i)?.[1];
+          const frame = sourceCss.match(/--frame\s*:\s*url\(["']?([^"'\)]+)["']?\)/)?.[1];
+          const foliage = sourceCss.match(/--foliage\s*:\s*url\(["']?([^"'\)]+)["']?\)/)?.[1];
+          const roots = [{ label: 'hero.webp', ref: img }, {label: 'ornament.webp', ref: frame}, { label: 'leafshadow.webp', ref: foliage }];
+          let valid = true;
+          function verify(source, output, label, format) {
+            if (!existsSync(source) || !existsSync(output)) {
+              console.log('DIST FILE MISSING: ' + label); valid = false; return;
             }
-            const data = readFileSync(path);
-            const valid = type === 'webp'
-              ? data.length >= 16 && data.toString('ascii', 0, 4) === 'RIFF' &&
-                data.toString('ascii', 8, 12) === 'WEBP'
-              : data.length > 0 && data.toString('utf8', 0, 300).trim().length > 0;
-            console.log('DIST FILE ' + (valid ? 'OK' : 'INVALID') + ': ' + path +
-              ' | ' + data.length + ' bytes');
-            if (!valid) allValid = false;
+            const a = readFileSync(source), b = readFileSync(output);
+            const signature = format === 'webp' ?
+              b.length >= 16 && b.toString('ascii',0,4) === 'RIFF' && b.toString('ascii',8,12) === 'WEBP' :
+              b.length > 0 && b.toString('utf8',0,256).trim().length > 0;
+            const same = a.equals(b);
+            console.log('DIST FILE ' + ((signature && same) ? 'OK' : 'INVALID') +
+              ': ' + label + ' | ' + b.length + ' bytes | source match=' + same);
+            if (!signature || !same) valid = false;
           }
-          const html = readFileSync('dist/account/index.html', 'utf8');
-          console.log('DIST LOGIN DOCUMENT: ' + (html.includes('hero.webp') ? 'references hero.webp' : 'hero reference not found'));
-          if (!allValid) process.exitCode = 1;
+          for (const { label, ref } of roots) {
+            if (!ref) { console.log('SOURCE REFERENCE MISSING: ' + label); valid=false; continue; }
+            const source = resolve('account', ref);
+            const sourceRel = relative(process.cwd(),source);
+            if (sourceRel.startsWith('..'+sep) || sourceRel.startsWith('/') ||
+                !sourceRel.startsWith('assets'+sep) || basename(sourceRel) !== label) {
+              console.log('SOURCE PATH INVALID: ' + label); valid=false; continue;
+            }
+            verify(source, resolve('dist',sourceRel), label, 'webp');
+          }
+          for (const name of ['ivory-entry.css','account.css']) {
+            verify(resolve('account',name),resolve('dist/account',name),name,'css');
+          }
+          const builtHtml = readFileSync('dist/account/index.html','utf8');
+          console.log('DIST HTML PRESENT: ' + (builtHtml.length > 0));
+          if (!valid) process.exitCode=1;
           JS
       - name: Re-run all established private Node Vite Chromium and QA-only release gates
         env:
