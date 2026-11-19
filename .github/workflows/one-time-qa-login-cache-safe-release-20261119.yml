@@ -1,0 +1,79 @@
+name: One-time safe QA login mobile cache release
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-qa-login-cache-safe-release-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  qa_release:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '8bbc6f63409db67ff4fd1214ec90585b3453eb4b' && github.event.head_commit.message == 'ci: guarded QA login mobile cache recovery release' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout established public isolation guard
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce public-source isolation
+        run: npm run check:public
+      - name: Validate existing restricted QA-only credentials
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          QA_ACCOUNT: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          QA_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" || ! "$QA_ACCOUNT" =~ ^[0-9a-f]{32}$ || ${#QA_TOKEN} -lt 20 ]]; then
+            echo 'Restricted QA-only authorization unavailable'
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Checkout original private QA branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Pin final original QA login recovery snapshot and branch
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '9a6c3b0ce39a3b086b4f668a1545e366b786aa95'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Sealed focused login and release-source regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/login-cache-safe-gate.log"
+          trap 'rm -f "$log"' EXIT
+          if (cd candidate && node --test tests/qa-identity-reconnect.test.mjs tests/qa-release-live-version.test.mjs) >"$log" 2>&1; then
+            echo 'Focused login and release-source gates PASS'
+          else
+            echo 'Focused login and release-source gates FAILED; private diagnostics withheld'
+            exit 1
+          fi
+      - name: Full original private Node Vite Chromium and QA-only deployment gates
+        env:
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: node scripts/run-candidate.mjs release
