@@ -1,4 +1,4 @@
-name: One-time isolated focused and browser checks
+name: One-time isolated browser failure locator
 
 on:
   push:
@@ -12,11 +12,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  diagnose:
+  locate:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'a49d4466e830e3d7076bc1033803da8888717613' && github.event.head_commit.message == 'ci: one-time isolated focused and browser checks' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '814c99246ba404d47c744f34845e96bd208a5ffc' && github.event.head_commit.message == 'ci: one-time isolated group browser failure locator' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check public source
+      - name: Public safety check
         run: npm run check:public
       - name: Checkout isolated candidate
         uses: actions/checkout@v4
@@ -34,54 +34,38 @@ jobs:
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
-      - name: Lock candidate snapshot
+      - name: Verify candidate snapshot
         working-directory: candidate
         run: test "$(git rev-parse HEAD)" = 'c40e1ad92c0344223cadf30bf69187b04a0c3929'
-      - name: Run independent validations with numbered, sealed diagnostics
+      - name: Identify browser assertion by numeric source position
         shell: bash
         run: |
           set -euo pipefail
-          node --input-type=module <<'AUDIT'
+          node --input-type=module <<'LOCATE'
           import { spawnSync } from 'node:child_process';
           import { readdirSync } from 'node:fs';
           const cwd='candidate';
-          const tests=readdirSync(cwd+'/tests',{recursive:true})
+          const files=readdirSync(cwd+'/tests',{recursive:true})
             .filter(x=>/\.test\.(?:[cm]?js)$/.test(String(x))).map(String).sort();
-          function execute(cmd,args,timeout=15*60*1000) {
-            return spawnSync(cmd,args,{cwd,encoding:'utf8',maxBuffer:48*1024*1024,timeout});
+          const call=(cmd,args,timeout=10*60*1000)=>spawnSync(cmd,args,{cwd,encoding:'utf8',maxBuffer:32*1024*1024,timeout});
+          if(call('npm',['ci','--no-audit','--no-fund']).status!==0){console.log('setup=fail');process.exit(1);}
+          if(call('npx',['playwright','install','--with-deps','chromium']).status!==0){
+            console.log('browser-setup=fail');process.exit(1);
           }
-          if(execute('npm',['ci','--no-audit','--no-fund']).status!==0){
-            console.log('dependency-setup=failed');process.exit(1);
+          const r=call('node',['--test','tests/'+files[64]]);
+          if(r.status===0){console.log('target=pass');process.exit(0);}
+          const stdout=String(r.stdout||'');
+          const matched=[...stdout.matchAll(/^not ok (\d+) - [^\n]+/gm)];
+          for(let i=0;i<matched.length;i++){
+            const block=stdout.slice(matched[i].index,matched[i+1]?.index);
+            const frames=[...block.matchAll(/tests\/[^:\n]+\.test\.[cm]?js:(\d+):(\d+)/g)];
+            const safeReason=(block.match(/reason=(lore-read|protocol-read|persona-read|api-config|other-toast|no-toast)/)||[])[1]||'unknown';
+            const errorKind=(block.match(/failureType:\s*['"]([A-Za-z]+)['"]/ )||[])[1]||'unknown';
+            const operator=(block.match(/operator:\s*['"]([A-Za-z]+)['"]/ )||[])[1]||'unknown';
+            const type=/TimeoutError/i.test(block)?'timeout':/AssertionError/i.test(block)?'assertion':/TypeError/i.test(block)?'type':'other';
+            console.log('case='+matched[i][1]+' call-line='+(frames[0]?.[1]||'?')+
+              ' reason='+safeReason+' kind='+errorKind+' op='+operator+' type='+type);
           }
-          if(execute('npm',['run','build']).status!==0){
-            console.log('build=failed');process.exit(1);
-          }
-          let failures=0;
-          function checkFile(index){
-            const x=execute('node',['--test','tests/'+tests[index-1]],12*60*1000);
-            if(x.status===0){console.log('file-index='+index+' pass');return;}
-            failures++;
-            const out=String(x.stdout||'');
-            const items=[...out.matchAll(/^not ok (\d+) - [^\n]+/gm)];
-            if(!items.length){
-              const kind=/Executable doesn't exist|browserType\.launch/i.test(out+String(x.stderr||'')) ? 'browser-launch' :
-                /TimeoutError|timeout/i.test(out+String(x.stderr||'')) ? 'timeout' : 'unknown';
-              console.log('file-index='+index+' error='+kind);
-              return;
-            }
-            for(let i=0;i<Math.min(items.length,35);i++){
-              const part=out.slice(items[i].index,items[i+1]?.index);
-              const location=part.match(/location:\s*['"]?[^\n]*?\/tests\/[^:\n'"]+:(\d+)/);
-              const kind=part.match(/failureType:\s*['"]([A-Za-z]+)['"]/);
-              console.log('file-index='+index+' case='+items[i][1]+
-                ' line='+(location?.[1]||'?')+' kind='+(kind?.[1]||'?'));
-            }
-          }
-          for(const n of [22,38,39,41,45,47,57,70])checkFile(n);
-          const install=execute('npx',['playwright','install','--with-deps','chromium'],10*60*1000);
-          if(install.status===0){
-            for(const n of [49,65,76,78,84])checkFile(n);
-          }else{console.log('browser-setup=failed');failures++;}
-          console.log('targeted-failure-count='+failures);
-          if(failures)process.exitCode=1;
-          AUDIT
+          console.log('target=fail cases='+matched.length);
+          process.exitCode=1;
+          LOCATE
