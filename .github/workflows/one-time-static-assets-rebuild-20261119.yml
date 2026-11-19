@@ -1,0 +1,117 @@
+name: One-time scoped static assets full rebuild and QA release
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-static-assets-rebuild-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  verify_dist_then_release:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '14626fd090bd385c8f88528f145e2fe1a5538dd4' && github.event.head_commit.message == 'ci: scoped static assets full rebuild QA only 20261119' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout original public isolation runner
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify public source isolation
+        run: npm run check:public
+      - name: Check existing sealed original QA-only access
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          QA_ACCOUNT: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          QA_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" || ! "$QA_ACCOUNT" =~ ^[0-9a-f]{32}$ || ${#QA_TOKEN} -lt 20 ]]; then
+            echo 'Existing restricted QA-only authorization unavailable'
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Checkout original private QA snapshot
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Pin unmodified original QA source
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'f4a4790a723b93218ac3740249adca5d78f5426e'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+          test -z "$(git status --porcelain)"
+          echo 'Original QA source pinned; no application files modified.'
+      - name: Force fresh complete dependency install and Vite dist build
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          log="$RUNNER_TEMP/static-dist-rebuild-20261119.log"
+          trap 'rm -f "$log"' EXIT
+          if (cd candidate && npm ci --no-audit --no-fund && npm run build) > "$log" 2>&1; then
+            echo 'Full fresh npm ci and Vite dist build PASS.'
+          else
+            echo 'Full fresh npm ci or Vite dist build FAILED; private build log withheld.'
+            exit 1
+          fi
+      - name: Inspect exactly the built dist image and CSS outputs before deployment
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          import { existsSync, readFileSync, statSync } from 'node:fs';
+          const items = [
+            ['assets/ivory-mao/hero.webp', 'webp'],
+            ['assets/ivory-mao/ornament.webp', 'webp'],
+            ['assets/ivory-mao/leafshadow.webp', 'webp'],
+            ['account/ivory-entry.css', 'css'],
+            ['account/account.css', 'css']
+          ];
+          let allValid = true;
+          for (const [relative, type] of items) {
+            const path = 'dist/' + relative;
+            if (!existsSync(path) || statSync(path).size <= 0) {
+              console.log('DIST FILE MISSING: ' + path);
+              allValid = false;
+              continue;
+            }
+            const data = readFileSync(path);
+            const valid = type === 'webp'
+              ? data.length >= 16 && data.toString('ascii', 0, 4) === 'RIFF' &&
+                data.toString('ascii', 8, 12) === 'WEBP'
+              : data.length > 0 && data.toString('utf8', 0, 300).trim().length > 0;
+            console.log('DIST FILE ' + (valid ? 'OK' : 'INVALID') + ': ' + path +
+              ' | ' + data.length + ' bytes');
+            if (!valid) allValid = false;
+          }
+          const html = readFileSync('dist/account/index.html', 'utf8');
+          console.log('DIST LOGIN DOCUMENT: ' + (html.includes('hero.webp') ? 'references hero.webp' : 'hero reference not found'));
+          if (!allValid) process.exitCode = 1;
+          JS
+      - name: Re-run all established private Node Vite Chromium and QA-only release gates
+        env:
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: node scripts/run-candidate.mjs release
