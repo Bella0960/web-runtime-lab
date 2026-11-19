@@ -1,0 +1,45 @@
+name: One-time read-only selected-delete QA origin receipt check
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-selected-delete-origin-receipt-20261119.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-receipt-check
+  cancel-in-progress: false
+jobs:
+  read_only:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '1405767719a13f6cfb1ac04c1bc6299803936dfb' && github.event.head_commit.message == 'ci: verify selected-delete QA origin receipt after guarded publish' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preserve public content isolation
+        run: npm run check:public
+      - name: Verify existing phone QA origin receipt, no deployment or credentials
+        env:
+          EXPECTED_SHA: '7060d2bd32e346513518c0e8ef9398afe817b6d9'
+        run: |
+          node --input-type=module <<'EOF'
+          import assert from 'node:assert/strict';
+          const url = 'https://preview.mao520.com/qa-build-receipt.json?verify='+encodeURIComponent(process.env.EXPECTED_SHA);
+          const response = await fetch(url, {
+            redirect:'manual',cache:'no-store',headers:{accept:'application/json'},signal:AbortSignal.timeout(15000)
+          });
+          console.log('QA receipt HTTP status: '+response.status);
+          assert.equal(response.status,200,'Original phone QA receipt is not available');
+          const receipt=await response.json();
+          assert.equal(typeof receipt,'object','QA receipt must be JSON');
+          const matched=receipt?.sourceCommit===process.env.EXPECTED_SHA;
+          console.log('QA tested SHA receipt match: '+matched);
+          assert.ok(matched,'Existing QA domain does not serve this candidate');
+          console.log('QA origin version receipt verified (read-only).');
+          EOF
