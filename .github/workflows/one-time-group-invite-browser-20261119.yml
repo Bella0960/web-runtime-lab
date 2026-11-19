@@ -11,7 +11,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '2ee8c05fcfd31d7a08333da7918eeabd924bdca2' && github.event.head_commit.message == 'ci: isolate original QA group invite browser regression' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'c6289702ec02c485587807a73e09263f75681595' && github.event.head_commit.message == 'ci: recheck group invite browser with preserved stream bubble' }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '624776b38c622e25e9a12e36f1ac44bb63372c45'
+          test "$(git rev-parse HEAD)" = 'd6664ea8212fc4a44277939b47f1e3599597bec0'
           test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
       - name: Run actual isolated Chromium group invitation test
         shell: bash
