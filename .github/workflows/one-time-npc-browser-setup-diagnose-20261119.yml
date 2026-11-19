@@ -1,0 +1,70 @@
+name: One-time sealed browser dependency setup diagnosis
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-npc-browser-setup-diagnose-20261119.yml]
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '3dcd60fb204b003e2127541b25102a6d8929208c' && github.event.head_commit.message == 'ci: classify isolated browser install failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Keep public source free of restricted data
+        run: npm run check:public
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+      - name: Verify exact source version
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'a36bd4ae003dd99e4826982d722cd897f32bd90b'
+          test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/account-fanwai-stack-20261115'
+      - name: Classify dependency setup with private diagnostics kept sealed
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          cd candidate
+          log="$RUNNER_TEMP/sealed-browser-setup.log"
+          trap 'rm -f "$log"' EXIT
+          if ! npm ci --no-audit --no-fund >"$log" 2>&1; then
+            echo 'dependency-setup=failed'
+            exit 1
+          fi
+          echo 'dependency-setup=passed'
+          if npx playwright install --with-deps chromium >"$log" 2>&1; then
+            echo 'browser-setup=passed'
+          else
+            export SEALED_SETUP_LOG="$log"
+            node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const text = readFileSync(process.env.SEALED_SETUP_LOG,'utf8');
+          const reasons = [
+            ['network', /EAI_AGAIN|ECONNRESET|ETIMEDOUT|Failed to download|503 Service Unavailable|429 Too Many|Connection refused|network is unreachable|TLS handshake|certificate verify/i],
+            ['apt', /apt-get|dpkg|unable to locate package|could not get lock|unmet dependencies/i],
+            ['quota', /ENOSPC|no space left on device|disk quota exceeded/i],
+            ['browser', /Chromium|Playwright|browser/i]
+          ];
+          const category = (reasons.find(([key,re])=>re.test(text))||['unclassified'])[0];
+          console.log('browser-setup=failed category='+category);
+          NODE
+            exit 1
+          fi
