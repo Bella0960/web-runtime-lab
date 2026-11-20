@@ -49,7 +49,7 @@ jobs:
           if(cut<0)throw Error('Existing QA release entrypoint not found');
           const diagnostic=`
           (async () => {
-            try { preflightCheckout(); console.log('PHASE_1_OK'); }
+            try { assertLatestGitHead(); console.log('PHASE_1_OK'); }
             catch(e) { console.error('PHASE_1_FAILED:'+String(e.message||'')); process.exitCode=1; return; }
             try { await verifyWorkerPublicRoutes(); console.log('PHASE_2_OK'); }
             catch(e) { console.error('PHASE_2_FAILED:'+String(e.message||'')); process.exitCode=1; return; }
