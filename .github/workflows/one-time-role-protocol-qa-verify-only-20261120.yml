@@ -1,0 +1,45 @@
+name: One-time exact QA full read-only regression
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-role-protocol-qa-verify-only-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-qa-protocol-verify-only-20261120
+  cancel-in-progress: false
+jobs:
+  qa_verify:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout public guard
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify public isolation
+        run: node scripts/public-content-check.mjs
+      - name: Checkout exact existing private QA
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 100
+      - name: Enforce QA branch and immutable source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '904cdfa24c1e961c552cc8670f87d3a5d0bdfc7f'
+          test "$(git -C candidate branch --show-current)" = 'integration/account-fanwai-stack-20261115'
+          test -z "$(git -C candidate status --porcelain)"
+      - name: Execute original complete tests without deployment privileges
+        run: node scripts/run-candidate.mjs verify
