@@ -1,0 +1,47 @@
+name: One-time restricted shared parser full regression
+
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - '.github/workflows/one-time-shared-parser-full-20261120.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: one-time-shared-parser-full-20261120
+  cancel-in-progress: false
+
+jobs:
+  full:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout public safety scripts
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public metadata safety check
+        run: node scripts/public-content-check.mjs
+      - name: Checkout restricted private candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: task/CHAT-PARSER-001-shared-response-20261120
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Pin exact private commit for all tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '7039afb10d4abddb663ff51d78cc371aa045b956'
+      - name: Run the full private test contract without publishing source logs
+        run: node scripts/run-full-task-verification.mjs
