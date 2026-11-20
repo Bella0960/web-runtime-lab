@@ -11,7 +11,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'a3b976efa91dec2668a357d6fff70fe3246ea81f' && github.event.head_commit.message == 'ci: verify memory picker and timeline layout' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'd0e3668e387348bbf7005a1609cfedc2e3636024' && github.event.head_commit.message == 'ci: diagnose isolated memory layout assertions' }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -44,6 +44,19 @@ jobs:
             if "$@" >"$log" 2>&1; then
               echo "$stage passed"
             else
+              if [[ "$stage" == Memory-Chromium ]]; then
+                grep -E '^[[:space:]+-]*(searchHeight|searchFont|alignment|actionFonts|gap|leftBorders|bodyFont|timeColor):[ 0-9,().\[\]a-z\x27"-]* in the restricted candidate"
+              exit 1
+            fi
+          }
+          run Install npm ci
+          run Vite npm run build
+          run Chromium-install npx playwright install --with-deps chromium
+          run Memory-storage node --test tests/memory-space-cleanup.test.mjs
+          run Memory-Chromium node --test tests/memory-space-cleanup.browser.test.mjs
+ "$log" || true
+                grep -oE 'memory-space-cleanup\.browser\.test\.mjs:[0-9]+:[0-9]+' "$log" | sort -u || true
+              fi
               echo "::error::$stage failed in the restricted candidate"
               exit 1
             fi
