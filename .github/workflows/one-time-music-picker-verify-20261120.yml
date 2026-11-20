@@ -90,9 +90,9 @@ jobs:
             const captured=String(contract.stdout||'');
             for(const match of captured.matchAll(/^not ok ([0-9]+) /gm)){
               const tail=captured.slice(match.index,match.index+4000);
-              const loc=tail.match(/tests\\/([^:\\s]+\\.test\\.(?:mjs|js|cjs)):([0-9]+):[0-9]+/);
+              const loc=tail.match(/([A-Za-z0-9_.-]+[.]test[.](?:mjs|js|cjs)):([0-9]+):[0-9]+/);
               if(loc){
-                const fileOrdinal=contractFiles.indexOf('tests/'+loc[1])+1;
+                const fileOrdinal=contractFiles.findIndex(name=>name.endsWith('/'+loc[1]))+1;
                 console.log('SEALED_CHAT_CONTRACT_FAILURE_LOCATION: '+match[1]+':'+fileOrdinal+':'+loc[2]);
               }
             }
