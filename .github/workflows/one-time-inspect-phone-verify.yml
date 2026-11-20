@@ -11,7 +11,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '04ebc2476df79eff27c16a204dcd814347c09fbe' && github.event.head_commit.message == 'ci: verify compact role phone requests' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '7ba186f16281bcc3079a068668f5a5079c099efe' && github.event.head_commit.message == 'ci: verify role phone profile and desktop controls' }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -27,7 +27,7 @@ jobs:
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          ref: 'd6c837d51d71d3ed398dacb7bfda95cb0aaf6afc'
+          ref: 'd28ed0d78eaf13a8a9586fb85b4c8e30798a69aa'
           path: candidate
           persist-credentials: false
       - name: Verify exact checkout and run sealed regression
@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'd6c837d51d71d3ed398dacb7bfda95cb0aaf6afc'
+          test "$(git rev-parse HEAD)" = 'd28ed0d78eaf13a8a9586fb85b4c8e30798a69aa'
           log="$(mktemp)"
           trap 'rm -f "$log"' EXIT
           run() {
