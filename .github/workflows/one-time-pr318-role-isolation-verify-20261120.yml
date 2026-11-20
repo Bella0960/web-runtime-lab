@@ -1,0 +1,131 @@
+name: One-time restricted PR318 role isolation regression
+
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - '.github/workflows/one-time-pr318-role-isolation-verify-20261120.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: one-time-pr318-strict-role-isolation-20261120
+  cancel-in-progress: false
+
+jobs:
+  role-isolation:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout existing public guard
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce public metadata isolation
+        run: node scripts/public-content-check.mjs
+      - name: Checkout restricted strict role isolation patch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: fix/CHAT-CONTEXT-ISOLATION-20261120
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Assert exact private source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '8fedc33996215635a2fc7aa1f430a5943aba8af9'
+      - name: Run sealed memory worldbook and minimal persona contracts
+        run: |
+          node --input-type=module <<'NODE'
+          import { spawnSync } from 'node:child_process';
+          const setup = spawnSync('npm', ['ci', '--no-audit', '--no-fund'], {
+            cwd: 'candidate', stdio: 'ignore', timeout: 150000
+          });
+          if (setup.status !== 0 || setup.error) throw new Error('Sealed dependency gate failed');
+          const suite = [
+            'tests/chat-strict-role-isolation.test.mjs',
+            'tests/chat-context-strict-isolation.test.mjs',
+            'tests/role-worldbook-bindings.test.mjs',
+            'tests/chat-role-live-context.test.mjs',
+            'tests/chat-persona-source-contract.test.mjs',
+            'tests/chat-protocol-worldbook-priority.test.mjs',
+            'tests/chat-persona-sources-mandatory.test.mjs',
+            'tests/offline-worldbook-binding-parity.test.mjs'
+          ];
+          const scopedFailures = [];
+          for (const [index, path] of suite.entries()) {
+            const run = spawnSync(process.execPath, ['--test', path], {
+              cwd: 'candidate',
+              stdio: ['ignore','pipe','pipe'],
+              encoding: 'utf8', maxBuffer: 2 * 1024 * 1024,
+              timeout: 150000
+            });
+            if (run.status !== 0 || run.error) {
+              const failedNumbers = [...String(run.stdout || '').matchAll(/^not ok ([0-9]+) /gm)]
+                .map(x => x[1]).join(',');
+              console.log('SEALED_FAILED_SUBTEST_ORDINALS: ' + (index + 1) + ':' + failedNumbers);
+              scopedFailures.push(index + 1);
+            }
+          }
+          if (scopedFailures.length) throw new Error('Sealed role isolation gates failed: ' + scopedFailures.join(','));
+          const contract = spawnSync('npm', ['run', 'test:chat:contract'], {
+            cwd: 'candidate', stdio: ['ignore','pipe','pipe'],
+            encoding: 'utf8', maxBuffer: 4 * 1024 * 1024, timeout: 240000
+          });
+          if (contract.status !== 0 || contract.error) {
+            const contractFailures = [...String(contract.stdout || '')
+              .matchAll(/^not ok ([0-9]+) /gm)].map(x => x[1]).join(',');
+            console.log('SEALED_CHAT_CONTRACT_SUBTEST_ORDINALS: ' + contractFailures);
+            const {readFileSync} = await import('node:fs');
+            const contractFiles=JSON.parse(readFileSync('candidate/package.json','utf8'))
+              .scripts['test:chat:contract'].split(/[\x20\x09\x0a]+/).filter(s=>s.startsWith('tests/'));
+            const captured=String(contract.stdout||'');
+            for(const match of captured.matchAll(/^not ok ([0-9]+) /gm)){
+              const tail=captured.slice(match.index,match.index+4000);
+              const loc=tail.match(/([A-Za-z0-9_.-]+[.]test[.](?:mjs|js|cjs)):([0-9]+):[0-9]+/);
+              if(loc){
+                const fileOrdinal=contractFiles.findIndex(name=>name.endsWith('/'+loc[1]))+1;
+                console.log('SEALED_CHAT_CONTRACT_FAILURE_LOCATION: '+match[1]+':'+fileOrdinal+':'+loc[2]);
+              }
+            }
+            throw new Error('Sealed complete chat contract regression failed');
+          }
+          const build = spawnSync('npm', ['run', 'build'], {
+            cwd: 'candidate', stdio: 'ignore', timeout: 240000
+          });
+          if (build.status !== 0 || build.error) throw new Error('Sealed QA build validation failed');
+          const chromium = spawnSync('npx', ['playwright', 'install', '--with-deps', 'chromium'], {
+            cwd: 'candidate', stdio: 'ignore', timeout: 420000
+          });
+          if (chromium.status !== 0 || chromium.error) throw new Error('Sealed Chromium prerequisite gate failed');
+          // Each Node file runs in its own process, just like native node --test.
+          // Print ONLY ordinal indexes of failing files: no names/private TAP/log text.
+          const { readdirSync } = await import('node:fs');
+          const names = readdirSync('candidate/tests', { recursive: true })
+            .map(String)
+            .filter(x => ['.test.mjs','.test.cjs','.test.js'].some(ext => x.endsWith(ext)))
+            .map(x => 'tests/' + x.split(String.fromCharCode(92)).join('/')).sort();
+          const failed = [];
+          for (let i=0; i<names.length; i++) {
+            const one = spawnSync(process.execPath, ['--test', names[i]], {
+              cwd:'candidate',stdio:'ignore',timeout:150000
+            });
+            if (one.status !== 0 || one.error) failed.push(i+1);
+          }
+          if (failed.length) {
+            console.log('SEALED_FAILED_FILE_ORDINALS: ' + failed.join(','));
+            throw new Error('Sealed per-file Node regression gate failed');
+          }
+          console.log('PASS: strict role isolation, chat contract, Vite build, Chromium and complete Node suite');
+
+          NODE
+
