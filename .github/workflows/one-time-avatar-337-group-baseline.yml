@@ -1,0 +1,64 @@
+name: Sealed PR337 baseline group UI comparison
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-avatar-337-group-baseline.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-avatar-337-baseline
+  cancel-in-progress: false
+jobs:
+  compare:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '23834406a0eedc838964c5878dc080e0b2991c3c' && github.event.head_commit.message == 'ci: compare PR337 group UI test with QA baseline' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Public checkout and metadata guard
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/public-content-check.mjs
+      - name: Private QA base
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: 8e5bd9deca975b4ca4348d8f5e78d170a4b453a4
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          persist-credentials: false
+          path: baseline
+          fetch-depth: 1
+      - name: Private avatar candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: task-CHAT-AVATAR-003/restore-pr278-qa-20261121
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          persist-credentials: false
+          path: candidate
+          fetch-depth: 1
+      - name: Validate immutable references
+        run: |
+          set -euo pipefail
+          test "$(git -C baseline rev-parse HEAD)" = '8e5bd9deca975b4ca4348d8f5e78d170a4b453a4'
+          test "$(git -C candidate rev-parse HEAD)" = '59b12f75b5218aa8513c835e165ba42e012fb282'
+      - name: Compare closed source group UI regressions without exposing source
+        run: |
+          node --input-type=module <<'NODE'
+          import { spawnSync } from 'node:child_process';
+          for(const folder of ['baseline','candidate']){
+            const install=spawnSync('npm',['ci','--no-audit','--no-fund'],{cwd:folder,encoding:'utf8',maxBuffer:20000000,timeout:300000});
+            if(install.status!==0 || install.error) throw Error('SEALED_DEPENDENCY_FAILURE_'+folder);
+            const result=spawnSync('npm',['run','test:group:ui'],{cwd:folder,encoding:'utf8',maxBuffer:20000000,timeout:300000});
+            const output=(result.stdout||'')+'\n'+(result.stderr||'');
+            const bad=[...output.matchAll(/^not ok (\d+) -/gm)].map(x=>x[1]);
+            const passed=[...output.matchAll(/^ok (\d+) -/gm)].length;
+            console.log('SAFE_GROUP_UI_RESULT_'+folder+': '+(result.status===0?'PASS':'FAIL')+'; failed='+bad.length+'; passed='+passed);
+          }
+          NODE
