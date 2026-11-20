@@ -11,7 +11,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '9b4a8670fd4e725b14652f0b9f5ce84b42e87494' && github.event.head_commit.message == 'ci: verify updated memory cleanup candidate' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '6610d3e6b095edf43220324e08de126f3c8ed160' && github.event.head_commit.message == 'ci: verify memory cleanup and PWA assets' }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -27,7 +27,7 @@ jobs:
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          ref: 'b330700689acc71a7e4cb26111c7de19ad2a8d9b'
+          ref: '322838094b8e6ece7e5ee5439f029b2fa85ab2a1'
           path: candidate
           persist-credentials: false
       - name: Verify exact checkout and run sealed regression
@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'b330700689acc71a7e4cb26111c7de19ad2a8d9b'
+          test "$(git rev-parse HEAD)" = '322838094b8e6ece7e5ee5439f029b2fa85ab2a1'
           log="$(mktemp)"
           trap 'rm -f "$log"' EXIT
           run() {
