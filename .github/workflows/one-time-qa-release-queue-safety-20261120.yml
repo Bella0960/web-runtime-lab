@@ -1,0 +1,20 @@
+name: One-time QA duplicate release queue safety
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-qa-release-queue-safety-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  queue_safety:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: No-op QA duplicate prevention
+        run: |
+          echo "No credentials, no private checkout, no deployment."
