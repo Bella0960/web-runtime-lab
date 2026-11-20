@@ -77,9 +77,13 @@ jobs:
           }
           if (scopedFailures.length) throw new Error('Sealed role isolation gates failed: ' + scopedFailures.join(','));
           const contract = spawnSync('npm', ['run', 'test:chat:contract'], {
-            cwd: 'candidate', stdio: 'ignore', timeout: 240000
+            cwd: 'candidate', stdio: ['ignore','pipe','pipe'],
+            encoding: 'utf8', maxBuffer: 4 * 1024 * 1024, timeout: 240000
           });
           if (contract.status !== 0 || contract.error) {
+            const contractFailures = [...String(contract.stdout || '')
+              .matchAll(/^not ok ([0-9]+) /gm)].map(x => x[1]).join(',');
+            console.log('SEALED_CHAT_CONTRACT_SUBTEST_ORDINALS: ' + contractFailures);
             throw new Error('Sealed complete chat contract regression failed');
           }
           const build = spawnSync('npm', ['run', 'build'], {
