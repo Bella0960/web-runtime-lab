@@ -80,7 +80,7 @@ jobs:
               assert.equal(await page.evaluate(x=>window[['M','A','O','M','A','O','CallExperience'].join('')].invite(x),role),true);
               await page.locator('[data-invite-action="accept"]').click();
               assert.equal(await page.locator('[data-call-title]').isVisible(),true);
-              await page.locator('[data-call-action="end"]').click();
+              await page.locator('[data-call-action="end"]').first().click();
               await page.evaluate(()=>{
                 localStorage.setItem('phone_groups',JSON.stringify([{id:'g1',name:'Group',members:[{id:'role-test',name:'Sample'}]}]));
                 localStorage.setItem('ai_custom_characters',JSON.stringify([{id:'role-test',name:'Sample'}]));
