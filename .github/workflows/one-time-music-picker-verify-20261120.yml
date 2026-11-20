@@ -64,6 +64,16 @@ jobs:
           console.log('PASS: two isolated music import and data-integrity suites');
           NODE
 
+      - name: Check restricted candidate production build without publishing logs
+        run: |
+          node --input-type=module <<'NODE'
+          import { spawnSync } from 'node:child_process';
+          for (const args of [['ci'],['run','build']]) {
+            const result=spawnSync('npm',args,{cwd:'candidate',stdio:'ignore',timeout:180000,env:process.env});
+            if (result.status!==0 || result.error) throw Error('Sealed candidate build check failed');
+          }
+          console.log('RESTRICTED_BUILD_PASS');
+          NODE
       - name: Diagnose QA-only preflight without deploying
         shell: bash
         env:
@@ -90,6 +100,8 @@ jobs:
               preflightCheckout();
               checkpoint = 'worker-settings-and-founder-readonly';
               await cloudflarePreflight();
+              checkpoint = 'compiled-upload-safety-gate';
+              assertReadyForUpload({ allowPinned: true });
               console.log('READ_ONLY_RELEASE_PREFLIGHT_PASS');
             } catch (err) {
               const value = String(err && err.message || '');
