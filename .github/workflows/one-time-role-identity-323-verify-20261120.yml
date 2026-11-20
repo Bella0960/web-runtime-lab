@@ -1,0 +1,63 @@
+name: One-time sealed weak role identity premerge validation
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-role-identity-323-verify-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-role-identity-323
+  cancel-in-progress: false
+jobs:
+  candidate:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/public-content-check.mjs
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: task-CHAT-RP-IDENTITY-002/weak-name-and-global-identity-seal-20261120
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Confirm exact PR323 source
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '0c612b962115bdce854f589b04e393ad4daae760'
+      - name: Run sealed focused Node, complete chat, build and Chromium
+        run: |
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          const gates = [
+            ['npm',['ci','--no-audit','--no-fund']],
+            ['node',['--test','tests/chat-strict-role-isolation.test.mjs']],
+            ['node',['--test','tests/chat-protocol-worldbook-priority.test.mjs']],
+            ['node',['--test','tests/chat-rp-identity-runtime.test.mjs']],
+            ['node',['--test','tests/chat-scheduled-persona-source.test.mjs']],
+            ['node',['--test','tests/chat-offline-source-contract.test.mjs']],
+            ['npm',['run','test:chat:contract']],
+            ['npm',['run','build']],
+            ['npx',['playwright','install','--with-deps','chromium']],
+            ['node',['tests/chat-light-surfaces-browser.mjs']]
+          ];
+          for (let i=0;i<gates.length;i++){
+            const [bin,args]=gates[i];
+            const r=spawnSync(bin,args,{cwd:'candidate',stdio:'ignore',timeout:12*60*1000});
+            if(r.error||r.status!==0){
+              console.log('SEALED_FAILED_GATE_ORDINAL: '+(i+1));
+              throw Error('Restricted QA identity candidate check failed; private logs withheld');
+            }
+            console.log('SEALED_PASS_GATE_ORDINAL: '+(i+1));
+          }
+          console.log('PASS: exact role identity patch, full chat contracts, Vite, Chromium');
+          NODE
