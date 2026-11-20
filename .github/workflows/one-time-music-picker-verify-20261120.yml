@@ -75,12 +75,16 @@ jobs:
           node --input-type=module <<'NODE'
           import { readFileSync, writeFileSync } from 'node:fs';
           import { spawnSync } from 'node:child_process';
+          import { resolve, join } from 'node:path';
+          import { pathToFileURL } from 'node:url';
           const original = readFileSync('candidate/scripts/qa-direct-release.mjs','utf8');
           const marker = '\nmain().catch(error => {';
           const split = original.indexOf(marker);
           if (split < 0) throw new Error('Private QA guard shape changed');
           // Do not execute main(), TESTS or Wrangler: a fully read-only probe.
-          const test = original.slice(0, split) + `
+          const dependency = pathToFileURL(resolve('candidate/scripts/qa-snapshot-policy.mjs')).href;
+          const body = original.slice(0, split).replace("'./qa-snapshot-policy.mjs'", "'" + dependency + "'");
+          const test = body + `
             let checkpoint = 'qa-checkout';
             try {
               preflightCheckout();
@@ -110,8 +114,9 @@ jobs:
               process.exitCode = 1;
             }
           `;
-          writeFileSync('candidate/scripts/__temporary_guard_diagnostic.mjs',test,{mode:0o600});
-          const result=spawnSync(process.execPath,['scripts/__temporary_guard_diagnostic.mjs'],{
+          const temp = join(process.env.RUNNER_TEMP,'maomao-qa-readonly-preflight.mjs');
+          writeFileSync(temp,test,{mode:0o600});
+          const result=spawnSync(process.execPath,[temp],{
             cwd:'candidate',env:process.env,stdio:'pipe',encoding:'utf8',timeout:45000
           });
           const safe = String(result.stdout||'').split('\n').filter(line=>
