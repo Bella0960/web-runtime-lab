@@ -12,7 +12,7 @@ concurrency:
 jobs:
   gate:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '28a6cc2c1098b31638ed807ba1c92d1324d157b9' && github.event.head_commit.message == 'ci: guarded group reply verify 96ecd7e' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'c5e66240072fe7d2806d152e450b99a0b84669ac' && github.event.head_commit.message == 'ci: guarded group reply verify b720482' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '96ecd7ef54cec227d7ea5ea4032eac32b308c2eb'
+          test "$(git -C candidate rev-parse HEAD)" = 'b72048274bb1353d3109ef43b6b91b78ae4036fe'
       - name: Execute private targeted Node and Vite checks with sealed output
         run: |
           node --input-type=module <<'NODE'
