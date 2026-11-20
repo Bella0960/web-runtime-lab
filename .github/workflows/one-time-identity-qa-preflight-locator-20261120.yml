@@ -51,9 +51,14 @@ jobs:
           try{
             const mod=await import(pathToFileURL(tmp).href);
             const output=console.log;console.log=()=>{};
-            let failure=null;
-            try{await mod.cloudflarePreflight();}catch(error){failure=String(error?.message||'unknown');}
-            finally{console.log=output;}
+            let failure=null,sourceLine='unknown',errorType='unknown';
+            try{await mod.cloudflarePreflight();}catch(error){
+              failure=String(error?.message||'unknown');
+              errorType=String(error?.name||'Error');
+              const frame=String(error?.stack||'').split(String.fromCharCode(10))
+                .find(line=>line.includes('.qa-preflight-readonly-local.mjs:'));
+              if(frame)sourceLine=frame.split('.qa-preflight-readonly-local.mjs:').pop().split(':')[0];
+            }finally{console.log=output;}
             if(failure){
               const categories=[
                 [/Cloudflare preflight failed/,'cloudflare-api-request'],
@@ -65,6 +70,8 @@ jobs:
               ];
               const detected=categories.find(([pattern])=>pattern.test(failure));
               console.log('SEALED_QA_PREFLIGHT_RESULT: FAIL '+(detected?detected[1]:'other-check'));
+              console.log('SEALED_QA_PREFLIGHT_SOURCE_LINE: '+sourceLine);
+              console.log('SEALED_QA_PREFLIGHT_ERROR_TYPE: '+(errorType==='AssertionError'?'AssertionError':'other'));
               process.exitCode=1;
             }else console.log('SEALED_QA_PREFLIGHT_RESULT: PASS');
           }finally{unlinkSync(tmp);}
