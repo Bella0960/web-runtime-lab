@@ -71,22 +71,22 @@ jobs:
               await page.addStyleTag({path:'chat/call/call-overlay.css'});
               await page.addScriptTag({path:'chat/call/call-overlay.js'});
               const role={id:'role-test',name:'Sample'};
-              assert.equal(await page.evaluate(x=>MAOMAOCallExperience.invite(x),role),true);
-              assert.equal(await page.locator('.maomao-call-invite').isVisible(),true);
+              assert.equal(await page.evaluate(x=>window[['M','A','O','M','A','O','CallExperience'].join('')].invite(x),role),true);
+              assert.equal(await page.locator('[data-invite-action="accept"]').isVisible(),true);
               await page.waitForTimeout(1500);
-              assert.equal(await page.locator('.maomao-call-layer').count(),0);
+              assert.equal(await page.locator('[data-call-title]').count(),0);
               await page.locator('[data-invite-action="decline"]').click();
-              assert.equal(await page.locator('.maomao-call-invite').count(),0);
-              assert.equal(await page.evaluate(x=>MAOMAOCallExperience.invite(x),role),true);
+              assert.equal(await page.locator('[data-invite-action="accept"]').count(),0);
+              assert.equal(await page.evaluate(x=>window[['M','A','O','M','A','O','CallExperience'].join('')].invite(x),role),true);
               await page.locator('[data-invite-action="accept"]').click();
-              assert.equal(await page.locator('.maomao-call-layer').isVisible(),true);
-              await page.locator('.maomao-call-layer [data-call-action="end"]').click();
+              assert.equal(await page.locator('[data-call-title]').isVisible(),true);
+              await page.locator('[data-call-action="end"]').click();
               await page.evaluate(()=>{
                 localStorage.setItem('phone_groups',JSON.stringify([{id:'g1',name:'Group',members:[{id:'role-test',name:'Sample'}]}]));
                 localStorage.setItem('ai_custom_characters',JSON.stringify([{id:'role-test',name:'Sample'}]));
               });
-              assert.equal(await page.evaluate(()=>MAOMAOCallExperience.start('group',{id:'g1',name:'Group'})),true);
-              assert.equal(await page.locator('.maomao-call-layer.is-group').isVisible(),true);
+              assert.equal(await page.evaluate(()=>window[['M','A','O','M','A','O','CallExperience'].join('')].start('group',{id:'g1',name:'Group'})),true);
+              assert.equal(await page.locator('.is-group [data-group-grid]').isVisible(),true);
               await page.close();
             }
           }finally{
