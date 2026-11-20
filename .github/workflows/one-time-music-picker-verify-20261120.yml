@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: task-CHAT-HISTORY-001/group-private-safe-append-20261120
+          ref: task-CHAT-HISTORY-001/group-private-contract-20261120
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -42,11 +42,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '282be457deb747b3838c26b2d9290bf79a9fc251'
+          test "$(git -C candidate rev-parse HEAD)" = '6b060a8095dd11537c80035b6bc91626c59b76ca'
       - name: Run sealed group and history integrity tests
         run: |
           node --input-type=module <<'NODE'
           import { spawnSync } from 'node:child_process';
+          const setup = spawnSync('npm', ['ci', '--no-audit', '--no-fund'], {
+            cwd: 'candidate', stdio: 'ignore', timeout: 150000
+          });
+          if (setup.status !== 0 || setup.error) throw new Error('Sealed dependency gate failed');
           const suite = [
             'tests/group-turn-integration.test.mjs',
             'tests/chat-history-atomic.test.mjs',
@@ -64,6 +68,10 @@ jobs:
               throw new Error('Sealed group history regression failed at gate ' + (index + 1));
             }
           }
-          console.log('PASS: five isolated group/history integrity suites');
+          const contract = spawnSync('npm', ['run', 'test:chat:contract'], {
+            cwd: 'candidate', stdio: 'ignore', timeout: 240000
+          });
+          if (contract.status !== 0 || contract.error) throw new Error('Sealed full chat contract gate failed');
+          console.log('PASS: five group/history suites and complete chat contract gate');
           NODE
 
