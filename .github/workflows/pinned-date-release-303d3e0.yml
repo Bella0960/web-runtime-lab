@@ -55,7 +55,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '8d2267b1e69ff8f643fad533bf1250f6023efcc1'
+          test "$(git -C candidate rev-parse HEAD)" = '9812fd324f5695406f7f7bbe60692e43cc42dd0b'
           test "$(git -C candidate branch --show-current)" = 'integration/account-fanwai-stack-20261115'
       - name: Run scoped release through existing safety gates (sealed logs)
         env:
