@@ -74,6 +74,19 @@ jobs:
           if (contract.status !== 0 || contract.error) {
             throw new Error('Sealed complete chat contract regression failed');
           }
-          console.log('PASS: five identity/group/prompt/regex suites and complete chat contract');
+          const build = spawnSync('npm', ['run', 'build'], {
+            cwd: 'candidate', stdio: 'ignore', timeout: 240000
+          });
+          if (build.status !== 0 || build.error) throw new Error('Sealed QA build validation failed');
+          const chromium = spawnSync('npx', ['playwright', 'install', '--with-deps', 'chromium'], {
+            cwd: 'candidate', stdio: 'ignore', timeout: 420000
+          });
+          if (chromium.status !== 0 || chromium.error) throw new Error('Sealed Chromium prerequisite gate failed');
+          const fullNode = spawnSync(process.execPath, ['--test', '--test-concurrency=1'], {
+            cwd: 'candidate', stdio: 'ignore', timeout: 480000
+          });
+          if (fullNode.status !== 0 || fullNode.error) throw new Error('Sealed complete Node regression gate failed');
+          console.log('PASS: original compact prompt and entire Node test suite');
+
           NODE
 
