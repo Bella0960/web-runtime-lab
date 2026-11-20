@@ -1,4 +1,4 @@
-name: One-time restricted source-first prompt regression
+name: One-time restricted strict role isolation regression
 
 on:
   push:
@@ -10,11 +10,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: one-time-prompt-source-first-20261120
+  group: one-time-strict-role-isolation-20261120
   cancel-in-progress: false
 
 jobs:
-  prompt-contract:
+  role-isolation:
     if: github.actor == github.repository_owner
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -29,11 +29,11 @@ jobs:
           node-version: '22'
       - name: Enforce public metadata isolation
         run: node scripts/public-content-check.mjs
-      - name: Checkout restricted source-first prompt
+      - name: Checkout restricted strict role isolation patch
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: task-CHAT-PROMPT-001/source-priority-cleanup-20261120
+          ref: task-CHAT-ISOLATION-001/strict-memory-lore-minimal-persona-20261120
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -42,8 +42,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '8deb264df568f1d0d3f5503f71533acb2e203ce7'
-      - name: Run sealed source-first prompt and regex contracts
+          test "$(git -C candidate rev-parse HEAD)" = 'f5a8f4270383f4407733270ebeaae045f170733c'
+      - name: Run sealed memory worldbook and minimal persona contracts
         run: |
           node --input-type=module <<'NODE'
           import { spawnSync } from 'node:child_process';
@@ -52,12 +52,13 @@ jobs:
           });
           if (setup.status !== 0 || setup.error) throw new Error('Sealed dependency gate failed');
           const suite = [
-            'tests/chat-rp-identity-runtime.test.mjs',
-            'tests/chat-group-speaker-and-home-layout.test.mjs',
-            'tests/chat-prompt-payload-diagnostic.test.mjs',
+            'tests/chat-strict-role-isolation.test.mjs',
+            'tests/role-worldbook-bindings.test.mjs',
+            'tests/chat-role-live-context.test.mjs',
+            'tests/chat-persona-source-contract.test.mjs',
             'tests/chat-protocol-worldbook-priority.test.mjs',
             'tests/chat-persona-sources-mandatory.test.mjs',
-            'tests/regex-editor-ui.test.mjs'
+            'tests/offline-worldbook-binding-parity.test.mjs'
           ];
           for (const [index, path] of suite.entries()) {
             const run = spawnSync(process.execPath, ['--test', path], {
@@ -66,7 +67,7 @@ jobs:
               timeout: 150000
             });
             if (run.status !== 0 || run.error) {
-              throw new Error('Sealed prompt system regression failed at gate ' + (index + 1));
+              throw new Error('Sealed role isolation regression failed at gate ' + (index + 1));
             }
           }
           const contract = spawnSync('npm', ['run', 'test:chat:contract'], {
@@ -101,7 +102,7 @@ jobs:
             console.log('SEALED_FAILED_FILE_ORDINALS: ' + failed.join(','));
             throw new Error('Sealed per-file Node regression gate failed');
           }
-          console.log('PASS: source-first prompt, full chat contract, Vite build and entire Node test suite');
+          console.log('PASS: strict role isolation, chat contract, Vite build, Chromium and complete Node suite');
 
           NODE
 
