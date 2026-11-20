@@ -12,7 +12,7 @@ concurrency:
 jobs:
   gate:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '6e48441a2179502f9e1894bba0ce649ef7737612' && github.event.head_commit.message == 'ci: guarded group reply verify d4be37c' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '3f4ff250970b861d5113b3bde06cfc94e6853a96' && github.event.head_commit.message == 'ci: identify exact failing tests in sealed regression' }}
     runs-on: ubuntu-latest
     timeout-minutes: 85
     steps:
@@ -44,12 +44,14 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import { execFileSync, spawnSync } from 'node:child_process';
-          import { readFileSync } from 'node:fs';
+          import { writeFileSync, readFileSync } from 'node:fs';
           import { runInNewContext } from 'node:vm';
           const release = readFileSync('candidate/scripts/qa-direct-release.mjs', 'utf8');
           const gates = runInNewContext(release.match(/const TESTS = (\[[\s\S]*?\n\]);/)[1], {}, { timeout: 1000 });
+          writeFileSync('/tmp/sealed-test-reporter.mjs', "" + `const safe = new Set(['ERR_ASSERTION','TimeoutError','SyntaxError','ENOENT','ERR_TEST_FAILURE','TypeError','ReferenceError']);\nexport default async function* (source) { for await (const e of source) { if (e.type !== 'test:fail') continue; const d=e.data; const a=d.details?.error; const c=a?.cause || a; const kind=c?.code || c?.name; yield 'TEST_FAILURE ' + JSON.stringify([d.file || '',d.line || 0,safe.has(kind)?kind:'other']) + '\\n'; } }`);
           for (let index = 0; index < gates.length; index++) {
             const [cmd,args] = gates[index];
+            if (cmd === 'node' && args.includes('--test-concurrency=1')) args.push('--test-reporter=/tmp/sealed-test-reporter.mjs');
             const run = spawnSync(cmd,args,{
               cwd:'candidate',encoding:'utf8',maxBuffer:100*1024*1024,timeout:30*60*1000
             });
@@ -63,6 +65,11 @@ jobs:
               for (const [file,line] of new Map(failed.map(m=>[m[1],m[2]]))) {
                 const idx = files.indexOf(file);
                 if (idx !== -1) console.log('SEALED_TEST_INDEX: '+idx+' LINE: '+line);
+              }
+              for (const match of output.matchAll(/^TEST_FAILURE (.+)$/gm)) {
+                const [full,line,kind] = JSON.parse(match[1]);
+                const idx = files.findIndex(file => full.endsWith('/'+file) || full === file);
+                console.log('FAILED_TEST_INDEX: '+idx+' LINE: '+Number(line)+' KIND: '+kind);
               }
               if (run.error?.code) console.log('SEALED_RUN_ERROR: '+run.error.code);
               throw new Error('Private candidate premerge gate failed (no private logs emitted)');
