@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '20413fc287d4347f9fa1588763f4e8f19795f812' && github.event.head_commit.message == 'ci: verify approved PR337 avatar recovery privately' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'eaf4a9149e45be46de8acb6b42238eeac0958188' && github.event.head_commit.message == 'ci: verify PR337 avatar recovery with updated structural contracts' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -38,7 +38,7 @@ jobs:
       - name: Enforce immutable private candidate
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = 'bdf8176abdc86d6b5ef4f33a72da25fde13baf48'
+          test "$(git -C candidate rev-parse HEAD)" = 'cdffdebe3ffd4b6bfe0124a66d3b924a3705dca2'
           test -z "$(git -C candidate status --porcelain)"
       - name: Sealed original Node Vite Chromium and full regression
         run: |
