@@ -7,7 +7,7 @@ permissions:
   contents: read
 concurrency:
   group: qa-only-release-gate
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.repository_owner == github.actor }}
 jobs:
   release:
     if: github.actor == github.repository_owner
@@ -25,7 +25,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = 'aa81aaf7d17e1f2232309ea02428b42044f54ee3'
+          test "$(git rev-parse HEAD^)" = '94861ea3a3b12067dd06b57d3c6c73a4ee4747c6'
           test "$(git show --pretty='' --name-only HEAD | sed '/^$/d')" = '.github/workflows/qa-only-group-settings-release.yml'
           node scripts/public-content-check.mjs
       - name: Verify restricted source and target configuration
@@ -58,5 +58,5 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = 'bc3bbed25f29ab429c47df8ea94fcb8b1e3e9fd2'
+          test "$(git -C candidate rev-parse HEAD)" = 'ad341afc481063c4a0943380650722e306f3ba20'
           node scripts/run-candidate.mjs release
