@@ -82,10 +82,27 @@ jobs:
             cwd: 'candidate', stdio: 'ignore', timeout: 420000
           });
           if (chromium.status !== 0 || chromium.error) throw new Error('Sealed Chromium prerequisite gate failed');
-          const fullNode = spawnSync(process.execPath, ['--test', '--test-concurrency=1'], {
-            cwd: 'candidate', stdio: 'ignore', timeout: 480000
+          const fullNode = spawnSync(process.execPath, ['--test', '--test-concurrency=1', '--test-reporter=tap'], {
+            cwd: 'candidate', stdio: 'pipe', encoding: 'utf8',
+            maxBuffer: 64 * 1024 * 1024, timeout: 480000
           });
-          if (fullNode.status !== 0 || fullNode.error) throw new Error('Sealed complete Node regression gate failed');
+          if (fullNode.status !== 0 || fullNode.error) {
+            // Diagnostic privacy guard: NEVER emit private stdout, test names,
+            // assertions, stack traces, prompt data or user content to public logs.
+            const { readdirSync } = await import('node:fs');
+            const names = readdirSync('candidate/tests', { recursive: true })
+              .map(String).filter(x => /\\.test\\.(?:mjs|cjs|js)$/.test(x))
+              .map(x => 'tests/' + x.replace(/\\\\/g, '/')).sort();
+            const failed = String(fullNode.stdout || '').split('\\n')
+              .filter(line => /^not ok\\s+\\d+\\s+-\\s/.test(line))
+              .map(line => line.match(/tests\\/([^\\s]+\\.test\\.(?:mjs|cjs|js))/))
+              .filter(Boolean)
+              .map(match => names.indexOf('tests/' + match[1]) + 1)
+              .filter(index => index > 0);
+            console.log('SEALED_FAILED_FILE_ORDINALS: ' +
+              (failed.length ? [...new Set(failed)].join(',') : 'unknown'));
+            throw new Error('Sealed complete Node regression gate failed');
+          }
           console.log('PASS: original compact prompt and entire Node test suite');
 
           NODE
