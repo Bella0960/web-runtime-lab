@@ -58,6 +58,19 @@ jobs:
               const ordinals=[...String(r.stdout||'').matchAll(/^not ok ([0-9]+) /gm)].map(x=>x[1]);
               console.log('SEALED_FAILED_GATE_ORDINAL: '+(i+1));
               console.log('SEALED_FAILED_TEST_ORDINALS: '+(ordinals.join(',')||'setup'));
+              if(i===6){
+                const {readFileSync}=await import('node:fs');
+                const files=JSON.parse(readFileSync('candidate/package.json','utf8'))
+                  .scripts['test:chat:contract'].split(/\\s+/).filter(x=>x.startsWith('tests/'));
+                const tap=String(r.stdout||'');
+                for(const m of tap.matchAll(/^not ok ([0-9]+) [^\\n]*\\n([\\s\\S]*?)(?=^not ok |^ok |^1\\.\\.|$)/gm)){
+                  const loc=m[2].match(/location:\\s*['"]?[^\\n]*?tests\\/([^\\/]+\\.test\\.mjs):([0-9]+):[0-9]+/);
+                  if(loc){
+                    const index=files.findIndex(x=>x.endsWith('/'+loc[1]))+1;
+                    console.log('SEALED_CHAT_CONTRACT_FAIL_LOCATION: '+m[1]+':'+index+':'+loc[2]);
+                  }
+                }
+              }
               const tap=String(r.stdout||'');
               const failedBlock=tap.match(/^not ok 7 [^\\n]*\\n([\\s\\S]*?)(?=^not ok |^ok |^1\\.\\.|$)/m);
               const line=failedBlock&&failedBlock[1].match(/location:\\s*['"]?[^\\n]*chat-strict-role-isolation\\.test\\.mjs:([0-9]+):[0-9]+/);
