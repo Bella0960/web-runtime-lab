@@ -33,23 +33,24 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: integration/account-fanwai-stack-20261115
+          ref: task/MUSIC-UI-004-duration-artist-list-20261120
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
-          persist-credentials: true
-          fetch-depth: 100
+          persist-credentials: false
+          fetch-depth: 1
       - name: Assert exact private source
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '2f5268fde0bc8b3a619ee70864b1515e4b30e07d'
+          test "$(git -C candidate rev-parse HEAD)" = '1f6ebfecaa7e3b07bfab88a92c928c75e382689f'
       - name: Run sealed music import and integrity tests
         run: |
           node --input-type=module <<'NODE'
           import { spawnSync } from 'node:child_process';
           const suite = [
             'tests/music-extensionless-import.test.mjs',
-            'tests/music-data-integrity.test.mjs'
+            'tests/music-data-integrity.test.mjs',
+            'tests/music-duration-display.test.mjs'
           ];
           for (const [index, path] of suite.entries()) {
             const run = spawnSync(process.execPath, ['--test', path], {
@@ -61,78 +62,6 @@ jobs:
               throw new Error('Sealed music regression failed at gate ' + (index + 1));
             }
           }
-          console.log('PASS: two isolated music import and data-integrity suites');
+          console.log('PASS: three isolated music UI and data-integrity suites');
           NODE
 
-      - name: Check restricted candidate production build without publishing logs
-        run: |
-          node --input-type=module <<'NODE'
-          import { spawnSync } from 'node:child_process';
-          for (const args of [['ci'],['run','build']]) {
-            const result=spawnSync('npm',args,{cwd:'candidate',stdio:'ignore',timeout:180000,env:process.env});
-            if (result.status!==0 || result.error) throw Error('Sealed candidate build check failed');
-          }
-          console.log('RESTRICTED_BUILD_PASS');
-          NODE
-      - name: Diagnose QA-only preflight without deploying
-        shell: bash
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
-        run: |
-          set -euo pipefail
-          umask 077
-          node --input-type=module <<'NODE'
-          import { readFileSync, writeFileSync } from 'node:fs';
-          import { spawnSync } from 'node:child_process';
-          import { resolve, join } from 'node:path';
-          import { pathToFileURL } from 'node:url';
-          const original = readFileSync('candidate/scripts/qa-direct-release.mjs','utf8');
-          const marker = '\nmain().catch(error => {';
-          const split = original.indexOf(marker);
-          if (split < 0) throw new Error('Private QA guard shape changed');
-          // Do not execute main(), TESTS or Wrangler: a fully read-only probe.
-          const dependency = pathToFileURL(resolve('candidate/scripts/qa-snapshot-policy.mjs')).href;
-          const body = original.slice(0, split).replace("'./qa-snapshot-policy.mjs'", "'" + dependency + "'");
-          const test = body + `
-            let checkpoint = 'qa-checkout';
-            try {
-              preflightCheckout();
-              checkpoint = 'worker-settings-and-founder-readonly';
-              await cloudflarePreflight();
-              checkpoint = 'compiled-upload-safety-gate';
-              assertReadyForUpload({ allowPinned: true });
-              console.log('READ_ONLY_RELEASE_PREFLIGHT_PASS');
-            } catch (err) {
-              const value = String(err && err.message || '');
-              const known = [
-                ['QA bootstrap lifecycle mismatch','setup-lifecycle'],
-                ['Release would unexpectedly change','runtime-var-drift'],
-                ['An existing QA runtime variable is missing','runtime-var-missing'],
-                ['The original QA founder/admin no longer matches','founder-account'],
-                ['The isolated identity core contains conflicting accounts','core-account'],
-                ['Cloudflare account query was read-only','do-sql'],
-                ['Cloudflare account query returned incomplete','do-sql'],
-                ['Unexpected identity service binding','service-binding'],
-                ['Only the original #299','checkout-branch'],
-                ['Remote QA HEAD','qa-head-race'],
-                ['Only the original','qa-origin'],
-                ['Checkout must be clean','checkout-dirty'],
-                ['QA setup','setup'],
-                ['Cloudflare','cloudflare-api']
-              ];
-              const label = known.find(entry => value.includes(entry[0]));
-              console.log('READ_ONLY_RELEASE_PREFLIGHT_FAIL: ' + checkpoint + '/' + (label ? label[1] : 'other'));
-              process.exitCode = 1;
-            }
-          `;
-          const temp = join(process.env.RUNNER_TEMP,'candidate-readonly-preflight.mjs');
-          writeFileSync(temp,test,{mode:0o600});
-          const result=spawnSync(process.execPath,[temp],{
-            cwd:'candidate',env:process.env,stdio:'pipe',encoding:'utf8',timeout:45000
-          });
-          const safe = String(result.stdout||'').split('\n').filter(line=>
-            line.startsWith('READ_ONLY_RELEASE_PREFLIGHT_')).slice(-1);
-          console.log(safe[0] || 'READ_ONLY_RELEASE_PREFLIGHT_FAIL: no-result');
-          process.exitCode=result.status===0?0:1;
-          NODE
