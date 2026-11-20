@@ -1,0 +1,79 @@
+name: Pinned QA Node diagnostics
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pinned-node-diagnostics.yml'
+permissions:
+  contents: read
+concurrency:
+  group: pinned-node-diagnostics
+  cancel-in-progress: false
+jobs:
+  candidate:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Public isolation guard
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prevent private source in public runner repo
+        run: node scripts/public-content-check.mjs
+      - name: Restricted repository configuration
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          test -n "$SOURCE_REPOSITORY" && test -n "$SOURCE_TOKEN"
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::$(basename "$SOURCE_REPOSITORY")"
+      - name: Checkout pinned candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: 508b6f4c6b85bba4e7c09fa2c7414776a39864bf
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+      - name: Verify source and run isolated recovery gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '508b6f4c6b85bba4e7c09fa2c7414776a39864bf'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/install.log" 2>&1 || { echo 'FAILED dependencies'; exit 1; }
+          npm run build >"$RUNNER_TEMP/build.log" 2>&1 || { echo 'FAILED Vite'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/chromium.log" 2>&1 || { echo 'FAILED Chromium dependencies'; exit 1; }
+          export NODE_DISABLE_COLORS=1
+          set +e
+          node --test --test-concurrency=1 >"$RUNNER_TEMP/full-node.log" 2>&1
+          result=$?
+          set -e
+          node --input-type=module <<'SAFE_DIAGNOSTICS'
+          import {readFileSync} from 'node:fs';
+          const log=readFileSync(process.env.RUNNER_TEMP+'/full-node.log','utf8');
+          const lines=log.split('\n');
+          function hash(s){let h=2166136261;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return (h>>>0).toString(16);}
+          const name='tests/inspect-phone-gesture.test.mjs';
+          const start=lines.findIndex(line=>line.includes('FATAL:')&&(line.includes('画师')||line.includes('用户单聊')||line.includes('Timeout')||line.includes('模型')||line.includes('返回桌面')));
+          if(start>=0){
+            const line=lines[start];
+            console.log('INSPECT_CHECK '+['画师聊天按本人档案生成','用户单聊固定首位','Timeout','微信聊天详情可直返桌面','备忘录正文可直返桌面','读取第二个角色自己的档案','两个角色各生成一次'].map(value=>Number(line.includes(value))).join(''));
+            console.log('INSPECT_WAIT '+['.nv-contact','#appHome','[data-action=','[data-detail=','[data-app='].map(value=>Number(lines.slice(start,start+12).some(line=>line.includes(value)))).join(''));
+          }
+          for(const [i,line] of lines.entries()){
+            const match=line.match(/^not ok (\d+) - (.*)/);
+            if(!match)continue;
+            const nearby=lines.slice(i,i+15).join('\n');
+            const location=nearby.match(/\/candidate\/(tests\/[^\s'":]+)(?::(\d+):\d+)?/);
+            console.log('FAIL ordinal='+match[1]+' inspect='+Number(nearby.includes(name)||match[2].includes(name))+' pathHash='+hash(location?.[1]||'')+' labelHash='+hash(match[2])+' line='+(location?.[2]||0));
+          }
+          for(const line of lines)if(/^# (tests|pass|fail|skipped) \d+$/.test(line))console.log(line);
+          SAFE_DIAGNOSTICS
+          exit "$result"
