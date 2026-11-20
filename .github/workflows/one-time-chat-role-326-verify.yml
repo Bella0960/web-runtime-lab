@@ -11,7 +11,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   gate:
-    if: ${{ github.actor == github.repository_owner && github.event.before == '54c54fc8599a65ca3d9865ffc123fb192486d5fb' && github.event.head_commit.message == 'ci: verify corrected role identity candidate 326' }}
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '752e4cc995185cf7cb8ae59584e26b5aa6953415' && github.event.head_commit.message == 'ci: launch full role identity verification 326' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
