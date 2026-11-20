@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '365b82d7b0d6af2a2ddfe63408b82ca0eac19f02' && github.event.head_commit.message == 'ci: verify PR337 avatar image and complete regression' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'eac5e6526243d5c59a2daa56f0b7a857686f77cc' && github.event.head_commit.message == 'ci: diagnose PR337 real mobile Chromium failure' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -51,8 +51,7 @@ jobs:
             ['chat-contract','npm',['run','test:chat:contract']],
             ['vite','npm',['run','build']],
             ['chromium-install','npx',['playwright','install','--with-deps','chromium']],
-            ['avatar-chromium','npm',['run','test:role:avatars:browser']],
-            ['all-node','node',['--test','--test-concurrency=1']]
+            ['avatar-chromium','npm',['run','test:role:avatars:browser']]
           ];
           for (let i=0;i<commands.length;i++) {
             const [label,cmd,args]=commands[i];
@@ -60,6 +59,8 @@ jobs:
             const out=(t.stdout||'')+'\n'+(t.stderr||'');
             if(t.error||t.status!==0) {
               console.log('SEALED_FAILED_GATE: '+label+' ('+(i+1)+'/'+commands.length+')');
+              const browserLine=[...out.matchAll(/chat-avatar-manager-browser\.mjs:(\d+):(\d+)/g)].map(m=>m[1]).find(Boolean);
+              if(browserLine) console.log('BROWSER_ASSERTION_LINE: '+browserLine);
               const bad=[...out.matchAll(/^not ok (\d+) -/gm)].slice(0,8).map(m=>m[1]);
               if(bad.length) console.log('FAILED_TEST_ORDINALS: '+bad.join(','));
               for(const x of ['ERR_ASSERTION','SyntaxError','TimeoutError','Cannot find module','PLAYWRIGHT_BROWSERS_PATH']) if(out.includes(x)) console.log('SAFE_ERROR_CLASS: '+x);
