@@ -10,7 +10,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   verify:
-    if: ${{ github.actor == github.repository_owner && github.event.before == '0f103c042370a952fc39ffd3522da21fe3b07c3f' && github.event.head_commit.message == 'ci: verify isolated memory cleanup candidate' }}
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == 'aa14375557b5ffe27eab42def1a49deec4509808' && github.event.head_commit.message == 'ci: run isolated memory cleanup verification' }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
