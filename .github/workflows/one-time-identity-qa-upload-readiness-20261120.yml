@@ -1,0 +1,72 @@
+name: One-time exact QA upload-readiness locator
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-identity-qa-upload-readiness-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: isolated-identity-qa-upload-readiness
+  cancel-in-progress: false
+jobs:
+  preflight:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/public-content-check.mjs
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: b3875a53a4625e4e83d75920ec31af2db8bceacf
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Verify exact tested QA SHA
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = 'b3875a53a4625e4e83d75920ec31af2db8bceacf'
+      - name: Validate original upload guard on clean Vite build without deployment
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync,existsSync} from 'node:fs';
+          import {spawnSync} from 'node:child_process';
+          import {pathToFileURL} from 'node:url';
+          import {resolve} from 'node:path';
+          import assert from 'node:assert/strict';
+          const candidate=resolve('candidate');
+          for(const [cmd,args] of [
+            ['npm',['ci','--no-audit','--no-fund']],
+            ['npm',['run','build']]
+          ]){
+            const r=spawnSync(cmd,args,{cwd:candidate,stdio:'ignore',timeout:420000});
+            if(r.error||r.status!==0){console.log('SEALED_SETUP_BUILD: FAIL');process.exit(1);}
+          }
+          const source=readFileSync(resolve(candidate,'scripts/qa-direct-release.mjs'),'utf8');
+          const start=source.indexOf('function run(command, args, quiet = false)');
+          const end=source.indexOf('function stampQaBuildReceipt()');
+          if(start<0||end<=start)throw Error('Original readiness contract changed');
+          const imported=await import(pathToFileURL(resolve(candidate,'scripts/qa-snapshot-policy.mjs')).href);
+          const guard=new Function('spawnSync','assert','evaluateQaSnapshot','existsSync','BRANCH',
+            source.slice(start,end)+'\nreturn assertReadyForUpload;')(
+              spawnSync,assert,imported.evaluateQaSnapshot,existsSync,
+              'integration/account-fanwai-stack-20261115');
+          process.chdir(candidate);
+          try{guard({allowPinned:true});console.log('SEALED_READINESS_GUARD: PASS');}
+          catch(error){
+            const msg=String(error?.message||'');
+            const kind=msg.includes('Tests altered the checkout')?'dirty-checkout':
+              msg.includes('QA Vite asset missing')?'missing-dist-asset':
+              msg.includes('remote')||msg.includes('ref')?'git-head-check':
+              'snapshot-check';
+            console.log('SEALED_READINESS_GUARD: FAIL '+kind);
+            process.exitCode=1;
+          }
+          NODE
