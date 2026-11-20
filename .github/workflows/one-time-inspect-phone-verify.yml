@@ -11,7 +11,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '909f5743cf7a7e0d98fde495b0d7f452118bbb7c' && github.event.head_commit.message == 'ci: verify role phone navigation and records' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '22647f7231840afa94e7e3be649a922c71da4c57' && github.event.head_commit.message == 'ci: diagnose role phone full regression' }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -44,6 +44,9 @@ jobs:
             if "$@" >"$log" 2>&1; then
               echo "$stage passed"
             else
+              if [[ "$stage" == Full-Node ]]; then
+                node -e 'const fs=require("node:fs"), crypto=require("node:crypto"); const s=fs.readFileSync(process.argv[1],"utf8"); const lines=s.split(/\r?\n/).filter(l=>l.startsWith("test at")||l.startsWith("✖ tests/")); const keys=new Set(); for(const l of lines){for(const m of l.matchAll(/tests\/[a-zA-Z0-9_./-]+\.mjs(?::\d+)?/g)){const [p,n]=m[0].split(":");keys.add(crypto.createHash("sha256").update(p).digest("hex").slice(0,12)+" "+(n||"0"));}}for(const k of keys)process.stdout.write("Failed assertion "+k+"\n");' "$log"
+              fi
               echo "::error::$stage failed in the restricted candidate"
               exit 1
             fi
@@ -51,6 +54,4 @@ jobs:
           run Install npm ci
           run Vite npm run build
           run Chromium-install npx playwright install --with-deps chromium
-          run Role-phone-contract node --test tests/inspect-feature-contract.test.mjs tests/inspect-native-contract.test.mjs tests/inspect-cross-app-interactions.test.mjs
-          run Role-phone-Chromium node --test tests/inspect-phone-gesture.test.mjs
           run Full-Node node --test --test-concurrency=1
