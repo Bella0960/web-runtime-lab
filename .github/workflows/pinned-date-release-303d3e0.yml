@@ -1,3 +1,4 @@
+# Re-run unchanged QA-only release after read-only source, build and preflight checks passed.
 name: Pinned isolated candidate release
 
 on:
