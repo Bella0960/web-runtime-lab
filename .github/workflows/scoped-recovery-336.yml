@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: cec5766e958f82701069b21116cad250d49e107e
+          ref: 965222011e82a6ab7905205814c32dfbbd47a191
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = 'cec5766e958f82701069b21116cad250d49e107e'
+          test "$(git -C candidate rev-parse HEAD)" = '965222011e82a6ab7905205814c32dfbbd47a191'
           cd candidate
           echo 'STAGE 1: dependencies'
           npm ci --no-audit --no-fund >"$RUNNER_TEMP/recovery-install.log" 2>&1 || { echo 'FAILED stage 1'; exit 1; }
@@ -70,4 +70,10 @@ jobs:
             node --input-type=module -e 'import { readFileSync } from "node:fs"; const s=readFileSync(process.env.RUNNER_TEMP+"/recovery-browser.log","utf8"); const m=s.match(/luck-room-browser\.mjs:(\d+):/); console.log("BROWSER_FAIL_LINE="+(m?m[1]:"unknown")); const lines=s.split(String.fromCharCode(10)); const err=lines.find(t=>t.trim().startsWith("Error: ")); const source=readFileSync("tests/luck-room-browser.mjs","utf8").split(String.fromCharCode(10)); const msg=err?err.trim().slice(7):""; const ix=msg?source.findIndex(t=>t.includes(msg)):-1; console.log("ASSERTION_SOURCE_LINE="+(ix>=0?ix+1:"unknown"));'
             echo 'FAILED stage 5'; exit 1;
           }
-          echo 'TARGETED RECOVERY GATES PASSED - no deployment'
+          echo 'TARGETED RECOVERY GATES PASSED'
+          echo 'STAGE 6: complete sequential Node regression'
+          node --test --test-concurrency=1 >"$RUNNER_TEMP/recovery-full-node.log" 2>&1 || {
+            awk '/^not ok [0-9]+/ { print "FAILED_TEST_ORDINAL=" $3 }' "$RUNNER_TEMP/recovery-full-node.log" | head -20 || true
+            echo 'FAILED stage 6'; exit 1;
+          }
+          echo 'ALL RECOVERY VERIFICATION GATES PASSED - no deployment'
