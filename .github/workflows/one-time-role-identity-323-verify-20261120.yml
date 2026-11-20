@@ -33,7 +33,7 @@ jobs:
       - name: Confirm exact PR323 source
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '542e3551b83be6c9ff71bb748464ddfc40948c82'
+          test "$(git -C candidate rev-parse HEAD)" = '11acd375d77bac38f2cb9ba481075c40e7677f51'
       - name: Run sealed focused Node, complete chat, build and Chromium
         run: |
           node --input-type=module <<'NODE'
