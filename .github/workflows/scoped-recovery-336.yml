@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: 965222011e82a6ab7905205814c32dfbbd47a191
+          ref: f82f71ebf49b74f7a8765a49149641dc999129cc
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '965222011e82a6ab7905205814c32dfbbd47a191'
+          test "$(git -C candidate rev-parse HEAD)" = 'f82f71ebf49b74f7a8765a49149641dc999129cc'
           cd candidate
           echo 'STAGE 1: dependencies'
           npm ci --no-audit --no-fund >"$RUNNER_TEMP/recovery-install.log" 2>&1 || { echo 'FAILED stage 1'; exit 1; }
