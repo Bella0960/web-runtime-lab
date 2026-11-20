@@ -56,12 +56,16 @@ jobs:
           }
           echo 'STAGE 3: full Vite build'
           npm run build >"$RUNNER_TEMP/recovery-build.log" 2>&1 || { echo 'FAILED stage 3'; exit 1; }
+          if [[ ! -f dist/luck-room/luck-room.html ]]; then echo 'FAILED built app HTML missing'; exit 1; fi
+          echo 'BUILT_APP_ROUTE_PRESENT'
           echo 'STAGE 4: chromium dependencies'
           npx playwright install --with-deps chromium >"$RUNNER_TEMP/recovery-chrome.log" 2>&1 || { echo 'FAILED stage 4'; exit 1; }
           echo 'STAGE 5: interactive chromium regression'
           python3 -m http.server 4173 --bind 127.0.0.1 --directory dist >"$RUNNER_TEMP/recovery-static-server.log" 2>&1 &
           STATIC_SERVER_PID=$!
           trap 'kill "$STATIC_SERVER_PID" 2>/dev/null || true' EXIT
+          sleep 2
+          curl -s -o /dev/null --max-time 5 -w 'STATIC_APP_HTTP_STATUS=%{http_code}\n' http://127.0.0.1:4173/luck-room/luck-room.html || true
           LUCK_ROOM_BASE_URL=http://127.0.0.1:4173 node tests/luck-room-browser.mjs >"$RUNNER_TEMP/recovery-browser.log" 2>&1 || {
             node --input-type=module -e 'import { readFileSync } from "node:fs"; const s=readFileSync(process.env.RUNNER_TEMP+"/recovery-browser.log","utf8"); const m=s.match(/luck-room-browser\.mjs:(\d+):/); console.log("BROWSER_FAIL_LINE="+(m?m[1]:"unknown")); console.log("BROWSER_KIND="+(/TimeoutError/.test(s)?"Timeout":/AssertionError/.test(s)?"Assertion":"Other"));'
             echo 'FAILED stage 5'; exit 1;
