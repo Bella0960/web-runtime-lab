@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: 542e3551b83be6c9ff71bb748464ddfc40948c82
+          ref: 11acd375d77bac38f2cb9ba481075c40e7677f51
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
