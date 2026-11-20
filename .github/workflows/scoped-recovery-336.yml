@@ -1,0 +1,60 @@
+name: Isolated recovery module verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/scoped-recovery-336.yml'
+permissions:
+  contents: read
+concurrency:
+  group: scoped-recovery-336
+  cancel-in-progress: false
+jobs:
+  candidate:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Public isolation guard
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prevent private source in public runner repo
+        run: node scripts/public-content-check.mjs
+      - name: Restricted repository configuration
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          test -n "$SOURCE_REPOSITORY" && test -n "$SOURCE_TOKEN"
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::$(basename "$SOURCE_REPOSITORY")"
+      - name: Checkout pinned candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: f7ec247bb7a9b8c6585fc9b409b23677bae3de4f
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+      - name: Verify source and run isolated recovery gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'f7ec247bb7a9b8c6585fc9b409b23677bae3de4f'
+          cd candidate
+          echo 'STAGE 1: dependencies'
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/recovery-install.log" 2>&1 || { echo 'FAILED stage 1'; exit 1; }
+          echo 'STAGE 2: dedicated contract'
+          node --test tests/luck-room-contract.test.mjs >"$RUNNER_TEMP/recovery-contract.log" 2>&1 || { echo 'FAILED stage 2'; exit 1; }
+          echo 'STAGE 3: full Vite build'
+          npm run build >"$RUNNER_TEMP/recovery-build.log" 2>&1 || { echo 'FAILED stage 3'; exit 1; }
+          echo 'STAGE 4: chromium dependencies'
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/recovery-chrome.log" 2>&1 || { echo 'FAILED stage 4'; exit 1; }
+          echo 'STAGE 5: interactive chromium regression'
+          node tests/luck-room-browser.mjs >"$RUNNER_TEMP/recovery-browser.log" 2>&1 || { echo 'FAILED stage 5'; exit 1; }
+          echo 'TARGETED RECOVERY GATES PASSED - no deployment'
