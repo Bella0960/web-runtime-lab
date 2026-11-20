@@ -1,0 +1,47 @@
+name: One-time shared parser private target regressions
+
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - '.github/workflows/one-time-shared-parser-targeted-20261120.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: one-time-shared-parser-targeted-20261120
+  cancel-in-progress: false
+
+jobs:
+  scoped-regression:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout existing public guard only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public metadata guard
+        run: node scripts/public-content-check.mjs
+      - name: Checkout restricted MAOMAO task branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: task/CHAT-PARSER-001-shared-response-20261120
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 35
+      - name: Pin exact private source commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '58143ad9be1c1617c90148db75261dc56f804231'
+      - name: Run only changed parser contract tests with sealed logs
+        run: node scripts/run-selected-regressions.mjs
