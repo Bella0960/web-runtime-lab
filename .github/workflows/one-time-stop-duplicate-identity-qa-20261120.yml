@@ -1,0 +1,19 @@
+name: One-time stop duplicate identity QA release
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-stop-duplicate-identity-qa-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: true
+jobs:
+  preserve_successful_qa:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Do not deploy or touch QA
+        run: echo "Duplicate QA release safely superseded after verified QA publication."
