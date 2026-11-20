@@ -25,7 +25,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = '5423e8f28e04995e61e98b484544aa22091075bb'
+          test "$(git rev-parse HEAD^)" = 'fdf191a6f2b6372a6ad4e3e5de457b3ed78887b2'
           test "$(git show --pretty='' --name-only HEAD | sed '/^$/d')" = '.github/workflows/qa-only-inspect-release.yml'
           node scripts/public-content-check.mjs
       - name: Verify restricted source and target configuration
@@ -58,5 +58,5 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '508b6f4c6b85bba4e7c09fa2c7414776a39864bf'
+          test "$(git -C candidate rev-parse HEAD)" = 'faa4223a8d52b6d3f02f7a58b450a5349858b134'
           node scripts/run-candidate.mjs release
