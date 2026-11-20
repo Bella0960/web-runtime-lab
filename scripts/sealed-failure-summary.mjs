@@ -20,8 +20,25 @@ export function summarizeSealedFailure(releaseSource, sealedLog, { timedOut = fa
     return 'gate-' + (index + 1) + '-of-' + gates.length + '-' + category;
   }
   if (stopped) {
-    return String(sealedLog).includes('Node, Vite and Chromium tests passed.')
-      ? 'post-test-safety-gate' : 'initial-safety-gate';
+    if (!String(sealedLog).includes('Node, Vite and Chromium tests passed.'))
+      return 'initial-safety-gate';
+    // Fixed allowlist: output generic post-test stage only, never private values.
+    for (const [pattern, category] of [
+      ['Tests altered the checkout', 'posttest-dirty-checkout'],
+      ['QA Vite asset missing', 'posttest-missing-dist'],
+      ['Unexpected remote branch ref', 'posttest-remote-branch'],
+      ['QA Worker was deployed by another release', 'posttest-worker-race'],
+      ['QA identity core changed', 'posttest-core-race'],
+      ['Read-only Cloudflare preflight failed at', 'posttest-cloudflare-api'],
+      ['QA bootstrap lifecycle mismatch', 'posttest-identity-bootstrap'],
+      ['The original QA founder/admin no longer matches', 'posttest-founder-state'],
+      ['The isolated identity core contains conflicting accounts', 'posttest-core-state'],
+      ['QA snapshot', 'posttest-snapshot'],
+      ['Release would unexpectedly change', 'posttest-binding-change']
+    ]) {
+      if (stopped.includes(pattern)) return category;
+    }
+    return 'post-test-safety-gate';
   }
   return 'unclassified-private-failure';
 }
