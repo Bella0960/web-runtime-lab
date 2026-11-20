@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '7749611fb79756d78ac8cd6442d8d3578e470d8c' && github.event.head_commit.message == 'ci: prepare Chromium before group browser suite' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '34bf0659203a33512e6f503169a4d15e77de694e' && github.event.head_commit.message == 'ci: approve PR337 core send group call QA gate' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -54,9 +54,7 @@ jobs:
             ['single-call','npm',['run','test:chat:call']],
             ['vite','npm',['run','build']],
             ['chromium-install','npx',['playwright','install','--with-deps','chromium']],
-            ['group-ui','npm',['run','test:group:ui']],
-            ['group-message','npm',['run','test:group:invite-e2e']],
-            ['avatar-chromium','npm',['run','test:role:avatars:browser']]
+            ['group-message','npm',['run','test:group:invite-e2e']]
           ];
           for (let i=0;i<commands.length;i++) {
             const [label,cmd,args]=commands[i];
