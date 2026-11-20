@@ -1,0 +1,65 @@
+name: One-time restricted music import test
+
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - '.github/workflows/one-time-music-picker-verify-20261120.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: one-time-music-import-verify-20261120
+  cancel-in-progress: false
+
+jobs:
+  music-import:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout existing public guard
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce public metadata isolation
+        run: node scripts/public-content-check.mjs
+      - name: Checkout restricted private music task
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: task/MUSIC-IMPORT-003-android-picker-read-20261120
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Assert exact private source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '867ce2e3946542f5adcca3a83f6a131b5d259411'
+      - name: Run sealed music import and integrity tests
+        run: |
+          node --input-type=module <<'NODE'
+          import { spawnSync } from 'node:child_process';
+          const suite = [
+            'tests/music-extensionless-import.test.mjs',
+            'tests/music-data-integrity.test.mjs'
+          ];
+          for (const [index, path] of suite.entries()) {
+            const run = spawnSync(process.execPath, ['--test', path], {
+              cwd: 'candidate',
+              stdio: 'ignore',
+              timeout: 150000
+            });
+            if (run.status !== 0 || run.error) {
+              throw new Error('Sealed music regression failed at gate ' + (index + 1));
+            }
+          }
+          console.log('PASS: two isolated music import and data-integrity suites');
+          NODE
