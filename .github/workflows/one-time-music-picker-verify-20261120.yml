@@ -1,4 +1,4 @@
-name: One-time restricted group private history regression
+name: One-time restricted persona source retry regression
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: task-CHAT-HISTORY-001/group-private-contract-20261120
+          ref: task-CHAT-RP-001/required-source-retry-20261120
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -42,8 +42,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '6b060a8095dd11537c80035b6bc91626c59b76ca'
-      - name: Run sealed group and history integrity tests
+          test "$(git -C candidate rev-parse HEAD)" = '29da1f47a702e14553a8cf47f2aeebcfc73053a1'
+      - name: Run sealed persona source and chat contracts
         run: |
           node --input-type=module <<'NODE'
           import { spawnSync } from 'node:child_process';
@@ -52,11 +52,11 @@ jobs:
           });
           if (setup.status !== 0 || setup.error) throw new Error('Sealed dependency gate failed');
           const suite = [
-            'tests/group-turn-integration.test.mjs',
-            'tests/chat-history-atomic.test.mjs',
-            'tests/chat-history-corruption-guard.test.mjs',
-            'tests/group-private-receipt-recovery.test.mjs',
-            'tests/group-speaker-scoped-history.test.mjs'
+            'tests/chat-required-source-retry.test.mjs',
+            'tests/chat-persona-sources-mandatory.test.mjs',
+            'tests/chat-protocol-worldbook-priority.test.mjs',
+            'tests/chat-primary-send-lock.test.mjs',
+            'tests/chat-direct-online-identity-guard.test.mjs'
           ];
           for (const [index, path] of suite.entries()) {
             const run = spawnSync(process.execPath, ['--test', path], {
@@ -65,13 +65,13 @@ jobs:
               timeout: 150000
             });
             if (run.status !== 0 || run.error) {
-              throw new Error('Sealed group history regression failed at gate ' + (index + 1));
+              throw new Error('Sealed persona source regression failed at gate ' + (index + 1));
             }
           }
           const contract = spawnSync('npm', ['run', 'test:chat:contract'], {
             cwd: 'candidate', stdio: 'ignore', timeout: 240000
           });
           if (contract.status !== 0 || contract.error) throw new Error('Sealed full chat contract gate failed');
-          console.log('PASS: five group/history suites and complete chat contract gate');
+          console.log('PASS: five persona/source suites and complete chat contract gate');
           NODE
 
