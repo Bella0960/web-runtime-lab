@@ -12,9 +12,9 @@ concurrency:
 jobs:
   gate:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'c5e66240072fe7d2806d152e450b99a0b84669ac' && github.event.head_commit.message == 'ci: guarded group reply verify b720482' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'cfbf04e2ec8e21f63e8a61838556e6fcb610ad1c' && github.event.head_commit.message == 'ci: diagnose sealed group regression' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 85
     steps:
       - name: Public guard checkout
         uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
       - name: Execute private targeted Node and Vite checks with sealed output
         run: |
           node --input-type=module <<'NODE'
-          import { spawnSync } from 'node:child_process';
+          import { execFileSync, spawnSync } from 'node:child_process';
           import { readFileSync } from 'node:fs';
           import { runInNewContext } from 'node:vm';
           const release = readFileSync('candidate/scripts/qa-direct-release.mjs', 'utf8');
@@ -51,15 +51,20 @@ jobs:
           for (let index = 0; index < gates.length; index++) {
             const [cmd,args] = gates[index];
             const run = spawnSync(cmd,args,{
-              cwd:'candidate',encoding:'utf8',maxBuffer:20*1024*1024,timeout:12*60*1000
+              cwd:'candidate',encoding:'utf8',maxBuffer:100*1024*1024,timeout:30*60*1000
             });
             if (run.error || run.status !== 0) {
               console.log('SEALED_FAILED_GATE_ORDINAL: ' + (index+1));
               const output = (run.stdout || '') + (run.stderr || '');
               const labels = ['sheet stays below the composer','sheet meets the bottom edge','both rows stay single line and unclipped','group actions are disabled in direct chat','intercepts pointer events','TimeoutError','SyntaxError','ERR_ASSERTION','test failed','role sticker favorites are selected','role sticker favorites are selected'];
               for (const label of labels) if (output.includes(label)) console.log('SAFE_FAILURE_LABEL: ' + label);
-              const browserLine = output.match(/chat-light-surfaces-browser\.mjs:(\d+):\d+/)?.[1];
-              if (browserLine) console.log('BROWSER_ASSERTION_LINE: ' + browserLine);
+              const files = execFileSync('git',['-C','candidate','ls-files'],{encoding:'utf8'}).split('\n').filter(p=>p.startsWith('tests/')).sort();
+              const failed = [...output.matchAll(/(?:test at |file:\/\/[^\n]*?\/)(tests\/[^:\s]+):(\d+)/g)];
+              for (const [file,line] of new Map(failed.map(m=>[m[1],m[2]]))) {
+                const idx = files.indexOf(file);
+                if (idx !== -1) console.log('SEALED_TEST_INDEX: '+idx+' LINE: '+line);
+              }
+              if (run.error?.code) console.log('SEALED_RUN_ERROR: '+run.error.code);
               throw new Error('Private candidate premerge gate failed (no private logs emitted)');
             }
             console.log('SEALED_PASS_GATE_ORDINAL: ' + (index+1));
