@@ -1,4 +1,4 @@
-name: One-time restricted account switch scope regression
+name: One-time restricted chat prompt payload diagnostic regression
 
 on:
   push:
@@ -10,11 +10,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: one-time-account-context-regression-20261120
+  group: one-time-prompt-system-regression-20261120
   cancel-in-progress: false
 
 jobs:
-  account-context:
+  prompt-system:
     if: github.actor == github.repository_owner
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -29,11 +29,11 @@ jobs:
           node-version: '22'
       - name: Enforce public metadata isolation
         run: node scripts/public-content-check.mjs
-      - name: Checkout restricted account context candidate
+      - name: Checkout restricted prompt system candidate
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: task-ACC-001/account-context-switch-20261120
+          ref: task-CHAT-PROMPT-001/qa-payload-debug-source-first-20261120
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -42,8 +42,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '94a7083ec7cde7618af9a43ab6bf296d08e99448'
-      - name: Run sealed account isolation and session contracts
+          test "$(git -C candidate rev-parse HEAD)" = 'c41b1b531715b596e5af261b8a345a80504fb405'
+      - name: Run sealed prompt, regex and chat contracts
         run: |
           node --input-type=module <<'NODE'
           import { spawnSync } from 'node:child_process';
@@ -52,10 +52,9 @@ jobs:
           });
           if (setup.status !== 0 || setup.error) throw new Error('Sealed dependency gate failed');
           const suite = [
-            'tests/account-storage-isolation.test.mjs',
-            'tests/account-session-expiry.test.mjs',
-            'tests/account-identity-bridge-probe.test.mjs',
-            'tests/account-qa-admin-proxy.test.mjs'
+            'tests/chat-prompt-payload-diagnostic.test.mjs',
+            'tests/chat-protocol-worldbook-priority.test.mjs',
+            'tests/regex-editor-ui.test.mjs'
           ];
           for (const [index, path] of suite.entries()) {
             const run = spawnSync(process.execPath, ['--test', path], {
@@ -64,9 +63,15 @@ jobs:
               timeout: 150000
             });
             if (run.status !== 0 || run.error) {
-              throw new Error('Sealed account isolation regression failed at gate ' + (index + 1));
+              throw new Error('Sealed prompt system regression failed at gate ' + (index + 1));
             }
           }
-          console.log('PASS: four account isolation/session/identity contract suites');
+          const contract = spawnSync('npm', ['run', 'test:chat:contract'], {
+            cwd: 'candidate', stdio: 'ignore', timeout: 240000
+          });
+          if (contract.status !== 0 || contract.error) {
+            throw new Error('Sealed complete chat contract regression failed');
+          }
+          console.log('PASS: three targeted regex/prompt/QA diagnostic suites and complete chat contract');
           NODE
 
