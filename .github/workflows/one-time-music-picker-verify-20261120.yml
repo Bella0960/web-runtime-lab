@@ -1,4 +1,4 @@
-name: One-time restricted prompt full-suite contract alignment
+name: One-time restricted source-first prompt regression
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: one-time-prompt-contract-alignment-20261120
+  group: one-time-prompt-source-first-20261120
   cancel-in-progress: false
 
 jobs:
@@ -29,11 +29,11 @@ jobs:
           node-version: '22'
       - name: Enforce public metadata isolation
         run: node scripts/public-content-check.mjs
-      - name: Checkout restricted prompt contract alignment
+      - name: Checkout restricted source-first prompt
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: task-CHAT-PROMPT-001/align-full-suite-20261120
+          ref: task-CHAT-PROMPT-001/source-priority-cleanup-20261120
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -42,8 +42,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '889b70c7b36d7fc563e19887ec079f1d06d161ee'
-      - name: Run sealed old and new role identity contracts
+          test "$(git -C candidate rev-parse HEAD)" = '39aa0eedcf67dc73adb8e18e1a5f3b4ead8dd89b'
+      - name: Run sealed source-first prompt and regex contracts
         run: |
           node --input-type=module <<'NODE'
           import { spawnSync } from 'node:child_process';
@@ -56,6 +56,7 @@ jobs:
             'tests/chat-group-speaker-and-home-layout.test.mjs',
             'tests/chat-prompt-payload-diagnostic.test.mjs',
             'tests/chat-protocol-worldbook-priority.test.mjs',
+            'tests/chat-persona-sources-mandatory.test.mjs',
             'tests/regex-editor-ui.test.mjs'
           ];
           for (const [index, path] of suite.entries()) {
@@ -100,7 +101,7 @@ jobs:
             console.log('SEALED_FAILED_FILE_ORDINALS: ' + failed.join(','));
             throw new Error('Sealed per-file Node regression gate failed');
           }
-          console.log('PASS: original compact prompt and entire Node test suite');
+          console.log('PASS: source-first prompt, full chat contract, Vite build and entire Node test suite');
 
           NODE
 
