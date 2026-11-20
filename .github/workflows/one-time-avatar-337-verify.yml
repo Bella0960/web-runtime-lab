@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'eac5e6526243d5c59a2daa56f0b7a857686f77cc' && github.event.head_commit.message == 'ci: diagnose PR337 real mobile Chromium failure' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'e32f20a2841f7d3774f944ec00be89ab17b3ee85' && github.event.head_commit.message == 'ci: identify PR337 mobile viewport discrepancy' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -38,7 +38,7 @@ jobs:
       - name: Enforce immutable private candidate
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '998fbf38df19e96970a2ba4ed7a29f5d6420d29e'
+          test "$(git -C candidate rev-parse HEAD)" = 'adcc43834e5cf5a68fa158f447328b346c884a80'
           test -z "$(git -C candidate status --porcelain)"
       - name: Sealed original Node Vite Chromium and full regression
         run: |
@@ -61,6 +61,14 @@ jobs:
               console.log('SEALED_FAILED_GATE: '+label+' ('+(i+1)+'/'+commands.length+')');
               const browserLine=[...out.matchAll(/chat-avatar-manager-browser\.mjs:(\d+):(\d+)/g)].map(m=>m[1]).find(Boolean);
               if(browserLine) console.log('BROWSER_ASSERTION_LINE: '+browserLine);
+              const viewport=out.match(/frame must fit viewport: (\{[^\n]+\})/);
+              if(viewport) {
+                try {
+                  const v=JSON.parse(viewport[1]);
+                  if(['width','frameX','frameRight','viewportWidth'].every(k=>Number.isFinite(v[k])))
+                    console.log('SAFE_VIEWPORT_GEOMETRY: '+[v.width,v.frameX,v.frameRight,v.viewportWidth].join(','));
+                } catch(_) {}
+              }
               const bad=[...out.matchAll(/^not ok (\d+) -/gm)].slice(0,8).map(m=>m[1]);
               if(bad.length) console.log('FAILED_TEST_ORDINALS: '+bad.join(','));
               for(const x of ['ERR_ASSERTION','SyntaxError','TimeoutError','Cannot find module','PLAYWRIGHT_BROWSERS_PATH']) if(out.includes(x)) console.log('SAFE_ERROR_CLASS: '+x);
