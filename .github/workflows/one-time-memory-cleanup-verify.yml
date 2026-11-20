@@ -6,12 +6,12 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: sealed-candidate
+  group: sealed-memory-verification
   cancel-in-progress: false
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'aa14375557b5ffe27eab42def1a49deec4509808' && github.event.head_commit.message == 'ci: run isolated memory cleanup verification' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '9b4a8670fd4e725b14652f0b9f5ce84b42e87494' && github.event.head_commit.message == 'ci: verify updated memory cleanup candidate' }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -27,7 +27,7 @@ jobs:
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          ref: '09989209a5da70e0acdb458e8e2b9bab0ca2776c'
+          ref: 'b330700689acc71a7e4cb26111c7de19ad2a8d9b'
           path: candidate
           persist-credentials: false
       - name: Verify exact checkout and run sealed regression
@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '09989209a5da70e0acdb458e8e2b9bab0ca2776c'
+          test "$(git rev-parse HEAD)" = 'b330700689acc71a7e4cb26111c7de19ad2a8d9b'
           log="$(mktemp)"
           trap 'rm -f "$log"' EXIT
           run() {
