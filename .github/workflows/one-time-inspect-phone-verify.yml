@@ -11,7 +11,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '22647f7231840afa94e7e3be649a922c71da4c57' && github.event.head_commit.message == 'ci: diagnose role phone full regression' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '04ebc2476df79eff27c16a204dcd814347c09fbe' && github.event.head_commit.message == 'ci: verify compact role phone requests' }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -27,7 +27,7 @@ jobs:
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          ref: '1d8e940fd58b38c3e939f3967cc54c2fecad4082'
+          ref: 'd6c837d51d71d3ed398dacb7bfda95cb0aaf6afc'
           path: candidate
           persist-credentials: false
       - name: Verify exact checkout and run sealed regression
@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '1d8e940fd58b38c3e939f3967cc54c2fecad4082'
+          test "$(git rev-parse HEAD)" = 'd6c837d51d71d3ed398dacb7bfda95cb0aaf6afc'
           log="$(mktemp)"
           trap 'rm -f "$log"' EXIT
           run() {
@@ -54,4 +54,5 @@ jobs:
           run Install npm ci
           run Vite npm run build
           run Chromium-install npx playwright install --with-deps chromium
+          run Role-phone-Chromium node --test tests/inspect-phone-gesture.test.mjs
           run Full-Node node --test --test-concurrency=1
