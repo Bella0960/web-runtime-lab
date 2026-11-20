@@ -1,0 +1,55 @@
+name: Isolated memory cleanup verification
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-memory-cleanup-verify.yml]
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: ${{ github.actor == github.repository_owner && github.event.before == '0f103c042370a952fc39ffd3522da21fe3b07c3f' && github.event.head_commit.message == 'ci: verify isolated memory cleanup candidate' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/public-content-check.mjs
+      - name: Checkout restricted candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          ref: '09989209a5da70e0acdb458e8e2b9bab0ca2776c'
+          path: candidate
+          persist-credentials: false
+      - name: Verify exact checkout and run sealed regression
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '09989209a5da70e0acdb458e8e2b9bab0ca2776c'
+          log="$(mktemp)"
+          trap 'rm -f "$log"' EXIT
+          run() {
+            local stage="$1"
+            shift
+            if "$@" >"$log" 2>&1; then
+              echo "$stage passed"
+            else
+              echo "::error::$stage failed in the restricted candidate"
+              exit 1
+            fi
+          }
+          run Install npm ci
+          run Vite npm run build
+          run Chromium-install npx playwright install --with-deps chromium
+          run Memory-storage node --test tests/memory-space-cleanup.test.mjs
+          run Memory-Chromium node --test tests/memory-space-cleanup.browser.test.mjs
+          run Full-Node node --test --test-concurrency=1
