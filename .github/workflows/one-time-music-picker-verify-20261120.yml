@@ -1,4 +1,4 @@
-name: One-time restricted persona source retry regression
+name: One-time restricted account switch scope regression
 
 on:
   push:
@@ -10,11 +10,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: one-time-chat-history-regression-20261120
+  group: one-time-account-context-regression-20261120
   cancel-in-progress: false
 
 jobs:
-  chat-history:
+  account-context:
     if: github.actor == github.repository_owner
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -29,11 +29,11 @@ jobs:
           node-version: '22'
       - name: Enforce public metadata isolation
         run: node scripts/public-content-check.mjs
-      - name: Checkout restricted private chat history candidate
+      - name: Checkout restricted account context candidate
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: task-CHAT-RP-001/required-source-retry-20261120
+          ref: task-ACC-001/account-context-switch-20261120
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -42,8 +42,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '3c1a7fdc82eb8095278a069b8e68a6d36df61f2c'
-      - name: Run sealed persona source and chat contracts
+          test "$(git -C candidate rev-parse HEAD)" = '94a7083ec7cde7618af9a43ab6bf296d08e99448'
+      - name: Run sealed account isolation and session contracts
         run: |
           node --input-type=module <<'NODE'
           import { spawnSync } from 'node:child_process';
@@ -52,11 +52,10 @@ jobs:
           });
           if (setup.status !== 0 || setup.error) throw new Error('Sealed dependency gate failed');
           const suite = [
-            'tests/chat-required-source-retry.test.mjs',
-            'tests/chat-persona-sources-mandatory.test.mjs',
-            'tests/chat-protocol-worldbook-priority.test.mjs',
-            'tests/chat-primary-send-lock.test.mjs',
-            'tests/chat-direct-online-identity-guard.test.mjs'
+            'tests/account-storage-isolation.test.mjs',
+            'tests/account-session-expiry.test.mjs',
+            'tests/account-identity-bridge-probe.test.mjs',
+            'tests/account-qa-admin-proxy.test.mjs'
           ];
           for (const [index, path] of suite.entries()) {
             const run = spawnSync(process.execPath, ['--test', path], {
@@ -65,13 +64,9 @@ jobs:
               timeout: 150000
             });
             if (run.status !== 0 || run.error) {
-              throw new Error('Sealed persona source regression failed at gate ' + (index + 1));
+              throw new Error('Sealed account isolation regression failed at gate ' + (index + 1));
             }
           }
-          const contract = spawnSync('npm', ['run', 'test:chat:contract'], {
-            cwd: 'candidate', stdio: 'ignore', timeout: 240000
-          });
-          if (contract.status !== 0 || contract.error) throw new Error('Sealed full chat contract gate failed');
-          console.log('PASS: five persona/source suites and complete chat contract gate');
+          console.log('PASS: four account isolation/session/identity contract suites');
           NODE
 
