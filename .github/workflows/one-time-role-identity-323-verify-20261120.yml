@@ -52,9 +52,12 @@ jobs:
           ];
           for (let i=0;i<gates.length;i++){
             const [bin,args]=gates[i];
-            const r=spawnSync(bin,args,{cwd:'candidate',stdio:'ignore',timeout:12*60*1000});
+            const r=spawnSync(bin,args,{cwd:'candidate',stdio:['ignore','pipe','pipe'],
+              encoding:'utf8',maxBuffer:3*1024*1024,timeout:12*60*1000});
             if(r.error||r.status!==0){
+              const ordinals=[...String(r.stdout||'').matchAll(/^not ok ([0-9]+) /gm)].map(x=>x[1]);
               console.log('SEALED_FAILED_GATE_ORDINAL: '+(i+1));
+              console.log('SEALED_FAILED_TEST_ORDINALS: '+(ordinals.join(',')||'setup'));
               throw Error('Restricted QA identity candidate check failed; private logs withheld');
             }
             console.log('SEALED_PASS_GATE_ORDINAL: '+(i+1));
