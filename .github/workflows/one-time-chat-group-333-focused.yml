@@ -12,7 +12,7 @@ concurrency:
 jobs:
   gate:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'ecc60f12375feb9426e274917832b5651c60845a' && github.event.head_commit.message == 'ci: run group browser reporter before test path' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '7dd5d27c95a896d6406e3710a13a4ee0b99f42d8' && github.event.head_commit.message == 'ci: isolate group reply persistence diagnostic' }}
     runs-on: ubuntu-latest
     timeout-minutes: 85
     steps:
@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = 'd4be37cf9a9792453c1bf30fcfa64436cbc35bd4'
+          test "$(git -C candidate rev-parse HEAD)" = '5ce52bd6bba093b3c2b134f2024da3edd1e303b9'
       - name: Execute private targeted Node and Vite checks with sealed output
         run: |
           node --input-type=module <<'NODE'
@@ -48,7 +48,7 @@ jobs:
           import { runInNewContext } from 'node:vm';
           const release = readFileSync('candidate/scripts/qa-direct-release.mjs', 'utf8');
           const gates = [['npm',['ci','--no-audit','--no-fund']],['npm',['run','build']],['npx',['playwright','install','--with-deps','chromium']],['node',['--test','--test-concurrency=1','tests/group-chat-invite-e2e.test.mjs']]];
-          writeFileSync('/tmp/sealed-test-reporter.mjs', "" + `const safe = new Set(['ERR_ASSERTION','TimeoutError','SyntaxError','ENOENT','ERR_TEST_FAILURE','TypeError','ReferenceError']);\nexport default async function* (source) { for await (const e of source) { if (e.type !== 'test:fail') continue; const d=e.data; const a=d.details?.error; const c=a?.cause || a; const kind=c?.code || c?.name; yield 'TEST_FAILURE ' + JSON.stringify([d.file || '',d.line || 0,safe.has(kind)?kind:'other', [...String(c?.stack || '').matchAll(/group-chat-invite-e2e[.]test[.]mjs:([0-9]+):/g)].map(x=>Number(x[1]))]) + '\\n'; } }`);
+          writeFileSync('/tmp/sealed-test-reporter.mjs', "" + `const safe = new Set(['ERR_ASSERTION','TimeoutError','SyntaxError','ENOENT','ERR_TEST_FAILURE','TypeError','ReferenceError']);\nexport default async function* (source) { for await (const e of source) { if (e.type !== 'test:fail') continue; const d=e.data; const a=d.details?.error; const c=a?.cause || a; const kind=c?.code || c?.name; const diagnostic=String(c?.message || '').match(/GROUP_DIAG ([^{}]*[{][^{}]*[}])/); yield 'TEST_FAILURE ' + JSON.stringify([d.file || '',d.line || 0,safe.has(kind)?kind:'other', [...String(c?.stack || '').matchAll(/group-chat-invite-e2e[.]test[.]mjs:([0-9]+):/g)].map(x=>Number(x[1])), diagnostic?.[1] || '']) + '\\n'; } }`);
           for (let index = 0; index < gates.length; index++) {
             const [cmd,args] = gates[index];
             if (cmd === 'node' && args.includes('--test-concurrency=1')) args.unshift('--test-reporter=/tmp/sealed-test-reporter.mjs');
@@ -67,9 +67,10 @@ jobs:
                 if (idx !== -1) console.log('SEALED_TEST_INDEX: '+idx+' LINE: '+line);
               }
               for (const match of output.matchAll(/^TEST_FAILURE (.+)$/gm)) {
-                const [full,line,kind,positions] = JSON.parse(match[1]);
+                const [full,line,kind,positions,diagnostic] = JSON.parse(match[1]);
                 const idx = files.findIndex(file => full.endsWith('/'+file) || full === file);
                 console.log('FAILED_TEST_INDEX: '+idx+' LINE: '+Number(line)+' KIND: '+kind+' STACK: '+positions.join(','));
+                if (diagnostic) console.log('SAFE_GROUP_DIAG '+diagnostic);
               }
               if (run.error?.code) console.log('SEALED_RUN_ERROR: '+run.error.code);
               throw new Error('Private candidate premerge gate failed (no private logs emitted)');
