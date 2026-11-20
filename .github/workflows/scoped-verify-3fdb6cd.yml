@@ -57,13 +57,33 @@ jobs:
           test "$(git -C candidate rev-parse HEAD)" = '3db5c6764d2daa12effd6bc0aa49a1ec16a91938'
           cd candidate
           node --input-type=module <<'JS'
-          import { readFileSync } from 'node:fs';
+          import { readFileSync, writeFileSync } from 'node:fs';
           import { spawnSync } from 'node:child_process';
           const source = readFileSync('scripts/qa-direct-release.mjs', 'utf8');
           const list = source.match(/const TESTS = (\[[\s\S]*?\n\]);/);
           if (!list) throw new Error('Release test list unavailable');
           const gates = Function('return ' + list[1])();
+          const reporter = process.env.RUNNER_TEMP + '/sealed-reporter.mjs';
+          writeFileSync(reporter, `import { createHash } from 'node:crypto';
+          export default async function* (events) {
+            for await (const event of events) {
+              if (event.type !== 'test:fail') continue;
+              const d = event.data;
+              const file = (d.file || '').replace(process.cwd() + '/', '');
+              const hash = createHash('sha256').update(file).digest('hex').slice(0, 12);
+              yield 'SEALED_FAIL ' + hash + ':' + (Number(d.line) || 0) + '\\n';
+            }
+          }`);
           for (const [index, [command, args]] of gates.entries()) {
+            if (index === 16) args.push('--test-reporter=' + reporter);
+            if (index === 16) {
+              const failure = spawnSync(command, args, {encoding:'utf8', maxBuffer: 32 * 1024 * 1024, timeout: 4500000});
+              for (const line of (failure.stdout || '').split('\n')) {
+                if (/^SEALED_FAIL [a-f0-9]{12}:\d+$/.test(line)) console.log(line);
+              }
+              if (failure.status !== 0) throw new Error('Full Node regression failed');
+              continue;
+            }
             const result = spawnSync(command, args, {stdio:'ignore', timeout: 4500000});
             if (result.status !== 0) throw new Error('Candidate failed at gate ' + (index + 1) + ' of ' + gates.length);
           }
