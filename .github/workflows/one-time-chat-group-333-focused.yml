@@ -1,0 +1,80 @@
+name: Group browser timeout diagnostic
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-chat-group-333-focused.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-group-browser-diagnostic
+  cancel-in-progress: false
+jobs:
+  gate:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '9e6fefd61868642232c75968d596078b3306356f' && github.event.head_commit.message == 'ci: diagnose the isolated group browser timeout' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    steps:
+      - name: Public guard checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce public metadata isolation
+        run: node scripts/public-content-check.mjs
+      - name: Checkout immutable private candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: task-CHAT-GROUP-001/group-reply-integrity
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Require exactly approved candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'd4be37cf9a9792453c1bf30fcfa64436cbc35bd4'
+      - name: Execute private targeted Node and Vite checks with sealed output
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync, spawnSync } from 'node:child_process';
+          import { writeFileSync, readFileSync } from 'node:fs';
+          import { runInNewContext } from 'node:vm';
+          const release = readFileSync('candidate/scripts/qa-direct-release.mjs', 'utf8');
+          const gates = [['npm',['ci','--no-audit','--no-fund']],['npm',['run','build']],['npx',['playwright','install','--with-deps','chromium']],['node',['--test','--test-concurrency=1','tests/group-chat-invite-e2e.test.mjs']]];
+          writeFileSync('/tmp/sealed-test-reporter.mjs', "" + `const safe = new Set(['ERR_ASSERTION','TimeoutError','SyntaxError','ENOENT','ERR_TEST_FAILURE','TypeError','ReferenceError']);\nexport default async function* (source) { for await (const e of source) { if (e.type !== 'test:fail') continue; const d=e.data; const a=d.details?.error; const c=a?.cause || a; const kind=c?.code || c?.name; yield 'TEST_FAILURE ' + JSON.stringify([d.file || '',d.line || 0,safe.has(kind)?kind:'other', [...String(c?.stack || '').matchAll(/group-chat-invite-e2e[.]test[.]mjs:([0-9]+):/g)].map(x=>Number(x[1]))]) + '\\n'; } }`);
+          for (let index = 0; index < gates.length; index++) {
+            const [cmd,args] = gates[index];
+            if (cmd === 'node' && args.includes('--test-concurrency=1')) args.push('--test-reporter=/tmp/sealed-test-reporter.mjs');
+            const run = spawnSync(cmd,args,{
+              cwd:'candidate',encoding:'utf8',maxBuffer:100*1024*1024,timeout:30*60*1000
+            });
+            if (run.error || run.status !== 0) {
+              console.log('SEALED_FAILED_GATE_ORDINAL: ' + (index+1));
+              const output = (run.stdout || '') + (run.stderr || '');
+              const labels = ['sheet stays below the composer','sheet meets the bottom edge','both rows stay single line and unclipped','group actions are disabled in direct chat','intercepts pointer events','TimeoutError','SyntaxError','ERR_ASSERTION','test failed','role sticker favorites are selected','role sticker favorites are selected'];
+              for (const label of labels) if (output.includes(label)) console.log('SAFE_FAILURE_LABEL: ' + label);
+              const files = execFileSync('git',['-C','candidate','ls-files'],{encoding:'utf8'}).split('\n').filter(p=>p.startsWith('tests/')).sort();
+              const failed = [...output.matchAll(/(?:test at |file:\/\/[^\n]*?\/)(tests\/[^:\s]+):(\d+)/g)];
+              for (const [file,line] of new Map(failed.map(m=>[m[1],m[2]]))) {
+                const idx = files.indexOf(file);
+                if (idx !== -1) console.log('SEALED_TEST_INDEX: '+idx+' LINE: '+line);
+              }
+              for (const match of output.matchAll(/^TEST_FAILURE (.+)$/gm)) {
+                const [full,line,kind,positions] = JSON.parse(match[1]);
+                const idx = files.findIndex(file => full.endsWith('/'+file) || full === file);
+                console.log('FAILED_TEST_INDEX: '+idx+' LINE: '+Number(line)+' KIND: '+kind+' STACK: '+positions.join(','));
+              }
+              if (run.error?.code) console.log('SEALED_RUN_ERROR: '+run.error.code);
+              throw new Error('Private candidate premerge gate failed (no private logs emitted)');
+            }
+            console.log('SEALED_PASS_GATE_ORDINAL: ' + (index+1));
+          }
+          console.log('PASS: all private release test gates');
+          NODE
