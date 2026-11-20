@@ -1,0 +1,50 @@
+name: One-time final sealed role identity QA-only deployment
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-role-identity-324-final-release-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  qa_release:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '7bbc5dbf185b7466048d95cd89ae16c15786c0f7' && github.event.head_commit.message == 'ci: final identity QA-only release after sealed preflight verification' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout existing public safety scripts
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify public isolation policy
+        run: node scripts/public-content-check.mjs
+      - name: Checkout original private QA branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Require immutable approved QA source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'b3875a53a4625e4e83d75920ec31af2db8bceacf'
+          test "$(git -C candidate branch --show-current)" = 'integration/account-fanwai-stack-20261115'
+          test -z "$(git -C candidate status --porcelain)"
+      - name: Run original complete Node Vite Chromium gates and QA-only deployment
+        env:
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: node scripts/run-candidate.mjs release
