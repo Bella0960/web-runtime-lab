@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '7749611fb79756d78ac8cd6442d8d3578e470d8c' && github.event.head_commit.message == 'ci: verify PR337 mobile portrait viewport in isolation' }}
+      ${{ github.actor == github.repository_owner && github.event.head_commit.message == 'ci: rerun isolated PR337 Chromium on pinned source' }}
     runs-on: ubuntu-latest
     timeout-minutes: 75
     steps:
@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: task-CHAT-AVATAR-003/restore-pr278-qa-20261121
+          ref: 59b12f75b5218aa8513c835e165ba42e012fb282
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
