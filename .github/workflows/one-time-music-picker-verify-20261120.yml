@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '8700bf1b9142f2827f26491ed7966f6c8ff337df'
+          test "$(git -C candidate rev-parse HEAD)" = '392187a0f741759514109574cb39da0bcbfa8c0c'
       - name: Run sealed memory worldbook and minimal persona contracts
         run: |
           node --input-type=module <<'NODE'
@@ -60,6 +60,7 @@ jobs:
             'tests/chat-persona-sources-mandatory.test.mjs',
             'tests/offline-worldbook-binding-parity.test.mjs'
           ];
+          const scopedFailures = [];
           for (const [index, path] of suite.entries()) {
             const run = spawnSync(process.execPath, ['--test', path], {
               cwd: 'candidate',
@@ -71,9 +72,10 @@ jobs:
               const failedNumbers = [...String(run.stdout || '').matchAll(/^not ok ([0-9]+) /gm)]
                 .map(x => x[1]).join(',');
               console.log('SEALED_FAILED_SUBTEST_ORDINALS: ' + (index + 1) + ':' + failedNumbers);
-              throw new Error('Sealed role isolation regression failed at gate ' + (index + 1));
+              scopedFailures.push(index + 1);
             }
           }
+          if (scopedFailures.length) throw new Error('Sealed role isolation gates failed: ' + scopedFailures.join(','));
           const contract = spawnSync('npm', ['run', 'test:chat:contract'], {
             cwd: 'candidate', stdio: 'ignore', timeout: 240000
           });
