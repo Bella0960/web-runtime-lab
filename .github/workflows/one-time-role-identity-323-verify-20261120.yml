@@ -58,6 +58,12 @@ jobs:
               const ordinals=[...String(r.stdout||'').matchAll(/^not ok ([0-9]+) /gm)].map(x=>x[1]);
               console.log('SEALED_FAILED_GATE_ORDINAL: '+(i+1));
               console.log('SEALED_FAILED_TEST_ORDINALS: '+(ordinals.join(',')||'setup'));
+              const tap=String(r.stdout||'');
+              const failedBlock=tap.match(/^not ok 7 [^\\n]*\\n([\\s\\S]*?)(?=^not ok |^ok |^1\\.\\.|$)/m);
+              const line=failedBlock&&failedBlock[1].match(/location:\\s*['"]?[^\\n]*chat-strict-role-isolation\\.test\\.mjs:([0-9]+):[0-9]+/);
+              const failure=failedBlock&&failedBlock[1].match(/error:\\s*['"]?([^\\n]+)/);
+              console.log('SEALED_FAILED_SOURCE_LINE: '+(line?line[1]:'unresolved'));
+              console.log('SEALED_FAILED_ERROR_CATEGORY: '+(failure?(/AssertionError/.test(failure[1])?'AssertionError':'other'):'unresolved'));
               throw Error('Restricted QA identity candidate check failed; private logs withheld');
             }
             console.log('SEALED_PASS_GATE_ORDINAL: '+(i+1));
