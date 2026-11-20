@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '06375d0af3333e23372702a295a9f3e62ad692fd'
+          test "$(git -C candidate rev-parse HEAD)" = '9adc01f5d9f313821fb7924a32a22e54aaf4d14b'
       - name: Run sealed memory worldbook and minimal persona contracts
         run: |
           node --input-type=module <<'NODE'
