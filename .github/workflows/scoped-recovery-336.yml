@@ -60,7 +60,7 @@ jobs:
           npx playwright install --with-deps chromium >"$RUNNER_TEMP/recovery-chrome.log" 2>&1 || { echo 'FAILED stage 4'; exit 1; }
           echo 'STAGE 5: interactive chromium regression'
           node tests/luck-room-browser.mjs >"$RUNNER_TEMP/recovery-browser.log" 2>&1 || {
-            node --input-type=module -e 'import { readFileSync } from "node:fs"; const s=readFileSync(process.env.RUNNER_TEMP+"/recovery-browser.log","utf8"); const m=s.match(/luck-room-browser\\.mjs:(\\d+):/); console.log("BROWSER_FAIL_LINE="+(m?m[1]:"unknown")); console.log("BROWSER_KIND="+(/TimeoutError/.test(s)?"Timeout":/AssertionError/.test(s)?"Assertion":"Other"));'
+            node --input-type=module -e 'import { readFileSync } from "node:fs"; const s=readFileSync(process.env.RUNNER_TEMP+"/recovery-browser.log","utf8"); const m=s.match(/luck-room-browser\.mjs:(\d+):/); console.log("BROWSER_FAIL_LINE="+(m?m[1]:"unknown")); console.log("BROWSER_KIND="+(/TimeoutError/.test(s)?"Timeout":/AssertionError/.test(s)?"Assertion":"Other"));'
             echo 'FAILED stage 5'; exit 1;
           }
           echo 'TARGETED RECOVERY GATES PASSED - no deployment'
