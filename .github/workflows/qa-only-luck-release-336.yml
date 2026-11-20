@@ -1,0 +1,62 @@
+name: One-time pinned QA-only recovery release
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/qa-only-luck-release-336.yml']
+permissions:
+  contents: read
+concurrency:
+  group: qa-only-release-gate
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public guard and exact parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = 'bcbea6af6df6343f7780368424d10fdc07eff748'
+          test "$(git show --pretty='' --name-only HEAD | sed '/^$/d')" = '.github/workflows/qa-only-luck-release-336.yml'
+          node scripts/public-content-check.mjs
+      - name: Verify restricted source and target configuration
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          ACCOUNT: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          DEPLOY: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SOURCE_REPOSITORY" && test -n "$SOURCE_TOKEN"
+          test -n "$ACCOUNT" && test -n "$DEPLOY"
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::$(basename "$SOURCE_REPOSITORY")"
+      - name: Checkout immutable QA candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: integration/account-fanwai-stack-20261115
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          persist-credentials: true
+          path: candidate
+          fetch-depth: 10
+      - name: Verify pinned SHA and invoke existing QA-only safety gate
+        shell: bash
+        env:
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '8e5bd9deca975b4ca4348d8f5e78d170a4b453a4'
+          node scripts/run-candidate.mjs release
