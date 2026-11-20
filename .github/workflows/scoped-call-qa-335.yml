@@ -1,0 +1,97 @@
+name: Isolated call UI candidate verification
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/scoped-call-qa-335.yml']
+permissions:
+  contents: read
+concurrency:
+  group: scoped-call-qa-335
+  cancel-in-progress: false
+jobs:
+  candidate:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public guard
+        run: node scripts/public-content-check.mjs
+      - name: Verify restricted source
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          test -n "$SOURCE_REPOSITORY" && test -n "$SOURCE_TOKEN"
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::$(basename "$SOURCE_REPOSITORY")"
+      - name: Checkout private candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: d373c7309f92f45a87d6663d4f0e5109385b2c8b
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+      - name: Node, Vite, Chromium pinned validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'd373c7309f92f45a87d6663d4f0e5109385b2c8b'
+          cd candidate
+          echo 'STAGE 1: dependencies'
+          npm ci --no-audit --no-fund >/dev/null 2>&1 || { echo 'FAILED 1'; exit 1; }
+          echo 'STAGE 2: focused Node'
+          node --test tests/chat-call-experience.test.mjs >/dev/null 2>&1 || { echo 'FAILED 2'; exit 1; }
+          echo 'STAGE 3: Vite build'
+          npm run build >/dev/null 2>&1 || { echo 'FAILED 3'; exit 1; }
+          echo 'STAGE 4: install Chromium'
+          npx playwright install --with-deps chromium >/dev/null 2>&1 || { echo 'FAILED 4'; exit 1; }
+          echo 'STAGE 5: browser 375,390,430'
+          node --input-type=module >/dev/null 2>&1 <<'JS' || { echo 'FAILED 5'; exit 1; }
+          import assert from 'node:assert/strict';
+          import {createServer} from 'node:http';
+          import {chromium} from 'playwright';
+          const server=createServer((req,res)=>{
+            res.writeHead(200,{'content-type':'text/html'});
+            res.end('<meta name="viewport" content="width=device-width,initial-scale=1"><div class="phone-mockup" style="position:relative;height:100vh"></div>');
+          });
+          await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
+          let browser;
+          try{
+            browser=await chromium.launch();
+            for(const width of [375,390,430]){
+              const page=await browser.newPage({viewport:{width,height:800}});
+              await page.goto('http://127.0.0.1:'+server.address().port+'/');
+              await page.addStyleTag({path:'chat/call/call-overlay.css'});
+              await page.addScriptTag({path:'chat/call/call-overlay.js'});
+              const role={id:'role-test',name:'Sample'};
+              assert.equal(await page.evaluate(x=>MAOMAOCallExperience.invite(x),role),true);
+              assert.equal(await page.locator('.maomao-call-invite').isVisible(),true);
+              await page.waitForTimeout(1500);
+              assert.equal(await page.locator('.maomao-call-layer').count(),0);
+              await page.locator('[data-invite-action="decline"]').click();
+              assert.equal(await page.locator('.maomao-call-invite').count(),0);
+              assert.equal(await page.evaluate(x=>MAOMAOCallExperience.invite(x),role),true);
+              await page.locator('[data-invite-action="accept"]').click();
+              assert.equal(await page.locator('.maomao-call-layer').isVisible(),true);
+              await page.locator('.maomao-call-layer [data-call-action="end"]').click();
+              await page.evaluate(()=>{
+                localStorage.setItem('phone_groups',JSON.stringify([{id:'g1',name:'Group',members:[{id:'role-test',name:'Sample'}]}]));
+                localStorage.setItem('ai_custom_characters',JSON.stringify([{id:'role-test',name:'Sample'}]));
+              });
+              assert.equal(await page.evaluate(()=>MAOMAOCallExperience.start('group',{id:'g1',name:'Group'})),true);
+              assert.equal(await page.locator('.maomao-call-layer.is-group').isVisible(),true);
+              await page.close();
+            }
+          }finally{
+            if(browser)await browser.close();
+            await new Promise(ok=>server.close(ok));
+          }
+          JS
+          echo 'TARGETED SUCCESS - not a full regression or deployment'
