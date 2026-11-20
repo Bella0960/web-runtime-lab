@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '39aa0eedcf67dc73adb8e18e1a5f3b4ead8dd89b'
+          test "$(git -C candidate rev-parse HEAD)" = '19ddf0a34fbe3f3b1d2d692713138e19267421ed'
       - name: Run sealed source-first prompt and regex contracts
         run: |
           node --input-type=module <<'NODE'
