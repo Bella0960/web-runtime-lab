@@ -12,7 +12,7 @@ concurrency:
 jobs:
   gate:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '1a584371f55803e70cf82cc195e3fa929b1127db' && github.event.head_commit.message == 'ci: verify action sheet and existing favorites state' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '027139902263871c73ed35c6cd0b15e50d837ec7' && github.event.head_commit.message == 'ci: verify action sheet on current integrated candidate' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '58ef8c9e34527ff9c599335f1b12e3fa25af798b'
+          test "$(git -C candidate rev-parse HEAD)" = '42efd864eb07b3517c20f33342675a6cf642307c'
       - name: Execute private targeted Node and Vite checks with sealed output
         run: |
           node --input-type=module <<'NODE'
@@ -56,8 +56,10 @@ jobs:
             if (run.error || run.status !== 0) {
               console.log('SEALED_FAILED_GATE_ORDINAL: ' + (index+1));
               const output = (run.stdout || '') + (run.stderr || '');
-              const labels = ['sheet stays below the composer','sheet meets the bottom edge','both rows stay single line and unclipped','group actions are disabled in direct chat','intercepts pointer events','TimeoutError','SyntaxError','ERR_ASSERTION','test failed','role sticker favorites are selected'];
+              const labels = ['sheet stays below the composer','sheet meets the bottom edge','both rows stay single line and unclipped','group actions are disabled in direct chat','intercepts pointer events','TimeoutError','SyntaxError','ERR_ASSERTION','test failed','role sticker favorites are selected','role sticker favorites are selected'];
               for (const label of labels) if (output.includes(label)) console.log('SAFE_FAILURE_LABEL: ' + label);
+              const browserLine = output.match(/chat-light-surfaces-browser.mjs:(d+):d+/)?.[1];
+              if (browserLine) console.log('BROWSER_ASSERTION_LINE: ' + browserLine);
               const browserLine = output.match(/chat-light-surfaces-browser.mjs:(d+):d+/)?.[1];
               if (browserLine) console.log('BROWSER_ASSERTION_LINE: ' + browserLine);
               throw new Error('Private candidate premerge gate failed (no private logs emitted)');
