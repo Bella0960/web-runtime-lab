@@ -25,7 +25,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = 'fab928410562a361c6490910d0d7be2383b3b9f9'
+          test "$(git rev-parse HEAD^)" = '315d600d848a3257adc0ecd2b6add4554a0ee323'
           test "$(git show --pretty='' --name-only HEAD | sed '/^$/d')" = '.github/workflows/qa-only-call-release-335.yml'
           node scripts/public-content-check.mjs
       - name: Verify restricted source and target configuration
@@ -45,9 +45,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: 788e333328956637aa3840fcf8b0890b8bd227ac
+          ref: integration/account-fanwai-stack-20261115
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          persist-credentials: false
+          persist-credentials: true
           path: candidate
           fetch-depth: 10
       - name: Verify pinned SHA and invoke existing QA-only safety gate
