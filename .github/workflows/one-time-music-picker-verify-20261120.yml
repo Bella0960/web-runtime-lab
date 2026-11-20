@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: task/MUSIC-IMPORT-003-android-picker-read-20261120
+          ref: task/MUSIC-IMPORT-004-protected-file-notice-20261120
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '867ce2e3946542f5adcca3a83f6a131b5d259411'
+          test "$(git -C candidate rev-parse HEAD)" = 'a8068ccc6f90c7d180bf755d8b9b03e1825b8276'
       - name: Run sealed music import and integrity tests
         run: |
           node --input-type=module <<'NODE'
