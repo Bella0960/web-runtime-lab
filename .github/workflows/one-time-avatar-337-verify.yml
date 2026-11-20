@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'e32f20a2841f7d3774f944ec00be89ab17b3ee85' && github.event.head_commit.message == 'ci: identify PR337 mobile viewport discrepancy' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '0c6a858a6de1d221a426fe62bfdcf0a4d3ae67bf' && github.event.head_commit.message == 'ci: verify PR337 chat group call and corrected viewport' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -38,7 +38,7 @@ jobs:
       - name: Enforce immutable private candidate
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = 'adcc43834e5cf5a68fa158f447328b346c884a80'
+          test "$(git -C candidate rev-parse HEAD)" = '59b12f75b5218aa8513c835e165ba42e012fb282'
           test -z "$(git -C candidate status --porcelain)"
       - name: Sealed original Node Vite Chromium and full regression
         run: |
@@ -49,6 +49,11 @@ jobs:
             ['avatar-node','npm',['run','test:role:avatars']],
             ['avatar-image-node','npm',['run','test:chat:image-vision']],
             ['chat-contract','npm',['run','test:chat:contract']],
+            ['chat-primary','npm',['run','test:chat:primary:atomic']],
+            ['group-governance','npm',['run','test:group:governance']],
+            ['group-ui','npm',['run','test:group:ui']],
+            ['group-message','npm',['run','test:group:invite-e2e']],
+            ['single-call','npm',['run','test:chat:call']],
             ['vite','npm',['run','build']],
             ['chromium-install','npx',['playwright','install','--with-deps','chromium']],
             ['avatar-chromium','npm',['run','test:role:avatars:browser']]
