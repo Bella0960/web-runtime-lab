@@ -1,0 +1,52 @@
+name: One-time contract alignment gate
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-role-protocol-contract-alignment-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: isolated-role-protocol-contract-alignment-20261120
+  cancel-in-progress: false
+jobs:
+  contract:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/public-content-check.mjs
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: task-CHAT-PROTOCOL-001/fix-stale-full-node-contract-20261120
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Pin exact test-only patch
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = 'a049a3b55229e8b34e85338eb5c22b5c1f411d20'
+      - name: Run actual updated protocol, strict isolation and entire chat contract
+        run: |
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          const tests=[
+            ['node',['--test','tests/chat-protocol-worldbook-priority.test.mjs']],
+            ['node',['--test','tests/chat-strict-role-isolation.test.mjs']],
+            ['npm',['run','test:chat:contract']]
+          ];
+          for(let i=0;i<tests.length;i++){
+            const [bin,args]=tests[i];
+            const r=spawnSync(bin,args,{cwd:'candidate',stdio:'ignore',timeout:240000});
+            if(r.error||r.status!==0){console.log('FAIL_GATE_ORDINAL:'+(i+1));throw Error('Sealed contract alignment failed');}
+            console.log('PASS_GATE_ORDINAL:'+(i+1));
+          }
+          console.log('PASS: full contract alignment');
+          NODE
