@@ -63,10 +63,14 @@ jobs:
           for (const [index, path] of suite.entries()) {
             const run = spawnSync(process.execPath, ['--test', path], {
               cwd: 'candidate',
-              stdio: 'ignore',
+              stdio: ['ignore','pipe','pipe'],
+              encoding: 'utf8', maxBuffer: 2 * 1024 * 1024,
               timeout: 150000
             });
             if (run.status !== 0 || run.error) {
+              const failedNumbers = [...String(run.stdout || '').matchAll(/^not ok (\\d+) /gm)]
+                .map(x => x[1]).join(',');
+              console.log('SEALED_FAILED_SUBTEST_ORDINALS: ' + (index + 1) + ':' + failedNumbers);
               throw new Error('Sealed role isolation regression failed at gate ' + (index + 1));
             }
           }
