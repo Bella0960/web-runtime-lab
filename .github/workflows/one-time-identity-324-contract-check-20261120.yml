@@ -1,0 +1,57 @@
+name: One-time identity full-node contract alignment
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-identity-324-contract-check-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-identity-324-contract-check
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/public-content-check.mjs
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: 78f8c49c3778c7891e82ed357c676e17ed86cdf2
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Assert immutable test-only patch
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = '78f8c49c3778c7891e82ed357c676e17ed86cdf2'
+      - name: Run real failed Node contracts and full chat build gates
+        run: |
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          const checks=[
+            ['npm',['ci','--no-audit','--no-fund']],
+            ['node',['--test','tests/chat-persona-source-contract.test.mjs']],
+            ['node',['--test','tests/group-persona-memory-audit.test.mjs']],
+            ['node',['--test','tests/chat-strict-role-isolation.test.mjs']],
+            ['npm',['run','test:chat:contract']],
+            ['npm',['run','build']],
+            ['npx',['playwright','install','--with-deps','chromium']],
+            ['node',['tests/chat-light-surfaces-browser.mjs']]
+          ];
+          for(let i=0;i<checks.length;i++){
+            const [cmd,args]=checks[i];
+            const r=spawnSync(cmd,args,{cwd:'candidate',stdio:'ignore',timeout:12*60*1000});
+            if(r.error||r.status!==0){console.log('SEALED_FAILED_GATE_ORDINAL:'+(i+1));throw Error('Sealed corrected Node gate failed');}
+            console.log('SEALED_PASS_GATE_ORDINAL:'+(i+1));
+          }
+          console.log('PASS: original two full Node failures plus chat/Vite/Chromium');
+          NODE
