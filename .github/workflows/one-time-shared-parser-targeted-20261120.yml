@@ -29,7 +29,7 @@ jobs:
           node-version: '22'
       - name: Public metadata guard
         run: node scripts/public-content-check.mjs
-      - name: Checkout restricted MAOMAO task branch
+      - name: Checkout restricted candidate task ref
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
