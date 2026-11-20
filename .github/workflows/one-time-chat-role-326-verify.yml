@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   gate:
-    if: ${{ github.actor == github.repository_owner && github.event.before == 'bf518c51ab057dbdd73e31734759086a7c414a6f' && github.event.head_commit.message == 'ci: verify isolated role identity candidate 326' }}
+    if: ${{ github.actor == github.repository_owner && github.event.before == '54c54fc8599a65ca3d9865ffc123fb192486d5fb' && github.event.head_commit.message == 'ci: verify corrected role identity candidate 326' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '311a2368284e534335df10ab30675c7b7d685b3b'
+          test "$(git -C candidate rev-parse HEAD)" = '8e1c31e5854a2fd6b5535500ab14bfd3c3e609c7'
       - name: Execute private targeted Node and Vite checks with sealed output
         run: |
           node --input-type=module <<'NODE'
@@ -58,5 +58,5 @@ jobs:
             }
             console.log('SEALED_PASS_GATE_ORDINAL: ' + (index+1));
           }
-          console.log('PASS: isolated role protocol contracts, full chat contract, Vite and Chromium page');
+          console.log('PASS: all private release test gates');
           NODE
