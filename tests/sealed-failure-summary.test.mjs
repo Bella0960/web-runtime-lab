@@ -35,6 +35,19 @@ test('preflight failures are distinguished without exposing private error detail
     'post-test-safety-gate');
 });
 
+test('post-test blocking classifies only known safety gates without leaking private text', () => {
+  const base = 'Node, Vite and Chromium tests passed.\nQA release stopped: ';
+  assert.equal(summarizeSealedFailure(source, base +
+    'Tests altered the checkout: refusing to upload uncommitted source (secret)'),
+    'posttest-dirty-checkout');
+  assert.equal(summarizeSealedFailure(source, base +
+    'QA Vite asset missing after build: private-data'),
+    'posttest-missing-dist');
+  assert.equal(summarizeSealedFailure(source, base +
+    'Read-only Cloudflare preflight failed at /hidden-path (HTTP 503)'),
+    'posttest-cloudflare-api');
+});
+
 test('timeouts and unknown errors never reveal log lines', () => {
   assert.equal(summarizeSealedFailure(source, 'secret', { timedOut: true }), 'process-timeout');
   assert.equal(summarizeSealedFailure(source, 'hidden sensitive data'), 'unclassified-private-failure');
