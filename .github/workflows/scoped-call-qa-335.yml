@@ -94,4 +94,7 @@ jobs:
             await new Promise(ok=>server.close(ok));
           }
           JS
-          echo 'TARGETED SUCCESS - not a full regression or deployment'
+          echo 'TARGETED SUCCESS - proceeding to sequential full Node regression'
+          echo 'STAGE 6: full Node suite (sequential)'
+          node --test --test-concurrency=1 >"$RUNNER_TEMP/isolated-node-regression.log" 2>&1 || { echo 'FAILED 6'; exit 1; }
+          echo 'COMPLETE NODE SUCCESS - not a deployment'
