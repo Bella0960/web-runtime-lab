@@ -11,7 +11,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == 'd0e3668e387348bbf7005a1609cfedc2e3636024' && github.event.head_commit.message == 'ci: diagnose isolated memory layout assertions' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '852a77e30447f50416c7904b1db1420e2697b2e7' && github.event.head_commit.message == 'ci: report memory layout assertion values' }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -45,16 +45,7 @@ jobs:
               echo "$stage passed"
             else
               if [[ "$stage" == Memory-Chromium ]]; then
-                grep -E '^[[:space:]+-]*(searchHeight|searchFont|alignment|actionFonts|gap|leftBorders|bodyFont|timeColor):[ 0-9,().\[\]a-z\x27"-]* in the restricted candidate"
-              exit 1
-            fi
-          }
-          run Install npm ci
-          run Vite npm run build
-          run Chromium-install npx playwright install --with-deps chromium
-          run Memory-storage node --test tests/memory-space-cleanup.test.mjs
-          run Memory-Chromium node --test tests/memory-space-cleanup.browser.test.mjs
- "$log" || true
+                grep -oE '(searchHeight|searchFont|alignment|actionFonts|gap|leftBorders|bodyFont|timeColor):[^[:alnum:]]{0,4}([0-9.]+(px)?|rgb\([0-9, ]+\))' "$log" || true
                 grep -oE 'memory-space-cleanup\.browser\.test\.mjs:[0-9]+:[0-9]+' "$log" | sort -u || true
               fi
               echo "::error::$stage failed in the restricted candidate"
@@ -66,4 +57,3 @@ jobs:
           run Chromium-install npx playwright install --with-deps chromium
           run Memory-storage node --test tests/memory-space-cleanup.test.mjs
           run Memory-Chromium node --test tests/memory-space-cleanup.browser.test.mjs
-          run Full-Node node --test --test-concurrency=1
