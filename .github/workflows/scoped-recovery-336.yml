@@ -67,7 +67,7 @@ jobs:
           sleep 2
           curl -s -o /dev/null --max-time 5 -w 'STATIC_APP_HTTP_STATUS=%{http_code}\n' http://127.0.0.1:4173/luck-room/luck-room.html || true
           LUCK_ROOM_BASE_URL=http://127.0.0.1:4173 node tests/luck-room-browser.mjs >"$RUNNER_TEMP/recovery-browser.log" 2>&1 || {
-            node --input-type=module -e 'import { readFileSync } from "node:fs"; const s=readFileSync(process.env.RUNNER_TEMP+"/recovery-browser.log","utf8"); const m=s.match(/luck-room-browser\.mjs:(\d+):/); console.log("BROWSER_FAIL_LINE="+(m?m[1]:"unknown")); console.log("BROWSER_KIND="+(/TimeoutError/.test(s)?"Timeout":/AssertionError/.test(s)?"Assertion":"Other")); const test=readFileSync("tests/luck-room-browser.mjs","utf8").split("\\n"); const errorLine=s.match(/(?:^|\\n)Error: ([^\\n]+)/); const codeIndex=errorLine ? test.findIndex(line => line.includes(errorLine[1])) : -1; console.log("ASSERTION_SOURCE_LINE="+(codeIndex>=0?codeIndex+1:"unknown"));'
+            node --input-type=module -e 'import { readFileSync } from "node:fs"; const s=readFileSync(process.env.RUNNER_TEMP+"/recovery-browser.log","utf8"); const m=s.match(/luck-room-browser\.mjs:(\d+):/); console.log("BROWSER_FAIL_LINE="+(m?m[1]:"unknown")); const lines=s.split(String.fromCharCode(10)); const err=lines.find(t=>t.trim().startsWith("Error: ")); const source=readFileSync("tests/luck-room-browser.mjs","utf8").split(String.fromCharCode(10)); const msg=err?err.trim().slice(7):""; const ix=msg?source.findIndex(t=>t.includes(msg)):-1; console.log("ASSERTION_SOURCE_LINE="+(ix>=0?ix+1:"unknown"));'
             echo 'FAILED stage 5'; exit 1;
           }
           echo 'TARGETED RECOVERY GATES PASSED - no deployment'
