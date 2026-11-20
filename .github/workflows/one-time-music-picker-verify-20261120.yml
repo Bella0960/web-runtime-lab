@@ -1,4 +1,4 @@
-name: One-time restricted music import test
+name: One-time restricted group private history regression
 
 on:
   push:
@@ -10,11 +10,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: one-time-music-import-verify-20261120
+  group: one-time-chat-history-regression-20261120
   cancel-in-progress: false
 
 jobs:
-  music-import:
+  chat-history:
     if: github.actor == github.repository_owner
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -29,11 +29,11 @@ jobs:
           node-version: '22'
       - name: Enforce public metadata isolation
         run: node scripts/public-content-check.mjs
-      - name: Checkout restricted private music task
+      - name: Checkout restricted private chat history candidate
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: task/MUSIC-UI-004-duration-artist-list-20261120
+          ref: task-CHAT-HISTORY-001/group-private-safe-append-20261120
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -42,15 +42,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '1f6ebfecaa7e3b07bfab88a92c928c75e382689f'
-      - name: Run sealed music import and integrity tests
+          test "$(git -C candidate rev-parse HEAD)" = '282be457deb747b3838c26b2d9290bf79a9fc251'
+      - name: Run sealed group and history integrity tests
         run: |
           node --input-type=module <<'NODE'
           import { spawnSync } from 'node:child_process';
           const suite = [
-            'tests/music-extensionless-import.test.mjs',
-            'tests/music-data-integrity.test.mjs',
-            'tests/music-duration-display.test.mjs'
+            'tests/group-turn-integration.test.mjs',
+            'tests/chat-history-atomic.test.mjs',
+            'tests/chat-history-corruption-guard.test.mjs',
+            'tests/group-private-receipt-recovery.test.mjs',
+            'tests/group-speaker-scoped-history.test.mjs'
           ];
           for (const [index, path] of suite.entries()) {
             const run = spawnSync(process.execPath, ['--test', path], {
@@ -59,9 +61,9 @@ jobs:
               timeout: 150000
             });
             if (run.status !== 0 || run.error) {
-              throw new Error('Sealed music regression failed at gate ' + (index + 1));
+              throw new Error('Sealed group history regression failed at gate ' + (index + 1));
             }
           }
-          console.log('PASS: three isolated music UI and data-integrity suites');
+          console.log('PASS: five isolated group/history integrity suites');
           NODE
 
