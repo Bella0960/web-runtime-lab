@@ -1,0 +1,71 @@
+name: Scoped candidate verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/scoped-verify-3fdb6cd.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scoped-verify-3fdb6cd
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout public guard scripts
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public metadata guard
+        run: node scripts/public-content-check.mjs
+      - name: Confirm restricted source configuration
+        shell: bash
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SOURCE_REPOSITORY" && test -n "$SOURCE_REF" && test -n "$SOURCE_TOKEN"
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Checkout private candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: 3fdb6cd0839e328e2e0eb544c0d42ac55944ab1f
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 100
+      - name: Run all existing candidate gates with sealed logs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '3fdb6cd0839e328e2e0eb544c0d42ac55944ab1f'
+          cd candidate
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { spawnSync } from 'node:child_process';
+          const source = readFileSync('scripts/qa-direct-release.mjs', 'utf8');
+          const list = source.match(/const TESTS = (\[[\s\S]*?\n\]);/);
+          if (!list) throw new Error('Release test list unavailable');
+          const gates = Function('return ' + list[1])();
+          for (const [index, [command, args]] of gates.entries()) {
+            const result = spawnSync(command, args, {stdio:'ignore', timeout: 4500000});
+            if (result.status !== 0) throw new Error('Candidate failed at gate ' + (index + 1) + ' of ' + gates.length);
+          }
+          console.log('All ' + gates.length + ' gates passed.');
+          JS
