@@ -48,6 +48,7 @@ jobs:
           if(!end.test(source))throw Error('Read-only probe refused: original entrypoint differs');
           const tmp=resolve('candidate/scripts/.qa-preflight-readonly-local.mjs');
           writeFileSync(tmp,source.replace(end,'export { cloudflarePreflight };')+'\n',{mode:0o600});
+          process.chdir(resolve('candidate'));
           try{
             const mod=await import(pathToFileURL(tmp).href);
             const output=console.log;console.log=()=>{};
