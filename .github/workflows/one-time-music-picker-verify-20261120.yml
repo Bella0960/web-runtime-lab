@@ -33,16 +33,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: task/MUSIC-IMPORT-004-protected-file-notice-20261120
+          ref: integration/account-fanwai-stack-20261115
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
-          persist-credentials: false
-          fetch-depth: 1
+          persist-credentials: true
+          fetch-depth: 100
       - name: Assert exact private source
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = 'a8068ccc6f90c7d180bf755d8b9b03e1825b8276'
+          test "$(git -C candidate rev-parse HEAD)" = '2f5268fde0bc8b3a619ee70864b1515e4b30e07d'
       - name: Run sealed music import and integrity tests
         run: |
           node --input-type=module <<'NODE'
@@ -62,4 +62,60 @@ jobs:
             }
           }
           console.log('PASS: two isolated music import and data-integrity suites');
+          NODE
+
+      - name: Diagnose QA-only preflight without deploying
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 077
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { spawnSync } from 'node:child_process';
+          const original = readFileSync('candidate/scripts/qa-direct-release.mjs','utf8');
+          const marker = '\nmain().catch(error => {';
+          const split = original.indexOf(marker);
+          if (split < 0) throw new Error('Private QA guard shape changed');
+          // Do not execute main(), TESTS or Wrangler: a fully read-only probe.
+          const test = original.slice(0, split) + `
+            let checkpoint = 'qa-checkout';
+            try {
+              preflightCheckout();
+              checkpoint = 'worker-settings-and-founder-readonly';
+              await cloudflarePreflight();
+              console.log('READ_ONLY_RELEASE_PREFLIGHT_PASS');
+            } catch (err) {
+              const value = String(err && err.message || '');
+              const known = [
+                ['QA bootstrap lifecycle mismatch','setup-lifecycle'],
+                ['Release would unexpectedly change','runtime-var-drift'],
+                ['An existing QA runtime variable is missing','runtime-var-missing'],
+                ['The original QA founder/admin no longer matches','founder-account'],
+                ['The isolated identity core contains conflicting accounts','core-account'],
+                ['Cloudflare account query was read-only','do-sql'],
+                ['Cloudflare account query returned incomplete','do-sql'],
+                ['Unexpected identity service binding','service-binding'],
+                ['Only the original #299','checkout-branch'],
+                ['Remote QA HEAD','qa-head-race'],
+                ['Only the original','qa-origin'],
+                ['Checkout must be clean','checkout-dirty'],
+                ['QA setup','setup'],
+                ['Cloudflare','cloudflare-api']
+              ];
+              const label = known.find(entry => value.includes(entry[0]));
+              console.log('READ_ONLY_RELEASE_PREFLIGHT_FAIL: ' + checkpoint + '/' + (label ? label[1] : 'other'));
+              process.exitCode = 1;
+            }
+          `;
+          writeFileSync('candidate/scripts/__temporary_guard_diagnostic.mjs',test,{mode:0o600});
+          const result=spawnSync(process.execPath,['scripts/__temporary_guard_diagnostic.mjs'],{
+            cwd:'candidate',env:process.env,stdio:'pipe',encoding:'utf8',timeout:45000
+          });
+          const safe = String(result.stdout||'').split('\n').filter(line=>
+            line.startsWith('READ_ONLY_RELEASE_PREFLIGHT_')).slice(-1);
+          console.log(safe[0] || 'READ_ONLY_RELEASE_PREFLIGHT_FAIL: no-result');
+          process.exitCode=result.status===0?0:1;
           NODE
