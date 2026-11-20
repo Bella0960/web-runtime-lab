@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = 'c1848ee551cee5d484a94ca70236130c8de6ce2f'
+          test "$(git -C candidate rev-parse HEAD)" = '3c1a7fdc82eb8095278a069b8e68a6d36df61f2c'
       - name: Run sealed persona source and chat contracts
         run: |
           node --input-type=module <<'NODE'
