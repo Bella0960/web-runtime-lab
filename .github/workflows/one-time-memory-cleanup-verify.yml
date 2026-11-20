@@ -11,7 +11,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '852a77e30447f50416c7904b1db1420e2697b2e7' && github.event.head_commit.message == 'ci: report memory layout assertion values' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'fbd79ff1b7354012cff624c426267868cd4165e0' && github.event.head_commit.message == 'ci: complete memory picker and timeline verification' }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -27,7 +27,7 @@ jobs:
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          ref: 'ad5ab0a0187ef70d20c3ebcc605409be0bfd3d87'
+          ref: '84d236489b11bbc7820f0efe8f18a3df391d9909'
           path: candidate
           persist-credentials: false
       - name: Verify exact checkout and run sealed regression
@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'ad5ab0a0187ef70d20c3ebcc605409be0bfd3d87'
+          test "$(git rev-parse HEAD)" = '84d236489b11bbc7820f0efe8f18a3df391d9909'
           log="$(mktemp)"
           trap 'rm -f "$log"' EXIT
           run() {
@@ -57,3 +57,4 @@ jobs:
           run Chromium-install npx playwright install --with-deps chromium
           run Memory-storage node --test tests/memory-space-cleanup.test.mjs
           run Memory-Chromium node --test tests/memory-space-cleanup.browser.test.mjs
+          run Full-Node node --test --test-concurrency=1
