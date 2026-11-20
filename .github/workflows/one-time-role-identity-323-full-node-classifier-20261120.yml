@@ -1,0 +1,68 @@
+name: One-time sealed PR323 full Node failure classifier
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-role-identity-323-full-node-classifier-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-identity-323-node-classifier
+  cancel-in-progress: false
+jobs:
+  node_classifier:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/public-content-check.mjs
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Require exact QA revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'e71766bdbe4af9cd53dcb49c0fe67c78dc746672'
+          test "$(git -C candidate branch --show-current)" = 'integration/account-fanwai-stack-20261115'
+      - name: Execute isolated full Node files and report failure ordinals only
+        run: |
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          import {readdirSync} from 'node:fs';
+          const gates=[
+            ['npm',['ci','--no-audit','--no-fund']],
+            ['npm',['run','build']],
+            ['npx',['playwright','install','--with-deps','chromium']]
+          ];
+          for(let i=0;i<gates.length;i++){
+            const [bin,args]=gates[i];
+            const r=spawnSync(bin,args,{cwd:'candidate',stdio:'ignore',timeout:12*60*1000});
+            if(r.error||r.status!==0)throw Error('Sealed setup gate failed ordinal '+(i+1));
+          }
+          const files=readdirSync('candidate/tests',{recursive:true})
+            .map(String).filter(n=>['.test.mjs','.test.cjs','.test.js'].some(e=>n.endsWith(e)))
+            .map(n=>'tests/'+n.split(String.fromCharCode(92)).join('/')).sort();
+          const fails=[];
+          for(let i=0;i<files.length;i++){
+            const r=spawnSync(process.execPath,['--test',files[i]],{
+              cwd:'candidate',stdio:'ignore',timeout:210000
+            });
+            if(r.error||r.status!==0)fails.push(i+1);
+          }
+          console.log('SEALED_NODE_TOTAL_FILES:'+files.length);
+          console.log('SEALED_NODE_FAILED_FILE_ORDINALS:'+(fails.join(',')||'none'));
+          if(fails.length)throw Error('Sealed full Node regression files failed');
+          console.log('PASS: all Node test files');
+          NODE
