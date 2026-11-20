@@ -12,7 +12,7 @@ concurrency:
 jobs:
   gate:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '0d55908f35c65c078f675a182ea76d024640eb67' && github.event.head_commit.message == 'ci: run approved group mention wake verify' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '58d43a88f84fb84f4704e39a1e5b3ba2b122703e' && github.event.head_commit.message == 'ci: verify group mention wake and persona checks' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '16c7606aebdc1c0ec89dc9ea35f134436f7c9c3d'
+          test "$(git -C candidate rev-parse HEAD)" = '2199a0020995d142518b4e7198da93ab63f773e6'
       - name: Execute private targeted Node and Vite checks with sealed output
         run: |
           node --input-type=module <<'NODE'
