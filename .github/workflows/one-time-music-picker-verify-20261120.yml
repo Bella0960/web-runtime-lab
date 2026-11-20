@@ -84,6 +84,18 @@ jobs:
             const contractFailures = [...String(contract.stdout || '')
               .matchAll(/^not ok ([0-9]+) /gm)].map(x => x[1]).join(',');
             console.log('SEALED_CHAT_CONTRACT_SUBTEST_ORDINALS: ' + contractFailures);
+            const {readFileSync} = await import('node:fs');
+            const contractFiles=JSON.parse(readFileSync('candidate/package.json','utf8'))
+              .scripts['test:chat:contract'].split(/[\x20\x09\x0a]+/).filter(s=>s.startsWith('tests/'));
+            const captured=String(contract.stdout||'');
+            for(const match of captured.matchAll(/^not ok ([0-9]+) /gm)){
+              const tail=captured.slice(match.index,match.index+4000);
+              const loc=tail.match(/tests\\/([^:\\s]+\\.test\\.(?:mjs|js|cjs)):([0-9]+):[0-9]+/);
+              if(loc){
+                const fileOrdinal=contractFiles.indexOf('tests/'+loc[1])+1;
+                console.log('SEALED_CHAT_CONTRACT_FAILURE_LOCATION: '+match[1]+':'+fileOrdinal+':'+loc[2]);
+              }
+            }
             throw new Error('Sealed complete chat contract regression failed');
           }
           const build = spawnSync('npm', ['run', 'build'], {
