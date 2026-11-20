@@ -1,0 +1,56 @@
+name: Isolated role phone verification
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-inspect-phone-verify.yml]
+permissions:
+  contents: read
+concurrency:
+  group: sealed-memory-verification
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '909f5743cf7a7e0d98fde495b0d7f452118bbb7c' && github.event.head_commit.message == 'ci: verify role phone navigation and records' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/public-content-check.mjs
+      - name: Checkout restricted candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          ref: '1d8e940fd58b38c3e939f3967cc54c2fecad4082'
+          path: candidate
+          persist-credentials: false
+      - name: Verify exact checkout and run sealed regression
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '1d8e940fd58b38c3e939f3967cc54c2fecad4082'
+          log="$(mktemp)"
+          trap 'rm -f "$log"' EXIT
+          run() {
+            local stage="$1"
+            shift
+            if "$@" >"$log" 2>&1; then
+              echo "$stage passed"
+            else
+              echo "::error::$stage failed in the restricted candidate"
+              exit 1
+            fi
+          }
+          run Install npm ci
+          run Vite npm run build
+          run Chromium-install npx playwright install --with-deps chromium
+          run Role-phone-contract node --test tests/inspect-feature-contract.test.mjs tests/inspect-native-contract.test.mjs tests/inspect-cross-app-interactions.test.mjs
+          run Role-phone-Chromium node --test tests/inspect-phone-gesture.test.mjs
+          run Full-Node node --test --test-concurrency=1
