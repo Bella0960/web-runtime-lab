@@ -1,0 +1,71 @@
+name: One-time safe QA preflight locator
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-identity-qa-preflight-locator-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: isolated-identity-qa-readonly-preflight
+  cancel-in-progress: false
+jobs:
+  preflight:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/public-content-check.mjs
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: b3875a53a4625e4e83d75920ec31af2db8bceacf
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Verify exact source
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = 'b3875a53a4625e4e83d75920ec31af2db8bceacf'
+      - name: Evaluate only read-only existing QA preflight without deployment
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync,unlinkSync} from 'node:fs';
+          import {pathToFileURL} from 'node:url';
+          import {resolve} from 'node:path';
+          const path=resolve('candidate/scripts/qa-direct-release.mjs');
+          const source=readFileSync(path,'utf8');
+          const end=/main\(\)\.catch\(error => \{[\s\S]*?\}\);\s*$/;
+          if(!end.test(source))throw Error('Read-only probe refused: original entrypoint differs');
+          const tmp=resolve('candidate/scripts/.qa-preflight-readonly-local.mjs');
+          writeFileSync(tmp,source.replace(end,'export { cloudflarePreflight };')+'\n',{mode:0o600});
+          try{
+            const mod=await import(pathToFileURL(tmp).href);
+            const output=console.log;console.log=()=>{};
+            let failure=null;
+            try{await mod.cloudflarePreflight();}catch(error){failure=String(error?.message||'unknown');}
+            finally{console.log=output;}
+            if(failure){
+              const categories=[
+                [/Cloudflare preflight failed/,'cloudflare-api-request'],
+                [/SQL counts|account counts|read-only|Founder|founder|admin|accounts/,'qa-identity-state'],
+                [/bootstrap lifecycle|QA setup|identity core/,'qa-bootstrap-state'],
+                [/runtime variable|runtime/,'qa-runtime-variable'],
+                [/QA-only|missing|binding|service/,'qa-binding-state'],
+                [/workers.dev|preview URLs/,'qa-route-state']
+              ];
+              const detected=categories.find(([pattern])=>pattern.test(failure));
+              console.log('SEALED_QA_PREFLIGHT_RESULT: FAIL '+(detected?detected[1]:'other-check'));
+              process.exitCode=1;
+            }else console.log('SEALED_QA_PREFLIGHT_RESULT: PASS');
+          }finally{unlinkSync(tmp);}
+          NODE
