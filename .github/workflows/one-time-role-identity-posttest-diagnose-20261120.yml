@@ -1,0 +1,92 @@
+name: One-time sealed QA posttest read-only diagnostic
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-role-identity-posttest-diagnose-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-identity-posttest-diagnostic-20261120
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/public-content-check.mjs
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: true
+          fetch-depth: 100
+      - name: Require exact approved private QA source
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'b3875a53a4625e4e83d75920ec31af2db8bceacf'
+          test "$(git -C candidate branch --show-current)" = 'integration/account-fanwai-stack-20261115'
+      - name: Read-only source and Cloudflare preflight category diagnostic
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync,unlinkSync} from 'node:fs';
+          import {spawnSync} from 'node:child_process';
+          const file='candidate/scripts/.qa-readonly-posttest-probe.mjs';
+          const source=readFileSync('candidate/scripts/qa-direct-release.mjs','utf8');
+          const cut=source.lastIndexOf('main().catch(error => {');
+          if(cut<0)throw Error('Existing QA release entrypoint not found');
+          const diagnostic=`
+          (async () => {
+            try { preflightCheckout(); console.log('PHASE_1_OK'); }
+            catch(e) { console.error('PHASE_1_FAILED:'+String(e.message||'')); process.exitCode=1; return; }
+            try { await verifyWorkerPublicRoutes(); console.log('PHASE_2_OK'); }
+            catch(e) { console.error('PHASE_2_FAILED:'+String(e.message||'')); process.exitCode=1; return; }
+            try { await cloudflarePreflight(); console.log('PHASE_3_OK'); }
+            catch(e) { console.error('PHASE_3_FAILED:'+String(e.message||'')); process.exitCode=1; return; }
+            try { await liveWorkerVersion(QA); await liveWorkerVersion(CORE); console.log('PHASE_4_OK'); }
+            catch(e) { console.error('PHASE_4_FAILED:'+String(e.message||'')); process.exitCode=1; return; }
+          })();
+          `;
+          writeFileSync(file,source.slice(0,cut)+diagnostic,{mode:0o600});
+          try {
+            const r=spawnSync(process.execPath,[file],{cwd:process.cwd(),env:process.env,
+              stdio:['ignore','pipe','pipe'],encoding:'utf8',timeout:180000,maxBuffer:1e6});
+            const raw=String(r.stdout||'')+'\n'+String(r.stderr||'');
+            for(let i=1;i<=4;i++)console.log('QA_PREFLIGHT_PHASE_'+i+':'+(raw.includes('PHASE_'+i+'_OK')?'PASS':'FAIL'));
+            if(r.error||r.status!==0) {
+              const known=['QA bootstrap lifecycle mismatch','Unexpected identity service binding',
+                'The original QA founder/admin no longer matches',
+                'The isolated identity core contains conflicting accounts',
+                'Release would unexpectedly change the existing QA runtime variable',
+                'Read-only Cloudflare preflight failed at',
+                'QA integration branch advanced',
+                'Checkout must be clean'];
+              const match=known.findIndex(k=>raw.includes(k));
+              console.log('QA_POSTTEST_FAILURE_CATEGORY:'+(match===-1?'other':String(match+1)));
+            }
+          } finally { try{unlinkSync(file)}catch(_){} }
+          NODE
+      - name: Inspect build-only tracked state without modifying source
+        run: |
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          const run=(c,a,timeout=420000)=>spawnSync(c,a,{cwd:'candidate',stdio:'ignore',timeout});
+          const install=run('npm',['ci','--no-audit','--no-fund'],250000);
+          if(install.error||install.status!==0)throw Error('Sealed dependency diagnostic failed');
+          const build=run('npm',['run','build']);
+          if(build.error||build.status!==0)throw Error('Sealed build diagnostic failed');
+          const check=spawnSync('git',['status','--porcelain'],{cwd:'candidate',encoding:'utf8',stdio:['ignore','pipe','pipe']});
+          console.log('QA_BUILD_ONLY_GIT_CLEAN:'+(check.status===0&&!String(check.stdout||'').trim()));
+          NODE
