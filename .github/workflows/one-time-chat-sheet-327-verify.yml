@@ -12,7 +12,7 @@ concurrency:
 jobs:
   gate:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '49738a86d3c31b6fc33b026a4227e99989be0cc3' && github.event.head_commit.message == 'ci: verify isolated bottom action sheet 327' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '5081ed6e5cf369d707146777a4d84bd50c776fa8' && github.event.head_commit.message == 'ci: verify action sheet with synchronized cache version' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '1c5b35a6cdfcc3600aba3fd69cb86c582e885818'
+          test "$(git -C candidate rev-parse HEAD)" = '0d7e9288826f8cba4ca4cd84726fc5ac76627bb1'
       - name: Execute private targeted Node and Vite checks with sealed output
         run: |
           node --input-type=module <<'NODE'
@@ -51,10 +51,13 @@ jobs:
           for (let index = 0; index < gates.length; index++) {
             const [cmd,args] = gates[index];
             const run = spawnSync(cmd,args,{
-              cwd:'candidate',stdio:'ignore',timeout:12*60*1000
+              cwd:'candidate',encoding:'utf8',maxBuffer:20*1024*1024,timeout:12*60*1000
             });
             if (run.error || run.status !== 0) {
               console.log('SEALED_FAILED_GATE_ORDINAL: ' + (index+1));
+              const output = (run.stdout || '') + (run.stderr || '');
+              const labels = ['sheet stays below the composer','sheet meets the bottom edge','both rows stay single line and unclipped','group actions are disabled in direct chat','intercepts pointer events','TimeoutError','SyntaxError','ERR_ASSERTION','test failed'];
+              for (const label of labels) if (output.includes(label)) console.log('SAFE_FAILURE_LABEL: ' + label);
               throw new Error('Private candidate premerge gate failed (no private logs emitted)');
             }
             console.log('SEALED_PASS_GATE_ORDINAL: ' + (index+1));
