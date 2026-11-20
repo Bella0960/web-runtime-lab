@@ -74,6 +74,21 @@ jobs:
           echo 'STAGE 6: complete sequential Node regression'
           node --test --test-concurrency=1 >"$RUNNER_TEMP/recovery-full-node.log" 2>&1 || {
             awk '/^not ok [0-9]+/ { print "FAILED_TEST_ORDINAL=" $3 }' "$RUNNER_TEMP/recovery-full-node.log" | head -20 || true
+            node --input-type=module <<'DIAG'
+            import {readFileSync} from 'node:fs';
+            const t=readFileSync(process.env.RUNNER_TEMP + '/recovery-full-node.log','utf8');
+            const blocks=t.split(/(?=^not ok \d+ - )/m);
+            const block=blocks.find(z=>/^not ok \d+ - /m.test(z)) || '';
+            const loc=(block.match(/^\s*location: ['"]?([^\n]+)$/m)||[])[1]||'';
+            const path=loc.replace(/['"]\s*$/,'').replace(/:\d+:\d+$/,'');
+            const index=path.lastIndexOf('/candidate/');
+            const file=index<0?path:path.slice(index+11);
+            function fingerprint(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619)>>>0;return h.toString(16).padStart(8,'0')}
+            console.log('FAILED_TEST_FILE_HASH='+fingerprint(file));
+            console.log('FAILED_TEST_SOURCE_LINE='+((loc.match(/:(\d+):\d+['"]?\s*$/)||[])[1]||'unknown'));
+            console.log('FAILED_TEST_ERROR_CODE='+((block.match(/^\s*code: ['"]?([A-Z_]+)/m)||[])[1]||'unknown'));
+            console.log('FAILED_TEST_LABEL_HASH='+fingerprint((block.split('\n')[0]||'').replace(/^not ok \d+ - /,'')));
+            DIAG
             echo 'FAILED stage 6'; exit 1;
           }
           echo 'ALL RECOVERY VERIFICATION GATES PASSED - no deployment'
