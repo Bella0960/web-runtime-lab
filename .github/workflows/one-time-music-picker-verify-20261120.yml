@@ -114,7 +114,7 @@ jobs:
               process.exitCode = 1;
             }
           `;
-          const temp = join(process.env.RUNNER_TEMP,'maomao-qa-readonly-preflight.mjs');
+          const temp = join(process.env.RUNNER_TEMP,'candidate-readonly-preflight.mjs');
           writeFileSync(temp,test,{mode:0o600});
           const result=spawnSync(process.execPath,[temp],{
             cwd:'candidate',env:process.env,stdio:'pipe',encoding:'utf8',timeout:45000
