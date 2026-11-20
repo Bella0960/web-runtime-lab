@@ -12,7 +12,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '0c6a858a6de1d221a426fe62bfdcf0a4d3ae67bf' && github.event.head_commit.message == 'ci: verify PR337 chat group call and corrected viewport' }}
+      ${{ github.actor == github.repository_owner && github.event.before == '7749611fb79756d78ac8cd6442d8d3578e470d8c' && github.event.head_commit.message == 'ci: prepare Chromium before group browser suite' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -51,11 +51,11 @@ jobs:
             ['chat-contract','npm',['run','test:chat:contract']],
             ['chat-primary','npm',['run','test:chat:primary:atomic']],
             ['group-governance','npm',['run','test:group:governance']],
-            ['group-ui','npm',['run','test:group:ui']],
-            ['group-message','npm',['run','test:group:invite-e2e']],
             ['single-call','npm',['run','test:chat:call']],
             ['vite','npm',['run','build']],
             ['chromium-install','npx',['playwright','install','--with-deps','chromium']],
+            ['group-ui','npm',['run','test:group:ui']],
+            ['group-message','npm',['run','test:group:invite-e2e']],
             ['avatar-chromium','npm',['run','test:role:avatars:browser']]
           ];
           for (let i=0;i<commands.length;i++) {
