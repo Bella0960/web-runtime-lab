@@ -1,0 +1,63 @@
+name: Isolated action sheet candidate 327
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-chat-sheet-327-verify.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-chat-protocol-premerge-20261120
+  cancel-in-progress: false
+jobs:
+  gate:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '49738a86d3c31b6fc33b026a4227e99989be0cc3' && github.event.head_commit.message == 'ci: verify isolated bottom action sheet 327' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Public guard checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce public metadata isolation
+        run: node scripts/public-content-check.mjs
+      - name: Checkout immutable private candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: task-CHAT-UI-001/bottom-action-sheet
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Require exactly approved candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '1c5b35a6cdfcc3600aba3fd69cb86c582e885818'
+      - name: Execute private targeted Node and Vite checks with sealed output
+        run: |
+          node --input-type=module <<'NODE'
+          import { spawnSync } from 'node:child_process';
+          import { readFileSync } from 'node:fs';
+          import { runInNewContext } from 'node:vm';
+          const release = readFileSync('candidate/scripts/qa-direct-release.mjs', 'utf8');
+          const gates = runInNewContext(release.match(/const TESTS = (\[[\s\S]*?\n\]);/)[1], {}, { timeout: 1000 });
+          for (let index = 0; index < gates.length; index++) {
+            const [cmd,args] = gates[index];
+            const run = spawnSync(cmd,args,{
+              cwd:'candidate',stdio:'ignore',timeout:12*60*1000
+            });
+            if (run.error || run.status !== 0) {
+              console.log('SEALED_FAILED_GATE_ORDINAL: ' + (index+1));
+              throw new Error('Private candidate premerge gate failed (no private logs emitted)');
+            }
+            console.log('SEALED_PASS_GATE_ORDINAL: ' + (index+1));
+          }
+          console.log('PASS: all private release test gates');
+          NODE
