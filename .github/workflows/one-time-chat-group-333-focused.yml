@@ -12,7 +12,7 @@ concurrency:
 jobs:
   gate:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '9e6fefd61868642232c75968d596078b3306356f' && github.event.head_commit.message == 'ci: diagnose the isolated group browser timeout' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'ecc60f12375feb9426e274917832b5651c60845a' && github.event.head_commit.message == 'ci: run group browser reporter before test path' }}
     runs-on: ubuntu-latest
     timeout-minutes: 85
     steps:
@@ -51,7 +51,7 @@ jobs:
           writeFileSync('/tmp/sealed-test-reporter.mjs', "" + `const safe = new Set(['ERR_ASSERTION','TimeoutError','SyntaxError','ENOENT','ERR_TEST_FAILURE','TypeError','ReferenceError']);\nexport default async function* (source) { for await (const e of source) { if (e.type !== 'test:fail') continue; const d=e.data; const a=d.details?.error; const c=a?.cause || a; const kind=c?.code || c?.name; yield 'TEST_FAILURE ' + JSON.stringify([d.file || '',d.line || 0,safe.has(kind)?kind:'other', [...String(c?.stack || '').matchAll(/group-chat-invite-e2e[.]test[.]mjs:([0-9]+):/g)].map(x=>Number(x[1]))]) + '\\n'; } }`);
           for (let index = 0; index < gates.length; index++) {
             const [cmd,args] = gates[index];
-            if (cmd === 'node' && args.includes('--test-concurrency=1')) args.push('--test-reporter=/tmp/sealed-test-reporter.mjs');
+            if (cmd === 'node' && args.includes('--test-concurrency=1')) args.unshift('--test-reporter=/tmp/sealed-test-reporter.mjs');
             const run = spawnSync(cmd,args,{
               cwd:'candidate',encoding:'utf8',maxBuffer:100*1024*1024,timeout:30*60*1000
             });
