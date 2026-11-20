@@ -1,0 +1,70 @@
+name: Guarded avatar restoration 337 native verification
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-avatar-337-verify.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-avatar-337-verification
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      ${{ github.actor == github.repository_owner && github.event.before == '20413fc287d4347f9fa1588763f4e8f19795f812' && github.event.head_commit.message == 'ci: verify approved PR337 avatar recovery privately' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Isolated public guard
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Ensure public content isolation
+        run: node scripts/public-content-check.mjs
+      - name: Checkout only approved private avatar candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: task-CHAT-AVATAR-003/restore-pr278-qa-20261121
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Enforce immutable private candidate
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'bdf8176abdc86d6b5ef4f33a72da25fde13baf48'
+          test -z "$(git -C candidate status --porcelain)"
+      - name: Sealed original Node Vite Chromium and full regression
+        run: |
+          node --input-type=module <<'NODE'
+          import { spawnSync } from 'node:child_process';
+          const commands = [
+            ['dependencies','npm',['ci','--no-audit','--no-fund']],
+            ['avatar-node','npm',['run','test:role:avatars']],
+            ['avatar-image-node','npm',['run','test:chat:image-vision']],
+            ['chat-contract','npm',['run','test:chat:contract']],
+            ['vite','npm',['run','build']],
+            ['chromium-install','npx',['playwright','install','--with-deps','chromium']],
+            ['avatar-chromium','npm',['run','test:role:avatars:browser']],
+            ['all-node','node',['--test','--test-concurrency=1']]
+          ];
+          for (let i=0;i<commands.length;i++) {
+            const [label,cmd,args]=commands[i];
+            const t=spawnSync(cmd,args,{cwd:'candidate',encoding:'utf8',maxBuffer:30*1024*1024,timeout:66*60*1000,env:process.env});
+            const out=(t.stdout||'')+'\n'+(t.stderr||'');
+            if(t.error||t.status!==0) {
+              console.log('SEALED_FAILED_GATE: '+label+' ('+(i+1)+'/'+commands.length+')');
+              const bad=[...out.matchAll(/^not ok (\d+) -/gm)].slice(0,8).map(m=>m[1]);
+              if(bad.length) console.log('FAILED_TEST_ORDINALS: '+bad.join(','));
+              for(const x of ['ERR_ASSERTION','SyntaxError','TimeoutError','Cannot find module','PLAYWRIGHT_BROWSERS_PATH']) if(out.includes(x)) console.log('SAFE_ERROR_CLASS: '+x);
+              throw new Error('Private code and logs remain sealed; regression failed.');
+            }
+            console.log('SEALED_PASS_GATE: '+label+' ('+(i+1)+'/'+commands.length+')');
+          }
+          NODE
