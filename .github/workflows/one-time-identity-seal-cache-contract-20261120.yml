@@ -1,0 +1,59 @@
+name: One-time sealed role identity cache contract verification
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-identity-seal-cache-contract-20261120.yml
+permissions:
+  contents: read
+concurrency:
+  group: sealed-identity-cache-contract-20261120
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/public-content-check.mjs
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: task-CHAT-RP-IDENTITY-002/fix-full-node-cache-contract-20261120
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'bd1f05983bf7531519960716978efb37dc573859'
+      - name: Run native cache contracts chat contract build and Chromium
+        run: |
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          const gates=[
+            ['npm',['ci','--no-audit','--no-fund']],
+            ['node',['--test','tests/chat-persona-source-contract.test.mjs']],
+            ['node',['--test','tests/group-persona-memory-audit.test.mjs']],
+            ['npm',['run','test:chat:contract']],
+            ['npm',['run','build']],
+            ['npx',['playwright','install','--with-deps','chromium']],
+            ['node',['tests/chat-light-surfaces-browser.mjs']]
+          ];
+          for(let i=0;i<gates.length;i++){
+            const [bin,args]=gates[i];
+            const r=spawnSync(bin,args,{cwd:'candidate',stdio:'ignore',timeout:12*60*1000});
+            if(r.status!==0||r.error){
+              console.log('SEALED_FAILED_GATE_ORDINAL:'+(i+1));
+              throw Error('QA contract gate failed; private logs withheld');
+            }
+            console.log('SEALED_PASS_GATE_ORDINAL:'+(i+1));
+          }
+          console.log('PASS: role identity cache contract, full chat, Vite and Chromium');
+          NODE
