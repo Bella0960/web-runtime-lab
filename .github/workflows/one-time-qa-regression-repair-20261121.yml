@@ -12,8 +12,8 @@ jobs:
   regression:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '269cc26885ae784723f2b62533b15d7167dfda46' &&
-      github.event.head_commit.message == 'ci: verify scoped stale-regression repairs 20261121'
+      github.event.before == 'd6ba14ffc175e93fb92af478e55a57b02946329d' &&
+      github.event.head_commit.message == 'ci: reverify synchronized QA regression contracts 20261121'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -38,7 +38,7 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '4dbdb10fc03f6b44e88fdf67522d5d63543f69ac'
+          test "$(git rev-parse HEAD)" = '9bc47e35f47613a77742f2bf086e3f1c6d275c23'
           test -z "$(git status --porcelain)"
       - name: Node focused and full suite + Vite with sanitized results
         shell: bash
