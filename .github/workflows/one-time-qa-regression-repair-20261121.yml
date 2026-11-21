@@ -12,8 +12,8 @@ jobs:
   regression:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '98f8b790f1a07df224367078c5392de2c8aa4d79' &&
-      github.event.head_commit.message == 'ci: build before full Node verification 20261121'
+      github.event.before == 'e99c32e27a22a9e92192af260e8b9f8317529e1d' &&
+      github.event.head_commit.message == 'ci: provision Chromium for complete QA Node suite 20261121'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -59,6 +59,7 @@ jobs:
               'tests/qa-release-live-version.test.mjs',
               'tests/default-desktop-layout.test.mjs'],time:300000},
             {name:'vite-build',bin:'npm',args:['run','build'],time:480000},
+            {name:'chromium-install',bin:'npx',args:['playwright','install','--with-deps','chromium'],time:480000},
             {name:'all-node',bin:'node',args:['--test','--test-concurrency=1'],time:900000}
           ];
           for(const step of steps){
