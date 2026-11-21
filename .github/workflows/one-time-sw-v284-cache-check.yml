@@ -1,0 +1,48 @@
+name: One-time SW v284 cache recovery regression
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-sw-v284-cache-check.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: >-
+      github.actor == github.repository_owner &&
+      github.event.before == 'd893857c699ab9084f41c5016bc1ba8f52e82fc6' &&
+      github.event.head_commit.message == 'ci: verify isolated cache recovery test v284 for QA'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Privacy gate
+        run: npm run check:public
+      - name: Checkout original private test-only fix
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: QA-SW-TEST-001/cache-version-regression-20261121
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          persist-credentials: false
+          path: candidate
+          fetch-depth: 1
+      - name: Pin source and run behavior-level cache contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '40510d24d5f074ebf2ac18157d1ae0849341cc3e'
+          log="$RUNNER_TEMP/cache-test.log"
+          trap 'rm -f "$log"' EXIT
+          if (cd candidate && node --test tests/pwa-route-cache-recovery.test.mjs) >"$log" 2>&1; then
+            grep '^# tests\\|^# pass\\|^# fail' "$log" || true
+            echo 'SAFE_PASS: cache v284 activates, old v282/v283 cleaned, account/fonts preserved'
+          else
+            echo 'SAFE_FAIL: SW cache regression'
+            sed -n 's/^not ok \([0-9]*\).*/failed assertion \1/p' "$log" | tail -8 || true
+            exit 1
+          fi
