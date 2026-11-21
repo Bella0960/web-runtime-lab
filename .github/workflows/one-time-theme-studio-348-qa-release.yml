@@ -12,8 +12,8 @@ jobs:
   qa_release:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '9f2982788cc8810a3d582e156659335d25032c26' &&
-      github.event.head_commit.message == 'ci: publish validated mobile theme studio QA-only 348'
+      github.event.before == '56f8d76fb21e3217ba63f26df16a145c1c1d435f' &&
+      github.event.head_commit.message == 'ci: publish tutorial-aligned mobile theme studio QA-only 348'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -57,7 +57,7 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'ad1e6877ac138ac2090d44deee2389fa129589c0'
+          test "$(git rev-parse HEAD)" = 'bd7b08b00f5517ffbcd2c137d0c5477b8c8349f2'
           test "$(git branch --show-current)" = 'integration/account-fanwai-stack-20261115'
           test -z "$(git status --porcelain)"
           test -f tests/theme-studio.test.mjs
@@ -72,6 +72,7 @@ jobs:
           trap 'rm -f "$log"' EXIT
           if (cd candidate && npm ci --no-audit --no-fund && \
               node --test tests/theme-studio.test.mjs && \
+              npm run test:tutorial && \
               npm run build && \
               npx playwright install --with-deps chromium && \
               node tests/theme-studio-browser.mjs) >"$log" 2>&1; then
