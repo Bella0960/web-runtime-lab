@@ -12,8 +12,8 @@ jobs:
   inspect:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '06f71f2e6c366347796a809f33a46148b1f7027e' &&
-      github.event.head_commit.message == 'ci: repair isolated viewport invocation'
+      github.event.before == 'ba99c104438d44e8d1b0cc454ef0240c5b661990' &&
+      github.event.head_commit.message == 'ci: inspect active login panel without click'
     runs-on: ubuntu-latest
     timeout-minutes: 18
     steps:
@@ -63,8 +63,12 @@ jobs:
               });
               try{
                 const response=await page.goto(url+'?nocache='+Date.now(),{waitUntil:'domcontentloaded',timeout:18000});
-                await page.locator('button[data-show="loginPanel"]').waitFor({timeout:12000});
-                await page.locator('button[data-show="loginPanel"]').click();
+                const login=page.locator('#loginPanel');
+                await page.waitForTimeout(400);
+                if (!(await login.isVisible())) {
+                  await page.locator('button[data-show="loginPanel"]:visible').click({timeout:10000});
+                }
+                await login.waitFor({state:'visible',timeout:12000});
                 await page.waitForTimeout(2300);
                 const data=await page.evaluate(()=>{
                   const rect=e=>{
