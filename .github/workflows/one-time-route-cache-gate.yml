@@ -1,0 +1,103 @@
+name: Isolated mobile route and cache recovery gate
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-route-cache-gate.yml]
+permissions:
+  contents: write
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      github.actor == github.repository_owner &&
+      github.event.before == 'f771c9631c6a50e765b38c0b1231c9999d8bcaaf' &&
+      github.event.head_commit.message == 'ci: verify isolated route cache recovery'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public content guard
+        run: npm run check:public
+      - name: Checkout restricted candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: refs/pull/347/head
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+      - name: Verify Node, Vite, Chromium and account-route contracts
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          phase=checkout
+          trap 'echo "$phase" > "$RUNNER_TEMP/route-phase"' EXIT
+          (
+            cd candidate
+            test "$(git rev-parse HEAD)" = 'bbbef67b4ea16fe46c41afe768d5bdcb4cb30d18'
+            test -z "$(git status --porcelain)"
+            phase=install
+            npm ci --no-audit --no-fund
+            phase=build
+            npm run build
+            phase=node-route-cache
+            node --test tests/pwa-route-cache-recovery.test.mjs \
+              tests/worker-page-auth-runtime.test.mjs \
+              tests/account-fanwai-pwa-runtime.test.mjs \
+              tests/sw-navigation-cache-lifecycle.test.mjs \
+              tests/detective-case-unlock.test.mjs \
+              tests/pwa-navigation-cache.test.mjs
+            phase=node-account
+            npm run test:account:release-gate
+            phase=node-pwa
+            npm run test:pwa:navigation
+            phase=node-chat
+            npm run test:chat:contract
+            phase=chromium-install
+            npx playwright install --with-deps chromium
+            phase=node-group
+            npm run test:group:governance
+            npm run test:group:ui
+            npm run test:group:invite-e2e
+            phase=mobile-browser
+            npx vite preview --host 127.0.0.1 --port 3000 > "$RUNNER_TEMP/route-vite-private.log" 2>&1 &
+            pid=$!
+            trap 'kill "$pid" 2>/dev/null || :; echo "$phase" > "$RUNNER_TEMP/route-phase"' EXIT
+            node tests/pwa-route-cache-recovery.browser.mjs
+            phase=complete
+          ) > "$RUNNER_TEMP/route-private.log" 2>&1
+      - name: Publish non-sensitive gate receipt
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          GATE_OUTCOME: ${{ steps.gate.outcome }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {existsSync,readFileSync} from 'node:fs';
+          const filename=process.env.RUNNER_TEMP+'/route-phase';
+          const phase=existsSync(filename)?readFileSync(filename,'utf8').trim():'prerequisite';
+          const passed=process.env.GATE_OUTCOME==='success'&&phase==='complete';
+          const payload={run_id:process.env.RUN_ID,result:passed?'pass':'fail',stage:phase,changed_files:11};
+          const url='https://api.github.com/repos/'+process.env.GH_REPOSITORY+'/contents/ci-status/route-cache-gate.json';
+          const headers={Authorization:'Bearer '+process.env.GH_TOKEN,
+            Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',
+            'Content-Type':'application/json'};
+          const prev=await fetch(url+'?ref=qa-candidate',{headers});
+          const sha=prev.ok?(await prev.json()).sha:undefined;
+          const res=await fetch(url,{method:'PUT',headers,body:JSON.stringify({
+            message:'ci: record route cache recovery gate',branch:'qa-candidate',
+            content:Buffer.from(JSON.stringify(payload)+'\n').toString('base64'),...(sha?{sha}:{})
+          })});
+          if(!res.ok)throw Error('Unable to publish generic verification receipt');
+          console.log('Generic pass-fail receipt recorded; private logs remain isolated.');
+          NODE
