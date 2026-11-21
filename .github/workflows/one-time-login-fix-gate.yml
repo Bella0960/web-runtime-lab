@@ -12,8 +12,8 @@ jobs:
   verify:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '20a26732f7cde6bbf68dac4e0f16403751a86c26' &&
-      github.event.head_commit.message == 'ci: isolate login identity contract failures'
+      github.event.before == 'b7274793646a73c831fe63980a3092710fcaa93b' &&
+      github.event.head_commit.message == 'ci: verify login-only isolated visual retry'
     runs-on: ubuntu-latest
     timeout-minutes: 70
     steps:
@@ -40,7 +40,7 @@ jobs:
           trap 'echo "$phase" > "$RUNNER_TEMP/login-phase"' EXIT
           {
             cd candidate
-            test "$(git rev-parse HEAD)" = '2f8f65acdc8052796110896e0042eebb40eca9c8'
+            test "$(git rev-parse HEAD)" = '5f56f82320e5922bcc8dacff85fb9662777bccfa'
             test -z "$(git status --porcelain)"
             phase=dependencies
             npm ci --no-audit --no-fund
