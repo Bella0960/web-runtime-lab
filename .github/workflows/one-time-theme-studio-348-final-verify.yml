@@ -1,0 +1,67 @@
+name: One-time mobile theme studio final scoped verification
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-theme-studio-348-final-verify.yml]
+permissions:
+  contents: read
+concurrency:
+  group: theme-studio-348-final
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      github.actor == github.repository_owner &&
+      github.event.before == '02fb0779ba81038e579a01003312eb8289554986' &&
+      github.event.head_commit.message == 'ci: verify final isolated mobile theme studio candidate 348'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Privacy guard
+        run: npm run check:public
+      - name: Checkout pinned original private candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: candidate
+      - name: Pin exact private QA source
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '0b7c9f17df31ae3e32ca218b57ac079f67bd4c97'
+          test -z "$(git status --porcelain)"
+      - name: Real Node/Vite/Chromium scoped safety tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          log="$RUNNER_TEMP/theme-studio-final.log"
+          trap 'rm -f "$log"' EXIT
+          phase=dependencies
+          if ! (cd candidate && npm ci --no-audit --no-fund) > "$log" 2>&1; then echo "SAFE_FAIL_PHASE: $phase";exit 1;fi
+          phase=desktop
+          if ! (cd candidate && node --test tests/default-desktop-layout.test.mjs) > "$log" 2>&1; then echo "SAFE_FAIL_PHASE: $phase";sed -n 's/^not ok \([0-9]*\).*/FAILED_ORDINAL \1/p' "$log";exit 1;fi
+          phase=tutorial
+          if ! (cd candidate && npm run test:tutorial) > "$log" 2>&1; then echo "SAFE_FAIL_PHASE: $phase";sed -n 's/^not ok \([0-9]*\).*/FAILED_ORDINAL \1/p' "$log";exit 1;fi
+          phase=studio
+          if ! (cd candidate && node --test tests/theme-studio.test.mjs tests/account-storage-isolation.test.mjs) > "$log" 2>&1; then echo "SAFE_FAIL_PHASE: $phase";sed -n 's/^not ok \([0-9]*\).*/FAILED_ORDINAL \1/p' "$log";exit 1;fi
+          phase=chat
+          if ! (cd candidate && npm run test:chat:contract) > "$log" 2>&1; then echo "SAFE_FAIL_PHASE: $phase";sed -n 's/^not ok \([0-9]*\).*/FAILED_ORDINAL \1/p' "$log";exit 1;fi
+          phase=vite
+          if ! (cd candidate && npm run build) > "$log" 2>&1; then echo "SAFE_FAIL_PHASE: $phase";exit 1;fi
+          phase=chromium-install
+          if ! (cd candidate && npx playwright install --with-deps chromium) > "$log" 2>&1; then echo "SAFE_FAIL_PHASE: $phase";exit 1;fi
+          phase=mobile
+          if ! (cd candidate && node tests/theme-studio-browser.mjs) > "$log" 2>&1; then echo "SAFE_FAIL_PHASE: $phase";exit 1;fi
+          echo 'SAFE_PASS: desktop, tutorial, studio, account, chat, vite, chromium 375/390/430'
+          echo 'VERIFY ONLY: no Cloudflare deployment attempted'
