@@ -1,0 +1,110 @@
+name: One-time isolated candidate surface gate
+on:
+  push:
+    branches: [qa-candidate]
+    paths:
+      - .github/workflows/one-time-surface-gate.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+
+jobs:
+  candidate_verify:
+    if: >-
+      ${{ github.actor }} == ${{ github.repository_owner }} &&
+      ${{ github.event.before }} == '5c8cf0be20bdf25925bd49f484e3c9a8b9aaa800' &&
+      ${{ github.event.head_commit.message }} == 'ci: run isolated candidate surface gate'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public content guard
+        run: npm run check:public
+      - name: Verify sealed source configuration
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SOURCE_REPOSITORY"
+          test -n "$SOURCE_REF"
+          test -n "$SOURCE_TOKEN"
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+          echo "::add-mask::$SOURCE_REF"
+      - name: Run private Node, build, Chromium with sealed output
+        id: verify
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          phase=clone
+          trap 'printf "%s\n" "$phase" > "$RUNNER_TEMP/candidate-phase"' EXIT
+          {
+            git clone --depth=1 --quiet --branch "$SOURCE_REF" "https://x-access-token:${SOURCE_TOKEN}@github.com/${SOURCE_REPOSITORY}.git" candidate
+            git -C candidate fetch --quiet --depth=1 origin 'refs/pull/344/head'
+            git -C candidate checkout --quiet --detach FETCH_HEAD
+            test "$(git -C candidate rev-parse HEAD)" = 'c0a937c99d154ec25c1bd8a258fae1990b85acb9'
+            test -z "$(git -C candidate status --porcelain)"
+            cd candidate
+            phase=install
+            npm ci --no-audit --no-fund
+            phase=node
+            npm run test:group:governance
+            phase=vite
+            npm run build
+            phase=chromium-setup
+            npx playwright install --with-deps chromium
+            phase=chromium
+            npm run test:group:ui
+            npm run test:group:invite-e2e
+            phase=passed
+          } >"$RUNNER_TEMP/private-validation.log" 2>&1
+      - name: Publish generic pass-fail receipt only
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          TEST_OUTCOME: ${{ steps.verify.outcome }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync, existsSync} from 'node:fs';
+          const phaseFile = process.env.RUNNER_TEMP + '/candidate-phase';
+          const phase = existsSync(phaseFile)
+            ? readFileSync(phaseFile,'utf8').trim().replace(/[^a-z-]/g,'').slice(0,30)
+            : 'prerequisite';
+          const pass = process.env.TEST_OUTCOME === 'success' && phase === 'passed';
+          const content = Buffer.from(JSON.stringify({
+            run_id: process.env.RUN_ID,
+            phase: 'verification',
+            result: pass ? 'pass' : 'fail',
+            stage: phase,
+            changed_files: 4
+          }) + '\n').toString('base64');
+          const url = 'https://api.github.com/repos/' + process.env.GH_REPOSITORY + '/contents/ci-status/surface-gate.json';
+          const headers = {'Authorization':'Bearer ' + process.env.GH_TOKEN,
+            'Accept':'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28',
+            'Content-Type':'application/json'};
+          const prev = await fetch(url + '?ref=qa-candidate',{headers});
+          const sha = prev.ok ? (await prev.json()).sha : undefined;
+          const response = await fetch(url,{method:'PUT',headers,body:JSON.stringify({
+            message:'ci: record sealed candidate gate', branch:'qa-candidate',
+            content, ...(sha?{sha}:{})
+          })});
+          if (!response.ok) throw Error('Cannot publish generic verification receipt: HTTP ' + response.status);
+          console.log('Generic verification receipt stored; no private logs were published.');
+          NODE
