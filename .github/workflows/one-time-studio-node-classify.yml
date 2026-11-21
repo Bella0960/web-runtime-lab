@@ -1,0 +1,93 @@
+name: One-time inherited Node assertions classifier
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-studio-node-classify.yml]
+permissions:
+  contents: read
+concurrency:
+  group: isolated-node-classifier-20261121
+  cancel-in-progress: false
+jobs:
+  classify:
+    if: >-
+      github.actor == github.repository_owner &&
+      github.event.before == '91c636da417575b2e3222e5df171cf3cf080b681' &&
+      github.event.head_commit.message == 'ci: one-time classify inherited full-node regressions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: public privacy
+        run: npm run check:public
+      - name: checkout pinned private
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: pin QA only
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '0b7c9f17df31ae3e32ca218b57ac079f67bd4c97'
+          test -z "$(git status --porcelain)"
+      - name: classify failing Node assertions without exposing source or fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { spawnSync } from 'node:child_process';
+          const run=(args,limit=400000)=>spawnSync(args[0],args.slice(1),{
+            cwd:'candidate',encoding:'utf8',timeout:limit,maxBuffer:30*1024*1024,
+            env:{...process.env,FORCE_COLOR:'0'}
+          });
+          for(const [step,args] of [
+            ['install',['npm','ci','--no-audit','--no-fund']],
+            ['build',['npm','run','build']]
+          ]) {
+            const r=run(args);
+            if(r.status!==0)throw new Error('SCOPED_SETUP_FAILED_'+step);
+            console.log('SCOPED_SETUP_PASS_'+step);
+          }
+          const tests=[
+            'tests/chat-protocol-worldbook-priority.test.mjs',
+            'tests/chat-reply-bubble-mode.test.mjs',
+            'tests/encounter-contract.test.mjs',
+            'tests/font-runtime-performance.test.mjs',
+            'tests/forum-gossip-story.test.mjs',
+            'tests/group-game-chat-receipts.test.mjs',
+            'tests/qa-identity-reconnect.test.mjs',
+            'tests/qa-release-live-version.test.mjs',
+            'tests/default-desktop-layout.test.mjs'
+          ];
+          for(const path of tests){
+            const r=run(['node','--test',path],240000);
+            const out=(r.stdout||'')+'\n'+(r.stderr||'');
+            const failures=[...out.matchAll(/^not ok\s+(\d+)\s+-.*$/gm)];
+            console.log('SCOPED_TEST '+path.split('/').pop()+' exit='+r.status+' failures='+failures.length);
+            for(let i=0;i<failures.length;i++){
+              const start=failures[i].index,end=i+1<failures.length?failures[i+1].index:out.length;
+              const block=out.slice(start,end).split('\n    ...')[0];
+              const line=(block.match(/location: '[^']+\.mjs:(\d+):\d+'/m)||[])[1] ||
+                (block.match(/(?:\w+\.test\.mjs):(\d+):\d+/)||[])[1]||'unknown';
+              const operator=(block.match(/operator:\s*'([a-zA-Z]+)'/)||[])[1]||'none';
+              const cls=(block.match(/code:\s*'([A-Z_]+)'/)||[])[1]||'unknown';
+              const error=(block.match(/error:\s*'([^']{1,140})'/)||[])[1]||'';
+              let reason='other';
+              if(/regular expression|pattern/i.test(error)) reason='regex-text-mismatch';
+              else if(/deep|strictly equal|expected/i.test(error))reason='assertion-value-mismatch';
+              else if(/Unexpected|already been declared|identifier/i.test(error))reason='syntax-invalid';
+              else if(/timeout/i.test(error))reason='timeout';
+              console.log('SCOPED_FAIL '+path.split('/').pop()+':'+line+' ordinal='+failures[i][1]+' class='+cls+' operator='+operator+' reason='+reason);
+            }
+          }
+          NODE
