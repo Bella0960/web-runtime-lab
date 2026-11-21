@@ -1,4 +1,4 @@
-name: Guarded role phone desktop QA-only release
+name: Guarded group-settings QA-only release
 on:
   push:
     branches: [qa-candidate]
@@ -12,7 +12,7 @@ concurrency:
 jobs:
   qa_release:
     if: >-
-      ${{ github.actor == github.repository_owner && github.event.before == '6bb9f09d4fad6874c269b0209f74001fc9415eb4' && github.event.head_commit.message == 'ci: release role phone desktop controls to QA only' }}
+      ${{ github.actor == github.repository_owner && github.event.before == 'b2d2b06184e5e2812510b76ab6ee380df20fcb04' && github.event.head_commit.message == 'ci: release approved group-settings QA revision' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '273706d257e172b37a18355414bb9d355e755072'
+          test "$(git -C candidate rev-parse HEAD)" = '1d85dae038a6d9781e6865991d7d1b16ec0ec6fd'
           test "$(git -C candidate branch --show-current)" = 'integration/account-fanwai-stack-20261115'
           test -z "$(git -C candidate status --porcelain)"
           echo 'Exact approved QA candidate verified.'
