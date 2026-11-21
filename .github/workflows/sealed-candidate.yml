@@ -11,6 +11,14 @@ on:
         options:
           - verify
           - release
+      candidate:
+        description: 'Sealed baseline or approved single-chat QA candidate'
+        type: choice
+        required: true
+        default: sealed
+        options:
+          - sealed
+          - chat-p0-375
       confirmation:
         description: 'For release only: enter qa-only'
         required: false
@@ -27,7 +35,7 @@ jobs:
   candidate:
     # No private deployment credentials enter an unapproved verify-only run.
     if: >-
-      ${{ inputs.operation == 'verify' || (inputs.operation == 'release' && github.actor == github.repository_owner && inputs.confirmation == 'qa-only') }}
+      ${{ (inputs.candidate == 'sealed' || (inputs.candidate == 'chat-p0-375' && github.actor == github.repository_owner)) && (inputs.operation == 'verify' || (inputs.operation == 'release' && github.actor == github.repository_owner && inputs.confirmation == 'qa-only')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -45,7 +53,7 @@ jobs:
         shell: bash
         env:
           SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
-          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_REF: ${{ inputs.candidate == 'chat-p0-375' && 'integration/qa-single-chat-375' || secrets.CANDIDATE_REF }}
           SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
           OPERATION: ${{ inputs.operation }}
         run: |
@@ -61,11 +69,22 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ${{ secrets.CANDIDATE_REF }}
+          ref: ${{ inputs.candidate == 'chat-p0-375' && 'integration/qa-single-chat-375' || secrets.CANDIDATE_REF }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: true
           fetch-depth: 100
+      - name: Verify approved single-chat candidate SHA
+        if: ${{ inputs.candidate == 'chat-p0-375' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected='40c39d1cc9cd42aed7c0acc53ad07ad17eacf9a5'
+          actual="$(git -C candidate rev-parse HEAD)"
+          if [[ "$actual" != "$expected" ]]; then
+            echo 'Approved QA candidate changed; refuse unverified source.'
+            exit 1
+          fi
       - name: Run private validation without public logs
         env:
           CANDIDATE_RELEASE_ACK: ${{ inputs.confirmation }}
