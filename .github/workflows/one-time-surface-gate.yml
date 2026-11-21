@@ -15,9 +15,9 @@ concurrency:
 jobs:
   candidate_verify:
     if: >-
-      ${{ github.actor }} == ${{ github.repository_owner }} &&
-      ${{ github.event.before }} == '5c8cf0be20bdf25925bd49f484e3c9a8b9aaa800' &&
-      ${{ github.event.head_commit.message }} == 'ci: run isolated candidate surface gate'
+      github.actor == github.repository_owner &&
+      github.event.before == '043feb1b25a491f9e892944055f0f3b93682fad6' &&
+      github.event.head_commit.message == 'ci: validate sealed candidate gate expression'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
