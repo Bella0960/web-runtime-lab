@@ -3,6 +3,11 @@
 // allowlisted test filenames, numeric line numbers and fixed error codes.
 export function summarizeSealedFailure(releaseSource, sealedLog, { timedOut = false } = {}) {
   if (timedOut) return 'process-timeout';
+  // Verify-only diagnostics still fail the job; report the complete set of
+  // required failed gates rather than just the final failing test.
+  if (/^QA_DIAGNOSTIC_FAILED_GATES:[0-9,]{1,80}$/m.test(String(sealedLog))) {
+    return 'multiple-required-test-gates';
+  }
   const body = String(releaseSource).match(/const TESTS\s*=\s*\[([\s\S]*?)\n\];/)?.[1] || '';
   const gates = [...body.matchAll(/^\s*\['(npm|node|npx)',\s*\[([^\]\n]+)\]\],?\s*$/gm)]
     .map(match => ({
@@ -36,7 +41,9 @@ export function summarizeSealedNodeFailures(sealedLog, allowedTestFiles = []) {
   ));
   if (!allowed.size) return [];
   const input = String(sealedLog);
-  const tapStart = input.lastIndexOf('TAP version 13');
+  // Verify-only may contain several test processes. Parse all TAP blocks in
+  // the bounded ephemeral log, not just the last process's TAP header.
+  const tapStart = input.indexOf('TAP version 13');
   const lines = (tapStart >= 0 ? input.slice(tapStart) : input).split(/\r?\n/);
   const failures = [];
   let block = null;
