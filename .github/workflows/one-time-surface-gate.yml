@@ -12,8 +12,8 @@ jobs:
   audit:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '0521c09e3fb71892cb0936f3af0b83030b35c20c' &&
-      github.event.head_commit.message == 'ci: isolate full suite failure indices'
+      github.event.before == '28cb2c2db2c7a39ce3a6ea743c35538fe0148b97' &&
+      github.event.head_commit.message == 'ci: correct isolated test working directory'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -39,12 +39,12 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C candidate rev-parse HEAD)" = 'bdbb368b958bd3d45edf593b3f7495dd4ed4d011'
-          {
+          (
             cd candidate
             npm ci --no-audit --no-fund
             npm run build
             npx playwright install --with-deps chromium
-          } > "$RUNNER_TEMP/private-setup.log" 2>&1
+          ) > "$RUNNER_TEMP/private-setup.log" 2>&1
           node --input-type=module <<'NODE'
           import {readdirSync,writeFileSync} from 'node:fs';
           import {spawnSync} from 'node:child_process';
