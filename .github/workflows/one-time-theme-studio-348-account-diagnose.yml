@@ -12,8 +12,8 @@ jobs:
   inspect:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '32daf86ed98ad11d469ffc04ae9c32f6c02810ba' &&
-      github.event.head_commit.message == 'ci: isolate mobile editor QA account gate 348'
+      github.event.before == 'cb675b5916ba125912b6ded747d0d9f23e021dd4' &&
+      github.event.head_commit.message == 'ci: verify updated account redirect regression gate 348'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -38,7 +38,7 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'd78e625a51b552f43afa7a13ebf671e471024417'
+          test "$(git rev-parse HEAD)" = 'ad1e6877ac138ac2090d44deee2389fa129589c0'
           test -z "$(git status --porcelain)"
       - name: Diagnose account gate without disclosing private test output
         shell: bash
