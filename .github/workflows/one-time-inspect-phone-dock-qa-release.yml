@@ -7,13 +7,13 @@ permissions:
   contents: write
 concurrency:
   group: sealed-candidate
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   qa_only:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == 'e08ba5c381b060797f8250f0db1e71dd882a5773' &&
-      github.event.head_commit.message == 'ci: finalize scoped release preflight'
+      github.event.before == '1fc5e02fc4ae001a441ef38c74ac345670b3853c' &&
+      github.event.head_commit.message == 'ci: replace stale QA candidate attempt'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
