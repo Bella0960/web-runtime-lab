@@ -1,20 +1,19 @@
-name: Isolated candidate full-regression diagnostic
+name: Isolated targeted regression audit
 on:
   push:
     branches: [qa-candidate]
-    paths:
-      - .github/workflows/one-time-surface-gate.yml
+    paths: [.github/workflows/one-time-surface-gate.yml]
 permissions:
   contents: write
 concurrency:
   group: sealed-candidate
   cancel-in-progress: false
 jobs:
-  diagnostic:
+  audit:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '442c9d23f2137ceda3db0460c815a2a4f520ec18' &&
-      github.event.head_commit.message == 'ci: verify updated group browser test in isolation'
+      github.event.before == '0521c09e3fb71892cb0936f3af0b83030b35c20c' &&
+      github.event.head_commit.message == 'ci: isolate full suite failure indices'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -24,9 +23,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Public privacy guard
+      - name: Public guard
         run: npm run check:public
-      - name: Get restricted candidate without publication
+      - name: Checkout verified candidate in sealed runner
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
@@ -34,9 +33,8 @@ jobs:
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
-          fetch-depth: 1
-      - name: Run sealed diagnostic
-        id: verify
+      - name: Build candidate and run targeted suites
+        id: test
         shell: bash
         run: |
           set -euo pipefail
@@ -47,12 +45,27 @@ jobs:
             npm run build
             npx playwright install --with-deps chromium
           } > "$RUNNER_TEMP/private-setup.log" 2>&1
-          set +e
-          node --test --test-concurrency=1 > "$RUNNER_TEMP/private-node.log" 2>&1
-          status=$?
-          set -e
-          if test "$status" -ne 0; then echo "fail" > "$RUNNER_TEMP/diagnostic-result"; else echo "pass" > "$RUNNER_TEMP/diagnostic-result"; fi
-      - name: Save numeric-only failure diagnostics
+          node --input-type=module <<'NODE'
+          import {readdirSync,writeFileSync} from 'node:fs';
+          import {spawnSync} from 'node:child_process';
+          const files=readdirSync('candidate/tests').filter(f=>f.endsWith('.test.mjs')).sort();
+          const ids=[48,50,60,67,72,82,86,93,99,102];
+          const results=[];
+          for(const id of ids){
+            const path=files[id-1];
+            if(!path) throw Error('Missing indexed test '+id);
+            const r=spawnSync(process.execPath,['--test','tests/'+path],{
+              cwd:'candidate',encoding:'utf8',maxBuffer:32*1024*1024,timeout:120000
+            });
+            const log=String(r.stdout||'')+'\n'+String(r.stderr||'');
+            const status=r.status===0&&!r.error;
+            results.push({index:id,ok:status,error_type:status?'none':
+              /TimeoutError|timeout/i.test(log)?'timeout':
+              /AssertionError|ERR_ASSERTION/i.test(log)?'assertion':'other'});
+          }
+          writeFileSync(process.env.RUNNER_TEMP+'/numeric-suites.json',JSON.stringify(results)+'\n');
+          NODE
+      - name: Publish anonymized verification result
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
@@ -60,37 +73,20 @@ jobs:
           RUN_ID: ${{ github.run_id }}
         run: |
           node --input-type=module <<'NODE'
-          import { readFileSync, existsSync, readdirSync } from 'node:fs';
-          import { join } from 'node:path';
-          const file = process.env.RUNNER_TEMP + '/private-node.log';
-          const source = existsSync(file) ? readFileSync(file,'utf8') : '';
-          const files = existsSync('candidate/tests')
-            ? readdirSync('candidate/tests').filter(x=>/\.test\.mjs$/.test(x)).sort()
-            : [];
-          const errorSections = source.split(/\n(?=\s*not ok\s+\d+\s+-\s+)/m)
-            .filter(x=>/^\s*not ok\s+\d+\s+-/m.test(x)).slice(0,30);
-          const failedIndices = errorSections.map(x => Number((x.match(/^\s*not ok\s+(\d+)/m)||[])[1]))
-            .filter(x => Number.isInteger(x));
-          const fileIndices = [...new Set(errorSections.flatMap(block => {
-            const names = [...block.matchAll(/tests\/([a-zA-Z0-9_.-]+\.test\.mjs)/g)].map(m=>m[1]);
-            return names.map(name=>files.indexOf(name)+1).filter(n=>n>0);
-          }))].slice(0,20);
-          const summary = source.match(/#\s+(tests|pass|fail|duration_ms)\s+([\d.]+)/g)||[];
-          const statusFile = process.env.RUNNER_TEMP + '/diagnostic-result';
-          const result = existsSync(statusFile) ? readFileSync(statusFile,'utf8').trim() : 'setup-failed';
-          const payload = {run_id:process.env.RUN_ID,stage:'full-node',result,
-            failed_test_numbers:failedIndices,file_indices:fileIndices,test_files:files.length,
-            summary:summary.slice(-5).map(s=>s.match(/#\s+(\w+)\s+([\d.]+)/)?.slice(1))};
-          const url = 'https://api.github.com/repos/'+process.env.GH_REPOSITORY+'/contents/ci-status/node-diagnostic.json';
-          const headers = {Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json',
+          import {existsSync,readFileSync} from 'node:fs';
+          const f=process.env.RUNNER_TEMP+'/numeric-suites.json';
+          const tests=existsSync(f)?JSON.parse(readFileSync(f,'utf8')):[];
+          const payload={run_id:process.env.RUN_ID,result:tests.length===10?'complete':'incomplete',tests};
+          const url='https://api.github.com/repos/'+process.env.GH_REPOSITORY+'/contents/ci-status/targeted-audit.json';
+          const headers={Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json',
             'X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'};
-          const prev = await fetch(url+'?ref=qa-candidate',{headers});
-          const sha = prev.ok ? (await prev.json()).sha : undefined;
-          const response = await fetch(url,{method:'PUT',headers,body:JSON.stringify({
-            message:'ci: record sealed numeric regression diagnostics',branch:'qa-candidate',
+          const prior=await fetch(url+'?ref=qa-candidate',{headers});
+          const sha=prior.ok?(await prior.json()).sha:undefined;
+          const res=await fetch(url,{method:'PUT',headers,body:JSON.stringify({
+            message:'ci: record anonymized targeted regression audit',branch:'qa-candidate',
             content:Buffer.from(JSON.stringify(payload)+'\n').toString('base64'),
             ...(sha?{sha}:{})
           })});
-          if(!response.ok)throw Error('Cannot publish generic diagnostic receipt: '+response.status);
-          console.log('Numeric-only diagnostic receipt recorded.');
+          if(!res.ok)throw Error('Cannot record audit receipt: '+res.status);
+          console.log('Generic numeric audit recorded.');
           NODE
