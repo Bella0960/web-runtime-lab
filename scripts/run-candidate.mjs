@@ -34,6 +34,13 @@ if (!releaseSource.includes('preflightCheckout();') ||
 
 const environment = { ...process.env };
 const args = [script];
+// Run the complete diagnostic sweep only for non-deploy validation.
+// Release remains strict fail-fast with all existing deployment guards.
+if (mode === 'verify') {
+  environment.MAOMAO_QA_DIAGNOSE_ALL = '1';
+} else {
+  delete environment.MAOMAO_QA_DIAGNOSE_ALL;
+}
 if (mode === 'release') {
   // Verify the immutable Worker identity and config before any deployment.
   // Matching filenames or an --qa-only flag alone is insufficient.
@@ -90,7 +97,16 @@ try {
     // Any failed Node-based gate may emit TAP failures, not only the full
     // Node suite at gate 18. Only allowlisted test paths and fixed codes
     // leave the ephemeral runner; never echo raw npm/Node logs.
-    if (/^gate-\d+-of-\d+-tests$/.test(stage)) {
+    const gateReport = [...sealedLog.matchAll(/^QA_DIAGNOSTIC_FAILED_GATES:([0-9,]{1,80})$/gm)]
+      .map(match => match[1]).at(-1);
+    if (stage === 'multiple-required-test-gates' && gateReport) {
+      const gates = [...new Set(gateReport.split(',').map(Number))]
+        .filter(n => Number.isSafeInteger(n) && n >= 1 && n <= 20)
+        .sort((a, b) => a - b);
+      if (gates.length) console.error('Failed required QA gate numbers: ' + gates.join(','));
+    }
+    if (/^gate-\d+-of-\d+-tests$/.test(stage) ||
+        stage === 'multiple-required-test-gates') {
       const testDir = join(source, 'tests');
       const files = existsSync(testDir)
         ? readdirSync(testDir, { withFileTypes: true })
