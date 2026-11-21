@@ -1,0 +1,71 @@
+name: One-time theme studio 002 private mobile verification
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-theme-studio-002-verify.yml]
+permissions:
+  contents: read
+concurrency:
+  group: theme-studio-002-verify
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      github.actor == github.repository_owner &&
+      github.event.before == '1d066b64db20e342fa7a7e2f9468ddd6d5eafc0f' &&
+      github.event.head_commit.message == 'ci: verify enhanced mobile theme editor and IDB photo imports 002'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public privacy guard
+        run: npm run check:public
+      - name: Checkout original private editor branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: THEME-STUDIO-002/mobile-editor-images-preview-20261121
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 1
+          path: candidate
+      - name: Pin immutable source SHA
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '3c8a1a5d1d2a6a4d298a54fb8ce19633627aa60b'
+          test -z "$(git status --porcelain)"
+          test -f shared/js/theme-studio-assets.js
+      - name: Native Node, Vite, Chromium and IDB image verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          logfile="$RUNNER_TEMP/theme-002.log"
+          trap 'rm -f "$logfile"' EXIT
+          phase=dependencies
+          if ! (cd candidate && npm ci --no-audit --no-fund) >"$logfile" 2>&1; then echo "SAFE_FAIL_PHASE: $phase";exit 1;fi
+          phase=node
+          if ! (cd candidate && node --test tests/theme-studio.test.mjs tests/theme-studio-advanced.test.mjs tests/default-desktop-layout.test.mjs) >"$logfile" 2>&1; then
+            echo "SAFE_FAIL_PHASE: $phase";sed -n 's/^not ok \([0-9]*\).*/FAILED_ORDINAL \1/p' "$logfile";exit 1;fi
+          echo 'SAFE_PASS: theme Node, legacy compatibility, desktop layout'
+          phase=tutorial
+          if ! (cd candidate && npm run test:tutorial) >"$logfile" 2>&1; then echo "SAFE_FAIL_PHASE: $phase";exit 1;fi
+          phase=build
+          if ! (cd candidate && npm run build) >"$logfile" 2>&1; then echo "SAFE_FAIL_PHASE: $phase";exit 1;fi
+          echo 'SAFE_PASS: Vite and tutorial'
+          phase=chromium-install
+          if ! (cd candidate && npx playwright install --with-deps chromium) >"$logfile" 2>&1; then echo "SAFE_FAIL_PHASE: $phase";exit 1;fi
+          phase=browser
+          if ! (cd candidate && node tests/theme-studio-browser.mjs) >"$logfile" 2>&1; then
+            echo "SAFE_FAIL_PHASE: $phase"
+            grep -E 'AssertionError|TimeoutError|expected|actual|Error:' "$logfile" | \
+              sed -E 's/([A-Za-z_]+)=([^ ]+)/\1=[redacted]/g' | head -12 || true
+            exit 1
+          fi
+          echo 'SAFE_PASS: Chromium 375/390/430 image import, IDB and actual chat CSS'
