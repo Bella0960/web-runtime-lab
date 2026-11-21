@@ -1,0 +1,71 @@
+name: One-time isolated account gate diagnosis
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-theme-studio-348-account-diagnose.yml]
+permissions:
+  contents: read
+concurrency:
+  group: one-time-theme-studio-348-diagnosis
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: >-
+      github.actor == github.repository_owner &&
+      github.event.before == '32daf86ed98ad11d469ffc04ae9c32f6c02810ba' &&
+      github.event.head_commit.message == 'ci: isolate mobile editor QA account gate 348'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public privacy gate
+        run: npm run check:public
+      - name: Checkout unchanged restricted source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Confirm pinned source
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'd78e625a51b552f43afa7a13ebf671e471024417'
+          test -z "$(git status --porcelain)"
+      - name: Diagnose account gate without disclosing private test output
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { spawnSync } from 'node:child_process';
+          const deps=spawnSync('npm',['ci','--no-audit','--no-fund'],{
+            cwd:'candidate',encoding:'utf8',maxBuffer:50*1024*1024,timeout:300000});
+          if(deps.status!==0) {
+            console.log('SAFE_FAIL_PHASE: dependency-install');
+            console.log('SAFE_FAIL_CLASS: '+(deps.error?.code||'nonzero'));
+            process.exit(1);
+          }
+          const r=spawnSync('npm',['run','test:account:ui-candidate'],{
+            cwd:'candidate',encoding:'utf8',maxBuffer:50*1024*1024,timeout:360000});
+          const out=(r.stdout||'')+'\n'+(r.stderr||'');
+          const nums=[...out.matchAll(/^not ok (\d+) -/gm)].map(m=>m[1]).slice(0,16);
+          const unique=[...new Set([...out.matchAll(/tests\/([a-z0-9-]+\.test\.mjs):(\d+):(\d+)/ig)]
+            .map(m=>m[1]+':'+m[2]))].slice(0,10);
+          console.log('SAFE_ACCOUNT_TEST_EXIT: '+r.status);
+          console.log('SAFE_FAILED_ORDINALS: '+(nums.join(',')||'none'));
+          console.log('SAFE_STACK_FILELINES: '+(unique.join(',')||'none'));
+          for(const k of ['ERR_ASSERTION','SyntaxError','MODULE_NOT_FOUND','ENOENT','TimeoutError','QuotaExceededError']) {
+            if(out.includes(k))console.log('SAFE_CLASS: '+k);
+          }
+          if(r.error)console.log('SAFE_RUN_ERROR_CLASS: '+r.error.code);
+          if(r.status===0)console.log('Account gate PASS');
+          else throw new Error('Account gate failed; all private details withheld.');
+          NODE
