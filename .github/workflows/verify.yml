@@ -1,24 +1,25 @@
-name: Candidate verification
+name: Candidate verification (manual)
 
+# Public QA changes must not automatically start another build.
+# Use the existing sealed-candidate workflow for guarded source verification/release.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - qa-candidate
 
 permissions:
   contents: read
 
 concurrency:
-  group: candidate-${{ github.ref }}
+  group: candidate-manual-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -26,13 +27,7 @@ jobs:
         run: npm run check:public
       - name: Targeted tests
         run: npm test
-      - name: Build artifact
+      - name: Build artifact locally for verification
         run: npm run build
       - name: Verify build integrity
         run: npm run test:bundle
-      - uses: actions/upload-artifact@v4
-        with:
-          name: runtime-bundle
-          path: dist/
-          if-no-files-found: error
-          retention-days: 2
