@@ -12,8 +12,8 @@ jobs:
   qa_release:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '87fc13d1866460327c81ed2efd4542ca73605c85' &&
-      github.event.head_commit.message == 'ci: guarded mobile theme studio QA-only publish 348'
+      github.event.before == '7c45ee23b32ce888d7004692837d9fcb8f276acd' &&
+      github.event.head_commit.message == 'ci: recheck guarded mobile theme studio QA-only publish 348'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -50,7 +50,7 @@ jobs:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
           ref: ${{ secrets.CANDIDATE_REF }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          persist-credentials: false
+          persist-credentials: true
           fetch-depth: 100
           path: candidate
       - name: Pin exact QA revision and its unique branch
