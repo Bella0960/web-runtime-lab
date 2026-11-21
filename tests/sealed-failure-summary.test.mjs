@@ -87,3 +87,30 @@ test('untrusted test output cannot inject paths, credentials or error details', 
   ]);
   assert.deepEqual(summarizeSealedNodeFailures(log, []), []);
 });
+
+
+test('verify-only diagnostic reports multiple required gate failures without exposing raw logs', () => {
+  const log = [
+    'TAP version 13',
+    'not ok 1 - private test title',
+    '  ---',
+    "  location: '/private/tests/first-failure.test.mjs:12:1'",
+    "  code: 'ERR_ASSERTION'",
+    '  ...',
+    'QA release stopped at intermediate test gate (private)',
+    'TAP version 13',
+    'not ok 2 - second private name',
+    '  ---',
+    "  location: '/private/tests/second-failure.test.mjs:34:1'",
+    "  code: 'ERR_TEST_FAILURE'",
+    '  ...',
+    'QA_DIAGNOSTIC_FAILED_GATES:6,8,18'
+  ].join('\n');
+  assert.equal(summarizeSealedFailure(source, log), 'multiple-required-test-gates');
+  const found = summarizeSealedNodeFailures(log, ['first-failure.test.mjs','second-failure.test.mjs']);
+  assert.deepEqual(found, [
+    { file: 'first-failure.test.mjs', line: 12, code: 'ERR_ASSERTION' },
+    { file: 'second-failure.test.mjs', line: 34, code: 'ERR_TEST_FAILURE' }
+  ]);
+  assert.doesNotMatch(JSON.stringify(found), /private test title|second private name|private\//);
+});
