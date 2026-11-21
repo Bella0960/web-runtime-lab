@@ -1,0 +1,78 @@
+name: One-time sealed full Node gate classification
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-theme-studio-348-fullnode-diagnose.yml]
+permissions:
+  contents: read
+concurrency:
+  group: one-time-theme-studio-348-fullnode
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    if: >-
+      github.actor == github.repository_owner &&
+      github.event.before == 'd1ce2e3654da24f6b10e3801e26281081e2d56a8' &&
+      github.event.head_commit.message == 'ci: isolate full Node gate for mobile theme QA 348'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public-source privacy gate
+        run: npm run check:public
+      - name: Checkout pinned original private candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Verify immutable private source
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'bd7b08b00f5517ffbcd2c137d0c5477b8c8349f2'
+          test -z "$(git status --porcelain)"
+      - name: Run true Node suite and classify failures without private data
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          const cmd=(program,args,limit=720000)=>{
+            return spawnSync(program,args,{cwd:'candidate',encoding:'utf8',
+              maxBuffer:100*1024*1024,timeout:limit});
+          };
+          for(const [program,args,name,limit] of [
+            ['npm',['ci','--no-audit','--no-fund'],'dependencies',300000],
+            ['npm',['run','build'],'build',480000],
+            ['npx',['playwright','install','--with-deps','chromium'],'chromium',480000]
+          ]){
+            const r=cmd(program,args,limit);
+            if(r.status!==0){console.log('SAFE_SETUP_FAIL: '+name);process.exit(1);}
+            console.log('SAFE_SETUP_PASS: '+name);
+          }
+          const r=cmd('node',['--test','--test-concurrency=1'],900000);
+          const out=(r.stdout||'')+'\n'+(r.stderr||'');
+          const failed=[...out.matchAll(/^not ok (\d+) -/gm)].map(m=>m[1]).slice(0,24);
+          const filelines=[...new Set([...out.matchAll(/(?:tests\/)([a-zA-Z0-9-]+(?:\.test)?\.mjs):(\d+):(\d+)/g)]
+            .map(m=>m[1]+':'+m[2]))].slice(-35);
+          const failedCount=(out.match(/^# fail\s+(\d+)/m)||[])[1]||'not-reported';
+          console.log('SAFE_NODE_EXIT: '+r.status);
+          console.log('SAFE_NODE_FAILURE_COUNT: '+failedCount);
+          console.log('SAFE_NODE_FAILED_ORDINALS: '+(failed.join(',')||'none'));
+          console.log('SAFE_NODE_STACK_FILELINES: '+(filelines.join(',')||'none'));
+          for(const word of ['ERR_ASSERTION','SyntaxError','MODULE_NOT_FOUND','ENOENT','TimeoutError','Error: frame','ERR_TEST_FAILURE']){
+            if(out.includes(word))console.log('SAFE_CLASS: '+word);
+          }
+          if(r.error)console.log('SAFE_PROCESS_CLASS: '+(r.error.code||'error'));
+          if(r.status===0)console.log('Complete sequential Node suite PASS');
+          else throw new Error('Complete sequential Node failed; contents withheld');
+          NODE
