@@ -12,8 +12,8 @@ jobs:
   verify:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '4f2b2d2e0c8f6323f010dba5da77589d98e3e17b' &&
-      github.event.head_commit.message == 'ci: verify isolated login-only patch'
+      github.event.before == '20a26732f7cde6bbf68dac4e0f16403751a86c26' &&
+      github.event.head_commit.message == 'ci: isolate login identity contract failures'
     runs-on: ubuntu-latest
     timeout-minutes: 70
     steps:
@@ -49,7 +49,16 @@ jobs:
             phase=login-unit
             node --test tests/qa-login-recovery.test.mjs
             phase=identity-contract
-            npm run test:account:release-gate
+            index=0
+            test_fail=0
+            for name in account-cutover-guard account-identity-bridge-probe qa-identity-bootstrap account-qa-bootstrap-route account-qa-admin-proxy; do
+              index=$((index+1))
+              if ! node --test "tests/${name}.test.mjs" > "$RUNNER_TEMP/account-check-${index}.log" 2>&1; then
+                echo "$index" >> "$RUNNER_TEMP/login-failing-indices"
+                test_fail=1
+              fi
+            done
+            test "$test_fail" -eq 0
             phase=group-contract
             npm run test:group:governance
             phase=chromium-install
@@ -109,7 +118,9 @@ jobs:
           import {existsSync,readFileSync} from 'node:fs';
           const f=process.env.RUNNER_TEMP+'/login-phase';
           const phase=existsSync(f)?readFileSync(f,'utf8').trim():'checkout';
-          const payload={run_id:process.env.RUN_ID,phase,result:process.env.OUTCOME==='success'&&phase==='complete'?'pass':'fail'};
+          const failures=process.env.RUNNER_TEMP+'/login-failing-indices';
+          const fail_indices=existsSync(failures)?readFileSync(failures,'utf8').trim().split(/\s+/).map(Number):[];
+          const payload={run_id:process.env.RUN_ID,phase,result:process.env.OUTCOME==='success'&&phase==='complete'?'pass':'fail',fail_indices};
           const url='https://api.github.com/repos/'+process.env.GH_REPOSITORY+'/contents/ci-status/login-fix-gate.json';
           const headers={Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json','Content-Type':'application/json'};
           const prev=await fetch(url+'?ref=qa-candidate',{headers});
