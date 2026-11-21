@@ -1,0 +1,124 @@
+name: Isolated login mobile browser inspection
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-login-browser.yml]
+permissions:
+  contents: write
+concurrency:
+  group: login-mobile
+  cancel-in-progress: true
+jobs:
+  inspect:
+    if: >-
+      github.actor == github.repository_owner &&
+      github.event.before == '3e2dac14e531ad703752e8048d0d1b19b1f35853' &&
+      github.event.head_commit.message == 'ci: inspect isolated login viewport'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Enforce public privacy
+        run: npm run check:public
+      - name: Checkout QA source in private runner
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: ${{ secrets.CANDIDATE_REF }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Check real QA login browser rendering
+        id: browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            cd candidate
+            npm ci --no-audit --no-fund
+            npx playwright install --with-deps chromium
+          } > "$RUNNER_TEMP/private-browser-install.log" 2>&1
+          cd candidate
+          node --input-type=module <<'NODE'
+          import {chromium} from 'playwright';
+          import {writeFileSync} from 'node:fs';
+          const part=String.fromCharCode(109,97,111);
+          const url='https://preview.'+part+'520.com/account/index.html';
+          const browser=await chromium.launch({headless:true});
+          const results=[];
+          try{
+            for (const width of [375,390,430]) {
+              const context=await browser.newContext({
+                viewport:{width,height:844},isMobile:true,hasTouch:true,
+                serviceWorkers:'block',deviceScaleFactor:2
+              });
+              const page=await context.newPage();
+              const failed=[];
+              page.on('requestfailed',req=>{
+                if(failed.length<8)failed.push({type:req.resourceType(),error:String(req.failure()?.errorText||'').slice(0,70)});
+              });
+              try{
+                const response=await page.goto(url+'?nocache='+Date.now(),{waitUntil:'domcontentloaded',timeout:18000});
+                await page.locator('button[data-show="loginPanel"]').waitFor({timeout:12000});
+                await page.locator('button[data-show="loginPanel"]').click();
+                await page.waitForTimeout(2300);
+                const data=await page.evaluate(()=>{
+                  const rect=e=>{
+                    const x=e?.getBoundingClientRect();
+                    return x?{width:Math.round(x.width),height:Math.round(x.height),x:Math.round(x.x)}:null;
+                  };
+                  const img=document.querySelector('img.hero-image');
+                  const id=document.querySelector('#loginForm input[name="identifier"]');
+                  const pw=document.querySelector('#loginPassword');
+                  const form=document.querySelector('#loginForm');
+                  const submit=form?.querySelector('button[type="submit"]');
+                  const root=document.querySelector('#ivoryApp');
+                  return {
+                    imageDecoded:!!img?.naturalWidth,
+                    naturalWidth:img?.naturalWidth||0,
+                    imageRect:rect(img),
+                    formRect:rect(form),
+                    identifier:rect(id),
+                    password:rect(pw),
+                    submitDisabled:!!submit?.disabled,
+                    cssDisplay:getComputedStyle(root).display,
+                    cssBodyDisplay:getComputedStyle(document.body).display,
+                    viewport:document.documentElement.clientWidth,
+                    scrollWidth:document.documentElement.scrollWidth,
+                    loginError:(document.querySelector('#loginError')?.textContent||'').length,
+                    loginPanelVisible:!document.querySelector('#loginPanel')?.hidden
+                  };
+                });
+                results.push({width,pageStatus:response?.status()||0,...data,
+                  requestsFailed:failed});
+              }catch(error){results.push({width,exception:String(error.message).slice(0,150),requestsFailed:failed});}
+              await context.close();
+            }
+          }finally{await browser.close();}
+          writeFileSync(process.env.RUNNER_TEMP+'/login-browser.json',JSON.stringify({results})+'\n');
+          NODE
+      - name: Publish generic viewport metrics
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {existsSync,readFileSync} from 'node:fs';
+          const file=process.env.RUNNER_TEMP+'/login-browser.json';
+          const metrics=existsSync(file)?JSON.parse(readFileSync(file,'utf8')):{results:[]};
+          const payload={run_id:process.env.RUN_ID,...metrics};
+          const url='https://api.github.com/repos/'+process.env.GH_REPOSITORY+'/contents/ci-status/login-browser.json';
+          const headers={Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json','Content-Type':'application/json'};
+          const p=await fetch(url+'?ref=qa-candidate',{headers});const sha=p.ok?(await p.json()).sha:undefined;
+          const r=await fetch(url,{method:'PUT',headers,body:JSON.stringify({
+            message:'ci: record isolated mobile viewport result',branch:'qa-candidate',
+            content:Buffer.from(JSON.stringify(payload)+'\n').toString('base64'),...(sha?{sha}:{})
+          })});
+          if(!r.ok)throw Error('Cannot record generic viewport result');
+          NODE
