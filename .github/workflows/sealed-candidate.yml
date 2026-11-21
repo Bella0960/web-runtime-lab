@@ -85,7 +85,8 @@ jobs:
             echo 'Approved QA candidate changed; refuse unverified source.'
             exit 1
           fi
-      - name: Run private validation without public logs
+      # The runner prints allowlisted failing-test locations only; raw logs remain ephemeral.
+      - name: Run sealed validation with sanitized failure locations
         env:
           CANDIDATE_RELEASE_ACK: ${{ inputs.confirmation }}
           CLOUDFLARE_ACCOUNT_ID: ${{ inputs.operation == 'release' && secrets.CANDIDATE_ACCOUNT_ID || '' }}
