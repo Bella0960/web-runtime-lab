@@ -1,0 +1,82 @@
+name: QA regression repair pinned verification
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-qa-regression-repair-20261121.yml]
+permissions:
+  contents: read
+concurrency:
+  group: one-time-qa-regression-verify-20261121
+  cancel-in-progress: false
+jobs:
+  regression:
+    if: >-
+      github.actor == github.repository_owner &&
+      github.event.before == '269cc26885ae784723f2b62533b15d7167dfda46' &&
+      github.event.head_commit.message == 'ci: verify scoped stale-regression repairs 20261121'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public content policy
+        run: npm run check:public
+      - name: Checkout approved restricted repository test patch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: QA-REGRESSION-20261121/align-stale-contract-tests
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          persist-credentials: false
+          path: candidate
+          fetch-depth: 1
+      - name: Pin exact test patch
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '4dbdb10fc03f6b44e88fdf67522d5d63543f69ac'
+          test -z "$(git status --porcelain)"
+      - name: Node focused and full suite + Vite with sanitized results
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          const run=(bin,args,limit=480000)=>spawnSync(bin,args,{cwd:'candidate',encoding:'utf8',
+            timeout:limit,maxBuffer:100*1024*1024,env:{...process.env,FORCE_COLOR:'0'}});
+          const steps=[
+            {name:'npm-ci',bin:'npm',args:['ci','--no-audit','--no-fund'],time:300000},
+            {name:'qa-contracts',bin:'node',args:['--test',
+              'tests/chat-protocol-worldbook-priority.test.mjs',
+              'tests/chat-reply-bubble-mode.test.mjs',
+              'tests/font-runtime-performance.test.mjs',
+              'tests/qa-identity-reconnect.test.mjs',
+              'tests/qa-release-live-version.test.mjs',
+              'tests/default-desktop-layout.test.mjs'],time:300000},
+            {name:'all-node',bin:'node',args:['--test','--test-concurrency=1'],time:900000},
+            {name:'vite-build',bin:'npm',args:['run','build'],time:480000}
+          ];
+          for(const step of steps){
+            const r=run(step.bin,step.args,step.time);
+            const out=(r.stdout||'')+'\n'+(r.stderr||'');
+            const counts=[...out.matchAll(/^# (?:tests|pass|fail)\s+(\d+)/gm)].map(m=>m[0].replace('# ','').replace(/\s+/g,'='));
+            console.log('SAFE_GATE '+step.name+' status='+r.status+' '+counts.join(' '));
+            if(r.status!==0){
+              const failures=[...out.matchAll(/^not ok (\d+) -/gm)].map(m=>m[1]).slice(0,30);
+              const filelines=[...new Set([...out.matchAll(/(?:tests\/)([a-z0-9-]+\.test\.mjs):(\d+):(\d+)/ig)]
+                .map(m=>m[1]+':'+m[2]))].slice(0,30);
+              console.log('SAFE_FAIL_ORDINALS '+failures.join(','));
+              console.log('SAFE_FAIL_LOCATIONS '+filelines.join(','));
+              for(const category of ['ERR_ASSERTION','SyntaxError','ERR_TEST_FAILURE','MODULE_NOT_FOUND','ENOENT','ETIMEDOUT']){
+                if(out.includes(category))console.log('SAFE_FAIL_CLASS '+category);
+              }
+              process.exit(1);
+            }
+          }
+          console.log('SAFE_PASS: all required focused Node, complete sequential Node, Vite');
+          NODE
