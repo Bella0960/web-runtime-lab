@@ -16,8 +16,8 @@ jobs:
   candidate_verify:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '5548133dc5cabfefa16b05ab9315406be6438752' &&
-      github.event.head_commit.message == 'ci: verify collapsible candidate revision'
+      github.event.before == 'bff0cfae80d78597c033edf20c3e7874dbbca489' &&
+      github.event.head_commit.message == 'ci: verify drawer browser compatibility fixes'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -57,7 +57,7 @@ jobs:
             git clone --depth=1 --quiet --branch "$SOURCE_REF" "https://x-access-token:${SOURCE_TOKEN}@github.com/${SOURCE_REPOSITORY}.git" candidate
             git -C candidate fetch --quiet --depth=1 origin 'refs/pull/344/head'
             git -C candidate checkout --quiet --detach FETCH_HEAD
-            test "$(git -C candidate rev-parse HEAD)" = 'e15e898fa18e3a7153d7b91fd6bd92310cf4a647'
+            test "$(git -C candidate rev-parse HEAD)" = 'f6f84bba9f6d567e62f8af242afed974175a059f'
             test -z "$(git -C candidate status --porcelain)"
             cd candidate
             phase=install
