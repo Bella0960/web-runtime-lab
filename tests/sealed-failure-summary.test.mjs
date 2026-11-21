@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { summarizeSealedFailure } from '../scripts/sealed-failure-summary.mjs';
+import { summarizeSealedFailure, summarizeSealedNodeFailures } from '../scripts/sealed-failure-summary.mjs';
 
 const source = `const TESTS = [
   ['npm', ['ci', '--no-audit']],
@@ -38,4 +38,52 @@ test('preflight failures are distinguished without exposing private error detail
 test('timeouts and unknown errors never reveal log lines', () => {
   assert.equal(summarizeSealedFailure(source, 'secret', { timedOut: true }), 'process-timeout');
   assert.equal(summarizeSealedFailure(source, 'hidden sensitive data'), 'unclassified-private-failure');
+});
+
+
+test('sanitized failing test locations omit test names, data and absolute paths', () => {
+  const secret = 'PRIVATE-VALUE-DO-NOT-PRINT';
+  const log = [
+    'TAP version 13',
+    '# Subtest: ' + secret,
+    'not ok 12 - ' + secret,
+    '  ---',
+    "  location: '/home/runner/work/project/tests/chat-error.test.mjs:42:1'",
+    "  code: 'ERR_ASSERTION'",
+    '  error: ' + secret,
+    '  stack: |-',
+    '    TestContext.<anonymous> (file:///home/runner/work/project/tests/chat-error.test.mjs:49:12)',
+    '  ...',
+    'not ok 13 - second failure',
+    '  ---',
+    "  location: '/home/runner/work/project/tests/forum-data.test.mjs:10:1'",
+    "  code: 'ERR_TEST_FAILURE'",
+    '  ...'
+  ].join('\n');
+  const found = summarizeSealedNodeFailures(log, ['chat-error.test.mjs', 'forum-data.test.mjs']);
+  assert.deepEqual(found, [
+    { file: 'chat-error.test.mjs', line: 49, code: 'ERR_ASSERTION' },
+    { file: 'forum-data.test.mjs', line: 10, code: 'ERR_TEST_FAILURE' }
+  ]);
+  assert.doesNotMatch(JSON.stringify(found), /PRIVATE-VALUE|home\/runner|Subtest/);
+});
+
+test('untrusted test output cannot inject paths, credentials or error details', () => {
+  const log = [
+    'TAP version 13',
+    'not ok 1 - fabricated title',
+    '  ---',
+    "  location: '/tmp/tests/unapproved.test.mjs:2:1'",
+    "  code: 'ERR_ASSERTION'",
+    '  ...',
+    'not ok 2 - allowed title',
+    '  ---',
+    "  location: '/tmp/tests/allowed.test.mjs:12:1'",
+    "  code: 'ERR_NOT_A_SAFE_VALUE'",
+    '  ...'
+  ].join('\n');
+  assert.deepEqual(summarizeSealedNodeFailures(log, ['allowed.test.mjs']), [
+    { file: 'allowed.test.mjs', line: 12, code: 'TEST_FAILURE' }
+  ]);
+  assert.deepEqual(summarizeSealedNodeFailures(log, []), []);
 });
