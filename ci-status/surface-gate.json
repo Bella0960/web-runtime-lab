@@ -1,1 +1,1 @@
-{"run_id":"44847500930","phase":"verification","result":"fail","stage":"chromium-ui","failing_test_indices":[9,10,11,13,14],"error_class":"timeout","changed_files":5}
+{"run_id":"44847621854","phase":"verification","result":"pass","stage":"passed","failing_test_indices":[],"error_class":"error","changed_files":5}
