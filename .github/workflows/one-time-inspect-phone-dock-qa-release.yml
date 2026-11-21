@@ -1,108 +1,199 @@
-name: Guarded isolated QA-only release
+name: Approved isolated QA surface publication
 on:
   push:
     branches: [qa-candidate]
-    paths:
-      - .github/workflows/one-time-inspect-phone-dock-qa-release.yml
+    paths: [.github/workflows/one-time-inspect-phone-dock-qa-release.yml]
 permissions:
   contents: write
 concurrency:
   group: sealed-candidate
   cancel-in-progress: false
 jobs:
-  qa_release:
+  qa_only:
     if: >-
-      github.actor == github.repository_owner && github.event.before == '166cad660fd6cd4e58ba1c04acba22a63deda0e9' && github.event.head_commit.message == 'ci: retry scoped candidate release with receipt'
+      github.actor == github.repository_owner &&
+      github.event.before == '3c2ae9f741fe523bddd598888b3149fc8ca05035' &&
+      github.event.head_commit.message == 'ci: publish verified isolated QA surface'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - name: Checkout existing public isolation guard
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Set up Node 22
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Enforce public repository privacy
-        run: node scripts/public-content-check.mjs
-      - name: Verify restricted source and scoped QA authorization
-        shell: bash
-        env:
-          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
-          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
-          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          QA_ACCOUNT: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
-          QA_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
-        run: |
-          set -euo pipefail
-          if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" || ! "$QA_ACCOUNT" =~ ^[0-9a-f]{32}$ || ${#QA_TOKEN} -lt 20 ]]; then
-            echo 'Restricted QA-only authorization unavailable.'
-            exit 1
-          fi
-          echo "::add-mask::$SOURCE_REPOSITORY"
-          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
-          echo "::add-mask::$SOURCE_REF"
-      - name: Checkout existing private QA candidate
+      - name: Public privacy guard
+        run: npm run check:public
+      - name: Checkout isolated candidate
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
           ref: ${{ secrets.CANDIDATE_REF }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
-          persist-credentials: true
-          fetch-depth: 100
-      - name: Require exact merged QA commit and branch
+          persist-credentials: false
+          fetch-depth: 5
+      - name: Scoped QA-only validation, binding preflight, and release
+        id: publish
         shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '1d85dae038a6d9781e6865991d7d1b16ec0ec6fd'
-          test "$(git -C candidate branch --show-current)" = 'integration/account-fanwai-stack-20261115'
-          test -z "$(git -C candidate status --porcelain)"
-          echo 'Exact approved QA candidate verified.'
-      - name: Run original complete private regression and QA Worker-only release
-        id: release
         env:
-          CANDIDATE_RELEASE_ACK: qa-only
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_REF: ${{ secrets.CANDIDATE_REF }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
         run: |
           set -euo pipefail
-          node scripts/run-candidate.mjs release 2>&1 | tee "$RUNNER_TEMP/summary.log"
-      - name: Record generic QA release result
+          phase=source
+          trap 'printf "%s\n" "$phase" > "$RUNNER_TEMP/qa-phase"' EXIT
+          exec > "$RUNNER_TEMP/qa-sealed.log" 2>&1
+          cd candidate
+          test "$(git rev-parse HEAD)" = 'fe481d4762e5e9098b1f459f4a0b825261804dc8'
+          test -z "$(git status --porcelain)"
+          phase=dependencies
+          npm ci --no-audit --no-fund
+          phase=build
+          npm run build
+          phase=browser-install
+          npx playwright install --with-deps chromium
+          phase=group-tests
+          npm run test:group:governance
+          npm run test:group:ui
+          npm run test:group:invite-e2e
+          node --test tests/group-settings-home.browser.test.mjs
+          phase=release-contracts
+          npm run test:account:release-gate
+          npm run test:chat:contract
+          npm run test:pwa:navigation
+          node --test tests/qa-cloud-settings-integration.test.mjs
+          phase=preflight
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const config=JSON.parse(readFileSync('wrangler.qa.jsonc','utf8'));
+          const original=readFileSync('scripts/qa-direct-release.mjs','utf8');
+          const worker=(original.match(/const QA = '([^']+)'/)||[])[1];
+          const core=(original.match(/const CORE = '([^']+)'/)||[])[1];
+          assert.ok(worker&&core&&worker!==core,'Original QA identifiers unavailable');
+          assert.equal(config.name,worker);
+          assert.equal(config.keep_vars,true);
+          assert.equal(config.workers_dev,true);
+          assert.equal(config.preview_urls,false);
+          assert.equal(config.routes,undefined);
+          assert.equal(config.custom_domains,undefined);
+          assert.equal(config.assets?.directory,'./dist');
+          assert.equal(config.assets?.binding,'ASSETS');
+          assert.equal(config.services?.[0]?.service,core);
+          assert.equal(config.services?.[0]?.binding,'MAO_IDENTITY_AUTHORITY');
+          assert.deepEqual(config.durable_objects?.bindings,[{name:'CLOUD_DB',class_name:'CloudDatabase'}]);
+          assert.ok(process.env.CLOUDFLARE_ACCOUNT_ID&&process.env.CLOUDFLARE_API_TOKEN);
+          const api=async path=>{
+            const response=await fetch('https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID+path,{
+              headers:{Authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN}});
+            const data=await response.json();
+            assert.equal(data.success,true,'Cloud API read-only preflight failed');
+            return data.result;
+          };
+          const getVersion=async name=>{
+            const data=await api('/workers/scripts/'+encodeURIComponent(name)+'/deployments');
+            const d=(data.deployments||data)[0];
+            assert.equal(d.versions?.length,1);
+            assert.equal(Number(d.versions[0].percentage),100);
+            return d.versions[0].version_id;
+          };
+          const fetchSettings=name=>api('/workers/scripts/'+encodeURIComponent(name)+'/settings');
+          const qa=await fetchSettings(worker),identity=await fetchSettings(core);
+          const byName=(bindings,name)=>bindings?.find(x=>x.name===name);
+          const service=byName(qa.bindings,'MAO_IDENTITY_AUTHORITY');
+          assert.equal(service?.type,'service');
+          assert.equal(service?.service,core);
+          assert.equal(byName(qa.bindings,'CLOUD_DB')?.type,'durable_object_namespace');
+          assert.equal(byName(identity.bindings,'CLOUD_DB')?.type,'durable_object_namespace');
+          const secrets=(bindings)=>(bindings||[]).filter(x=>x.type==='secret_text').map(x=>x.name).sort();
+          for(const key of ['MAO_IDENTITY_BRIDGE_SECRET','DEVICE_SECRET_PEPPER','VAPID_PRIVATE_KEY'])
+            assert.ok(secrets(qa.bindings).includes(key),'Required QA binding absent');
+          const remote=await fetch('https://api.github.com/repos/'+process.env.SOURCE_REPOSITORY+
+            '/git/ref/heads/'+process.env.SOURCE_REF.split('/').map(encodeURIComponent).join('/'),{
+              headers:{Authorization:'Bearer '+process.env.SOURCE_TOKEN,Accept:'application/vnd.github+json'}
+            });
+          assert.equal(remote.status,200,'Private QA source ref cannot be verified');
+          const latest=await remote.json();
+          assert.equal(latest.object?.sha,'fe481d4762e5e9098b1f459f4a0b825261804dc8','QA branch moved after source checkout');
+          writeFileSync(process.env.RUNNER_TEMP+'/qa-baseline.json',JSON.stringify({
+            worker,core,qaVersion:await getVersion(worker),coreVersion:await getVersion(core),
+            qaSecrets:secrets(qa.bindings),
+            qaDb:byName(qa.bindings,'CLOUD_DB')?.namespace_id,
+            qaService:service?.service,
+            coreSecrets:secrets(identity.bindings)
+          }));
+          NODE
+          phase=upload
+          node --input-type=module <<'NODE'
+          import {writeFileSync} from 'node:fs';
+          writeFileSync('dist/qa-build-receipt.json',JSON.stringify({sourceCommit:'fe481d4762e5e9098b1f459f4a0b825261804dc8'})+'\n');
+          NODE
+          npx --yes wrangler@4 deploy --config wrangler.qa.jsonc
+          phase=origin-verification
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const prev=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/qa-baseline.json','utf8'));
+          const api=async path=>{
+            const response=await fetch('https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID+path,{
+              headers:{Authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN}});
+            const data=await response.json();
+            assert.equal(data.success,true);
+            return data.result;
+          };
+          const version=async name=>{
+            const data=await api('/workers/scripts/'+encodeURIComponent(name)+'/deployments');
+            const d=(data.deployments||data)[0];
+            assert.equal(Number(d.versions?.[0]?.percentage),100);
+            return d.versions[0].version_id;
+          };
+          const qaVersion=await version(prev.worker);
+          assert.notEqual(qaVersion,prev.qaVersion,'QA deployment did not advance');
+          assert.equal(await version(prev.core),prev.coreVersion,'Identity core version unexpectedly changed');
+          const qa=await api('/workers/scripts/'+encodeURIComponent(prev.worker)+'/settings');
+          const keys=(bindings)=>(bindings||[]).filter(x=>x.type==='secret_text').map(x=>x.name).sort();
+          assert.deepEqual(keys(qa.bindings),prev.qaSecrets,'QA secret bindings changed');
+          assert.equal(qa.bindings?.find(x=>x.name==='CLOUD_DB')?.namespace_id,prev.qaDb);
+          assert.equal(qa.bindings?.find(x=>x.name==='MAO_IDENTITY_AUTHORITY')?.service,prev.qaService);
+          const source=readFileSync('scripts/qa-direct-release.mjs','utf8');
+          const urlPrefix=(source.match(/const url = '(https:\/\/[^']+\/qa-build-receipt\.json\?commit=)'/)||[])[1];
+          assert.ok(urlPrefix,'Original QA domain contract unavailable');
+          const response=await fetch(urlPrefix+'fe481d4762e5e9098b1f459f4a0b825261804dc8',{cache:'no-store',redirect:'manual'});
+          assert.equal(response.status,200,'QA phone test URL did not return receipt');
+          const receipt=await response.json();
+          assert.equal(receipt.sourceCommit,'fe481d4762e5e9098b1f459f4a0b825261804dc8','QA phone URL still points to a different version');
+          writeFileSync(process.env.RUNNER_TEMP+'/qa-success.json',JSON.stringify({versionId:qaVersion}));
+          NODE
+          phase=complete
+      - name: Record generic publication receipt
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPOSITORY: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
-          RELEASE_RESULT: ${{ steps.release.outcome }}
         run: |
           node --input-type=module <<'NODE'
-          import { readFileSync, existsSync } from 'node:fs';
-          const path = process.env.RUNNER_TEMP + '/summary.log';
-          const log = existsSync(path) ? readFileSync(path,'utf8') : '';
-          const match = log.match(/Candidate validation stopped at ([a-z0-9_-]+)/);
-          const stage = match ? match[1] : process.env.RELEASE_RESULT === 'success' ? 'complete' : 'preflight';
-          const payload = {
-            run_id: process.env.RUN_ID,
-            phase: 'qa-release',
-            result: process.env.RELEASE_RESULT === 'success' ? 'pass' : 'fail',
-            stage
-          };
-          const url = 'https://api.github.com/repos/' + process.env.GH_REPOSITORY + '/contents/ci-status/surface-release.json';
-          const headers = {
-            Authorization: 'Bearer ' + process.env.GH_TOKEN,
-            Accept: 'application/vnd.github+json',
-            'X-GitHub-Api-Version':'2022-11-28',
-            'Content-Type':'application/json'
-          };
-          const prev = await fetch(url + '?ref=qa-candidate', {headers});
-          const sha = prev.ok ? (await prev.json()).sha : undefined;
-          const result = await fetch(url, {method:'PUT',headers,body:JSON.stringify({
-            message:'ci: record generic QA release result', branch:'qa-candidate',
+          import {existsSync,readFileSync} from 'node:fs';
+          const base=process.env.RUNNER_TEMP;
+          const stage=existsSync(base+'/qa-phase')?readFileSync(base+'/qa-phase','utf8').trim():'unknown';
+          const success=existsSync(base+'/qa-success.json')?JSON.parse(readFileSync(base+'/qa-success.json','utf8')):null;
+          const payload={run_id:process.env.RUN_ID,phase:'scoped-qa-only',stage,
+            result:success?'pass':'fail',version_id:success?.versionId||null};
+          const url='https://api.github.com/repos/'+process.env.GH_REPOSITORY+'/contents/ci-status/qa-scoped-release.json';
+          const headers={Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json',
+            'X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'};
+          const previous=await fetch(url+'?ref=qa-candidate',{headers});
+          const sha=previous.ok?(await previous.json()).sha:undefined;
+          const response=await fetch(url,{method:'PUT',headers,body:JSON.stringify({
+            message:'ci: record generic scoped QA outcome',branch:'qa-candidate',
             content:Buffer.from(JSON.stringify(payload)+'\n').toString('base64'),
             ...(sha?{sha}:{})
           })});
-          if (!result.ok) throw new Error('Generic receipt update failed: HTTP '+result.status);
-          console.log('Generic release result recorded.');
+          if(!response.ok)throw Error('Failed to record scoped QA result: '+response.status);
+          console.log('Generic scoped QA receipt saved.');
           NODE
