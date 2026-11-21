@@ -1,5 +1,6 @@
 // Return a deliberately non-sensitive failure location from a sealed process log.
-// Never return logs, commands, filenames, repository identifiers or test output.
+// The stage summary never returns raw log content. The separate diagnostic helper only returns
+// allowlisted test filenames, numeric line numbers and fixed error codes.
 export function summarizeSealedFailure(releaseSource, sealedLog, { timedOut = false } = {}) {
   if (timedOut) return 'process-timeout';
   const body = String(releaseSource).match(/const TESTS\s*=\s*\[([\s\S]*?)\n\];/)?.[1] || '';
@@ -24,4 +25,54 @@ export function summarizeSealedFailure(releaseSource, sealedLog, { timedOut = fa
       ? 'post-test-safety-gate' : 'initial-safety-gate';
   }
   return 'unclassified-private-failure';
+}
+
+
+// Extract source locations from TAP failures while never emitting raw diagnostics.
+// The caller supplies filenames from the checked-out repository's tests/ folder.
+export function summarizeSealedNodeFailures(sealedLog, allowedTestFiles = []) {
+  const allowed = new Set(allowedTestFiles.filter(
+    name => /^[a-z0-9][a-z0-9._-]{0,90}\.test\.(?:mjs|js)$/i.test(name)
+  ));
+  if (!allowed.size) return [];
+  const input = String(sealedLog);
+  const tapStart = input.lastIndexOf('TAP version 13');
+  const lines = (tapStart >= 0 ? input.slice(tapStart) : input).split(/\r?\n/);
+  const failures = [];
+  let block = null;
+  const pathMatch = line => line.match(
+    /(?:^|[\\/])tests[\\/]([a-z0-9][a-z0-9._-]{0,90}\.test\.(?:mjs|js)):(\d{1,6}):(\d{1,6})\b/i
+  );
+  const save = () => {
+    if (!block) return;
+    const location = block.stack || block.location;
+    if (location && failures.length < 40) {
+      failures.push({ file: location.file, line: location.line, code: block.code });
+    }
+    block = null;
+  };
+  for (const line of lines) {
+    if (/^not ok \d+ - /.test(line)) {
+      save();
+      block = { code: 'TEST_FAILURE', location: null, stack: null, inStack: false };
+      continue;
+    }
+    if (!block) continue;
+    if (/^\s*\.\.\.\s*$/.test(line)) { save(); continue; }
+    if (/^\s*stack:/.test(line)) block.inStack = true;
+    const location = pathMatch(line);
+    if (location && allowed.has(location[1])) {
+      const clean = { file: location[1], line: Number(location[2]) };
+      if (/^\s*location:/.test(line)) block.location = clean;
+      else if (block.inStack && !block.stack) block.stack = clean;
+    }
+    const code = line.match(
+      /^\s*code: '(ERR_ASSERTION|ERR_TEST_FAILURE|ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND)'\s*$/
+    );
+    if (code) block.code = code[1];
+  }
+  save();
+  return [...new Map(
+    failures.map(item => [item.file + ':' + item.line + ':' + item.code, item])
+  ).values()];
 }
