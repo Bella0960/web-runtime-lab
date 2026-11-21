@@ -1,0 +1,122 @@
+name: Isolated login-only recovery verification
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-login-fix-gate.yml]
+permissions:
+  contents: write
+concurrency:
+  group: sealed-candidate
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      github.actor == github.repository_owner &&
+      github.event.before == '4f2b2d2e0c8f6323f010dba5da77589d98e3e17b' &&
+      github.event.head_commit.message == 'ci: verify isolated login-only patch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Public privacy guard
+        run: npm run check:public
+      - name: Checkout restricted source at pinned review revision
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          ref: refs/pull/346/head
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          path: candidate
+          persist-credentials: false
+      - name: Run private Node, Vite and browser recovery tests
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          phase=checkout
+          trap 'echo "$phase" > "$RUNNER_TEMP/login-phase"' EXIT
+          {
+            cd candidate
+            test "$(git rev-parse HEAD)" = '2f8f65acdc8052796110896e0042eebb40eca9c8'
+            test -z "$(git status --porcelain)"
+            phase=dependencies
+            npm ci --no-audit --no-fund
+            phase=vite-build
+            npm run build
+            phase=login-unit
+            node --test tests/qa-login-recovery.test.mjs
+            phase=identity-contract
+            npm run test:account:release-gate
+            phase=group-contract
+            npm run test:group:governance
+            phase=chromium-install
+            npx playwright install --with-deps chromium
+            phase=group-ui
+            npm run test:group:ui
+            phase=login-mobile
+            npx vite preview --host 127.0.0.1 --port 3000 > "$RUNNER_TEMP/vite-private.log" 2>&1 &
+            pid=$!
+            trap 'kill "$pid" 2>/dev/null || :; echo "$phase" > "$RUNNER_TEMP/login-phase"' EXIT
+            node --input-type=module <<'NODE'
+          import {chromium} from 'playwright';
+          import assert from 'node:assert/strict';
+          const base='http://127.0.0.1:3000/account/index.html';
+          let ready=false;
+          for(let i=0;i<35;i++){
+            try{ const r=await fetch(base); if(r.ok){ready=true;break;} }catch{}
+            await new Promise(resolve=>setTimeout(resolve,350));
+          }
+          assert.ok(ready,'Vite preview did not become ready');
+          const browser=await chromium.launch({headless:true});
+          try{
+            for(const width of [375,390,430]){
+              const page=await browser.newPage({viewport:{width,height:844},isMobile:true,hasTouch:true,serviceWorkers:'block'});
+              // Simulate the user's partial-CSS failure, so the HTML fallback is actually exercised.
+              await page.route('**/account/account.css*',route=>route.abort());
+              await page.route('**/account/ivory-entry.css*',route=>route.abort());
+              await page.goto(base,{waitUntil:'domcontentloaded',timeout:15000});
+              await page.locator('[data-show="loginPanel"]:visible').first().click();
+              const state=await page.evaluate(()=>{
+                const input=document.querySelector('#loginForm [name="identifier"]');
+                const pwd=document.querySelector('#loginPassword');
+                const hero=document.querySelector('img.hero-image');
+                const w=x=>Math.round(x.getBoundingClientRect().width);
+                return {input:w(input),password:w(pwd),imageWidth:hero?.naturalWidth||0,
+                  viewport:document.documentElement.clientWidth,
+                  scroll:document.documentElement.scrollWidth};
+              });
+              assert.ok(state.input>=240&&state.password>=190,'Login fields collapsed at '+width);
+              assert.ok(state.imageWidth>0,'Login image failed at '+width);
+              assert.ok(state.scroll<=state.viewport+1,'Login overflow at '+width);
+              await page.close();
+            }
+          }finally{await browser.close();}
+          NODE
+            phase=complete
+          } > "$RUNNER_TEMP/login-private.log" 2>&1
+      - name: Publish anonymized validation receipt
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          OUTCOME: ${{ steps.gate.outcome }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {existsSync,readFileSync} from 'node:fs';
+          const f=process.env.RUNNER_TEMP+'/login-phase';
+          const phase=existsSync(f)?readFileSync(f,'utf8').trim():'checkout';
+          const payload={run_id:process.env.RUN_ID,phase,result:process.env.OUTCOME==='success'&&phase==='complete'?'pass':'fail'};
+          const url='https://api.github.com/repos/'+process.env.GH_REPOSITORY+'/contents/ci-status/login-fix-gate.json';
+          const headers={Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json','Content-Type':'application/json'};
+          const prev=await fetch(url+'?ref=qa-candidate',{headers});
+          const sha=prev.ok?(await prev.json()).sha:undefined;
+          const r=await fetch(url,{method:'PUT',headers,body:JSON.stringify({
+            message:'ci: record isolated login gate',branch:'qa-candidate',
+            content:Buffer.from(JSON.stringify(payload)+'\n').toString('base64'),...(sha?{sha}:{})
+          })});
+          if(!r.ok)throw Error('Unable to publish generic login result');
+          NODE
