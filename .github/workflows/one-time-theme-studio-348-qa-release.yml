@@ -12,8 +12,8 @@ jobs:
   qa_release:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '7c45ee23b32ce888d7004692837d9fcb8f276acd' &&
-      github.event.head_commit.message == 'ci: recheck guarded mobile theme studio QA-only publish 348'
+      github.event.before == '9f2982788cc8810a3d582e156659335d25032c26' &&
+      github.event.head_commit.message == 'ci: publish validated mobile theme studio QA-only 348'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -57,7 +57,7 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'd78e625a51b552f43afa7a13ebf671e471024417'
+          test "$(git rev-parse HEAD)" = 'ad1e6877ac138ac2090d44deee2389fa129589c0'
           test "$(git branch --show-current)" = 'integration/account-fanwai-stack-20261115'
           test -z "$(git status --porcelain)"
           test -f tests/theme-studio.test.mjs
