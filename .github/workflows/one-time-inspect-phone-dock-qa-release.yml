@@ -12,8 +12,8 @@ jobs:
   qa_only:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '207b0b9d0389f6426936b93f599879eee040fa8a' &&
-      github.event.head_commit.message == 'ci: release tested QA login recovery'
+      github.event.before == '4c0b8bccbcb17f9d1360c13754574d4b92628d7f' &&
+      github.event.head_commit.message == 'ci: publish verified private-route recovery to QA'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -49,7 +49,7 @@ jobs:
           trap 'printf "%s\n" "$phase" > "$RUNNER_TEMP/qa-phase"' EXIT
           exec > "$RUNNER_TEMP/qa-sealed.log" 2>&1
           cd candidate
-          test "$(git rev-parse HEAD)" = 'cd38202d7bd8cc568795df55185a59c93b9c262d'
+          test "$(git rev-parse HEAD)" = '00e52d51282ae9126b49696247ed0b3fe24d6d47'
           test -z "$(git status --porcelain)"
           phase=dependencies
           npm ci --no-audit --no-fund
@@ -67,6 +67,7 @@ jobs:
           node --test tests/qa-login-recovery.test.mjs
           npm run test:chat:contract
           npm run test:pwa:navigation
+          node --test tests/pwa-route-cache-recovery.test.mjs             tests/worker-page-auth-runtime.test.mjs             tests/account-fanwai-pwa-runtime.test.mjs             tests/sw-navigation-cache-lifecycle.test.mjs             tests/detective-case-unlock.test.mjs             tests/pwa-navigation-cache.test.mjs
           node --test tests/qa-cloud-settings-integration.test.mjs
           phase=preflight
           node --input-type=module <<'NODE'
@@ -121,7 +122,7 @@ jobs:
             });
           assert.equal(remote.status,200,'Private QA source ref cannot be verified');
           const latest=await remote.json();
-          assert.equal(latest.object?.sha,'cd38202d7bd8cc568795df55185a59c93b9c262d','QA branch moved after source checkout');
+          assert.equal(latest.object?.sha,'00e52d51282ae9126b49696247ed0b3fe24d6d47','QA branch moved after source checkout');
           writeFileSync(process.env.RUNNER_TEMP+'/qa-baseline.json',JSON.stringify({
             worker,core,qaVersion:await getVersion(worker),coreVersion:await getVersion(core),
             qaSecrets:secrets(qa.bindings),
@@ -134,7 +135,7 @@ jobs:
           phase=upload
           node --input-type=module <<'NODE'
           import {writeFileSync} from 'node:fs';
-          writeFileSync('dist/qa-build-receipt.json',JSON.stringify({sourceCommit:'cd38202d7bd8cc568795df55185a59c93b9c262d'})+'\n');
+          writeFileSync('dist/qa-build-receipt.json',JSON.stringify({sourceCommit:'00e52d51282ae9126b49696247ed0b3fe24d6d47'})+'\n');
           NODE
           npx --yes wrangler@4 deploy --config wrangler.qa.jsonc
           phase=origin-verification
@@ -166,10 +167,10 @@ jobs:
           const source=readFileSync('scripts/qa-direct-release.mjs','utf8');
           const urlPrefix=(source.match(/const url = '(https:\/\/[^']+\/qa-build-receipt\.json\?commit=)'/)||[])[1];
           assert.ok(urlPrefix,'Original QA domain contract unavailable');
-          const response=await fetch(urlPrefix+'cd38202d7bd8cc568795df55185a59c93b9c262d',{cache:'no-store',redirect:'manual'});
+          const response=await fetch(urlPrefix+'00e52d51282ae9126b49696247ed0b3fe24d6d47',{cache:'no-store',redirect:'manual'});
           assert.equal(response.status,200,'QA phone test URL did not return receipt');
           const receipt=await response.json();
-          assert.equal(receipt.sourceCommit,'cd38202d7bd8cc568795df55185a59c93b9c262d','QA phone URL still points to a different version');
+          assert.equal(receipt.sourceCommit,'00e52d51282ae9126b49696247ed0b3fe24d6d47','QA phone URL still points to a different version');
           // Additional login-only post-deploy checks: correct MIME and delegated authority.
           const origin=new URL(urlPrefix).origin;
           const resources=[
@@ -195,6 +196,15 @@ jobs:
           assert.equal(status.identityMode,'delegated');
           assert.equal(status.identityAuthorityConnected,true);
           assert.equal(status.signInReady,true,'QA identity not sign-in ready');
+          const swResponse=await fetch(origin+'/sw.js?v=route-cache-20261121',{
+            cache:'no-store',signal:AbortSignal.timeout(16000)
+          });
+          assert.equal(swResponse.status,200,'QA Service Worker unavailable after release');
+          const activeSw=await swResponse.text();
+          assert.match(activeSw,/const CACHE_NAME = 'phone-app-pwa-v283'/,
+            'QA Service Worker is not the v283 cache recovery');
+          assert.ok(!activeSw.includes('return cacheablePublicResponse(cachedEntry)'),
+            'QA still serves offline cached login HTML under private app URLs');
 
           writeFileSync(process.env.RUNNER_TEMP+'/qa-success.json',JSON.stringify({versionId:qaVersion}));
           NODE
