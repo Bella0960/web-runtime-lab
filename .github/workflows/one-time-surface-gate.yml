@@ -13,8 +13,8 @@ jobs:
   diagnostic:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '84a03d449c942c16373a2d68d94b1a95fd9cf4d4' &&
-      github.event.head_commit.message == 'ci: fix diagnostic workflow expression'
+      github.event.before == '442c9d23f2137ceda3db0460c815a2a4f520ec18' &&
+      github.event.head_commit.message == 'ci: verify updated group browser test in isolation'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ${{ secrets.CANDIDATE_REF }}
+          ref: refs/pull/345/head
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -40,14 +40,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '8c66f9a27c8eeb9292cf205b5092c28529f667ac'
+          test "$(git -C candidate rev-parse HEAD)" = 'bdbb368b958bd3d45edf593b3f7495dd4ed4d011'
           {
             cd candidate
             npm ci --no-audit --no-fund
             npm run build
             npx playwright install --with-deps chromium
           } > "$RUNNER_TEMP/private-setup.log" 2>&1
-          cd candidate
           set +e
           node --test --test-concurrency=1 > "$RUNNER_TEMP/private-node.log" 2>&1
           status=$?
