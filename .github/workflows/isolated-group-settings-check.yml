@@ -25,14 +25,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = 'aa767698a7d30370cfe66b5aa566d82c8b872b35'
+          test "$(git rev-parse HEAD^)" = 'ea4d7b672913ca38ac94fe0af5fb9d1af24f9172'
           test "$(git show --pretty='' --name-only HEAD | sed '/^$/d')" = '.github/workflows/isolated-group-settings-check.yml'
           node scripts/public-content-check.mjs
       - name: Checkout pinned test candidate
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ad341afc481063c4a0943380650722e306f3ba20
+          ref: c00f7eb4dafe06f7aae2c1a5cf7adae16d2c8099
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           persist-credentials: false
           path: candidate
@@ -41,20 +41,20 @@ jobs:
         run: |
           set -euo pipefail
           cd candidate
-          test "$(git rev-parse HEAD)" = 'ad341afc481063c4a0943380650722e306f3ba20'
+          test "$(git rev-parse HEAD)" = 'c00f7eb4dafe06f7aae2c1a5cf7adae16d2c8099'
           npm ci --no-audit --no-fund >"$RUNNER_TEMP/group-install.log" 2>&1 || { echo 'dependency install failed'; exit 1; }
           npx playwright install --with-deps chromium >"$RUNNER_TEMP/group-browser.log" 2>&1 || { echo 'Chromium install failed'; exit 1; }
           set +e
-          timeout 85s node --test tests/group-settings-home.browser.test.mjs >"$RUNNER_TEMP/group-test.log" 2>&1
+          timeout 300s node --test --test-concurrency=1 tests/group-settings-home.browser.test.mjs tests/group-chat-invite-e2e.test.mjs tests/group-ui-collapse-invite.test.mjs >"$RUNNER_TEMP/group-test.log" 2>&1
           result=$?
           set -e
           if [ "$result" -ne 0 ]; then
             node --input-type=module <<'SAFE'
           import {readFileSync} from 'node:fs';
           const log=readFileSync(process.env.RUNNER_TEMP+'/group-test.log','utf8');
-          const lc=log.match(/group-settings-home\.browser\.test\.mjs:(\d+):\d+/g)||[];
+          const lc=log.match(/(?:group-settings-home\.browser|group-chat-invite-e2e|group-ui-collapse-invite)\.test\.mjs:\d+:\d+/g)||[];
           console.log('Classifications='+['TimeoutError','AssertionError','test timed out','page.waitForURL','locator.click','locator.waitFor','page.goto','evaluate','Navigation interrupted'].map(v=>Number(log.includes(v))).join(''));
-          console.log('Checkpoints='+lc.map(v=>v.split(':')[1]).join(','));
+          console.log('Checkpoints='+[...new Set(lc)].join(','));
           SAFE
             echo "Browser test exited $result"
             exit 1
