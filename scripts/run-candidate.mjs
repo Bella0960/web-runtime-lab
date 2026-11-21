@@ -1,7 +1,7 @@
 // Execute an isolated, credential-scoped validation without exposing source logs.
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, readSync, statSync, openSync, closeSync, unlinkSync, realpathSync } from 'node:fs';
-import { summarizeSealedFailure } from './sealed-failure-summary.mjs';
+import { existsSync, readFileSync, readdirSync, readSync, statSync, openSync, closeSync, unlinkSync, realpathSync } from 'node:fs';
+import { summarizeSealedFailure, summarizeSealedNodeFailures } from './sealed-failure-summary.mjs';
 import { assertApprovedQaTarget } from './qa-target-guard.mjs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -76,17 +76,35 @@ try {
     timeout: 75 * 60 * 1000
   });
   if (result.error || result.status !== 0) {
-    // Read only a bounded tail of the sealed local log. The classification
-    // is a fixed generic label; no private output enters public Actions logs.
+    // Read a bounded tail for safe diagnostics. Raw output never enters public logs.
     const size = statSync(outputPath).size;
-    const length = Math.min(size, 128 * 1024);
+    const length = Math.min(size, 16 * 1024 * 1024);
     const bytes = Buffer.alloc(length);
     const reader = openSync(outputPath, 'r');
     try { if (length) readSync(reader, bytes, 0, length, size - length); }
     finally { closeSync(reader); }
-    const stage = summarizeSealedFailure(releaseSource, bytes.toString('utf8'), {
+    const sealedLog = bytes.toString('utf8');
+    const stage = summarizeSealedFailure(releaseSource, sealedLog, {
       timedOut: result.error?.code === 'ETIMEDOUT'
     });
+    if (stage.endsWith('-tests') &&
+        sealedLog.includes('QA release stopped: node --test --test-concurrency=1 failed (exit ')) {
+      const testDir = join(source, 'tests');
+      const files = existsSync(testDir)
+        ? readdirSync(testDir, { withFileTypes: true })
+            .filter(item => item.isFile()).map(item => item.name)
+        : [];
+      const locations = summarizeSealedNodeFailures(sealedLog, files);
+      if (locations.length) {
+        console.error('Sanitized failing test locations (test titles and values withheld):');
+        for (const item of locations) {
+          console.error('  tests/' + item.file + ':' + item.line + ' [' + item.code + ']');
+        }
+      } else {
+        console.error('No safely extractable failing test locations in bounded Node output.');
+      }
+      if (size > length) console.error('Diagnostic log was truncated to a bounded tail.');
+    }
     throw new Error('Candidate validation stopped at ' + stage +
       '; private logs were withheld');
   }
