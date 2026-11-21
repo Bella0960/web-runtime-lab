@@ -12,8 +12,8 @@ jobs:
   qa_only:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == 'efd6c3b94db34998d95a8b0230ea0d9d867d506b' &&
-      github.event.head_commit.message == 'ci: constrain generic QA metadata'
+      github.event.before == 'e08ba5c381b060797f8250f0db1e71dd882a5773' &&
+      github.event.head_commit.message == 'ci: finalize scoped release preflight'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -105,13 +105,13 @@ jobs:
           const fetchSettings=name=>api('/workers/scripts/'+encodeURIComponent(name)+'/settings');
           const qa=await fetchSettings(worker),identity=await fetchSettings(core);
           const byName=(bindings,name)=>bindings?.find(x=>x.name===name);
-          assert.ok(secrets(qa.bindings).length>=5,'QA secret configuration is incomplete');
           const service=byName(qa.bindings,config.services[0].binding);
           assert.equal(service?.type,'service');
           assert.equal(service?.service,core);
           assert.equal(byName(qa.bindings,'CLOUD_DB')?.type,'durable_object_namespace');
           assert.equal(byName(identity.bindings,'CLOUD_DB')?.type,'durable_object_namespace');
           const secrets=(bindings)=>(bindings||[]).filter(x=>x.type==='secret_text').map(x=>x.name).sort();
+          assert.ok(secrets(qa.bindings).length>=5,'QA secret configuration is incomplete');
           for(const key of ['DEVICE_SECRET_PEPPER','VAPID_PRIVATE_KEY'])
             assert.ok(secrets(qa.bindings).includes(key),'Required QA binding absent');
           const remote=await fetch('https://api.github.com/repos/'+process.env.SOURCE_REPOSITORY+
