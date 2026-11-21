@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: 508b6f4c6b85bba4e7c09fa2c7414776a39864bf
+          ref: ad341afc481063c4a0943380650722e306f3ba20
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '508b6f4c6b85bba4e7c09fa2c7414776a39864bf'
+          test "$(git -C candidate rev-parse HEAD)" = 'ad341afc481063c4a0943380650722e306f3ba20'
           cd candidate
           npm ci --no-audit --no-fund >"$RUNNER_TEMP/install.log" 2>&1 || { echo 'FAILED dependencies'; exit 1; }
           npm run build >"$RUNNER_TEMP/build.log" 2>&1 || { echo 'FAILED Vite'; exit 1; }
