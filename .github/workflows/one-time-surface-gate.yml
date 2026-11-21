@@ -16,8 +16,8 @@ jobs:
   candidate_verify:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '37825466b90c77d179bbfbab9210394c4f8ccb45' &&
-      github.event.head_commit.message == 'ci: inspect sealed candidate failure index'
+      github.event.before == '5548133dc5cabfefa16b05ab9315406be6438752' &&
+      github.event.head_commit.message == 'ci: verify collapsible candidate revision'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -57,7 +57,7 @@ jobs:
             git clone --depth=1 --quiet --branch "$SOURCE_REF" "https://x-access-token:${SOURCE_TOKEN}@github.com/${SOURCE_REPOSITORY}.git" candidate
             git -C candidate fetch --quiet --depth=1 origin 'refs/pull/344/head'
             git -C candidate checkout --quiet --detach FETCH_HEAD
-            test "$(git -C candidate rev-parse HEAD)" = 'c0a937c99d154ec25c1bd8a258fae1990b85acb9'
+            test "$(git -C candidate rev-parse HEAD)" = 'e15e898fa18e3a7153d7b91fd6bd92310cf4a647'
             test -z "$(git -C candidate status --porcelain)"
             cd candidate
             phase=install
@@ -104,7 +104,7 @@ jobs:
             stage: phase,
             failing_test_indices: failedTests,
             error_class: errorClass,
-            changed_files: 4
+            changed_files: 5
           }) + '\n').toString('base64');
           const url = 'https://api.github.com/repos/' + process.env.GH_REPOSITORY + '/contents/ci-status/surface-gate.json';
           const headers = {'Authorization':'Bearer ' + process.env.GH_TOKEN,
