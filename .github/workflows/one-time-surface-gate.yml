@@ -16,8 +16,8 @@ jobs:
   candidate_verify:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '043feb1b25a491f9e892944055f0f3b93682fad6' &&
-      github.event.head_commit.message == 'ci: validate sealed candidate gate expression'
+      github.event.before == '37825466b90c77d179bbfbab9210394c4f8ccb45' &&
+      github.event.head_commit.message == 'ci: inspect sealed candidate failure index'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -68,8 +68,9 @@ jobs:
             npm run build
             phase=chromium-setup
             npx playwright install --with-deps chromium
-            phase=chromium
+            phase=chromium-ui
             npm run test:group:ui
+            phase=chromium-invite
             npm run test:group:invite-e2e
             phase=passed
           } >"$RUNNER_TEMP/private-validation.log" 2>&1
@@ -88,11 +89,21 @@ jobs:
             ? readFileSync(phaseFile,'utf8').trim().replace(/[^a-z-]/g,'').slice(0,30)
             : 'prerequisite';
           const pass = process.env.TEST_OUTCOME === 'success' && phase === 'passed';
+          const privatePath = process.env.RUNNER_TEMP + '/private-validation.log';
+          const privateLog = existsSync(privatePath) ? readFileSync(privatePath,'utf8') : '';
+          const failedTests = Array.from(privateLog.matchAll(/^\s*not ok\s+(\d+)\s+-/gm))
+            .map(match => Number(match[1])).slice(0,12);
+          const errorClass = /TimeoutError/.test(privateLog) ? 'timeout'
+            : /AssertionError/.test(privateLog) ? 'assertion'
+            : /browserType\.launch/.test(privateLog) ? 'launch'
+            : /Error:/.test(privateLog) ? 'error' : 'none';
           const content = Buffer.from(JSON.stringify({
             run_id: process.env.RUN_ID,
             phase: 'verification',
             result: pass ? 'pass' : 'fail',
             stage: phase,
+            failing_test_indices: failedTests,
+            error_class: errorClass,
             changed_files: 4
           }) + '\n').toString('base64');
           const url = 'https://api.github.com/repos/' + process.env.GH_REPOSITORY + '/contents/ci-status/surface-gate.json';
