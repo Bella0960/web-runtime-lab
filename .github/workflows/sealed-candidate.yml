@@ -79,7 +79,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected='40c39d1cc9cd42aed7c0acc53ad07ad17eacf9a5'
+          expected='ecda24302f2e7ccb4c15b9ffc1194949de1434a7'
           actual="$(git -C candidate rev-parse HEAD)"
           if [[ "$actual" != "$expected" ]]; then
             echo 'Approved QA candidate changed; refuse unverified source.'
