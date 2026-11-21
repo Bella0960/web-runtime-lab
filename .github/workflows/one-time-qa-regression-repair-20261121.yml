@@ -12,8 +12,8 @@ jobs:
   regression:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == 'd6ba14ffc175e93fb92af478e55a57b02946329d' &&
-      github.event.head_commit.message == 'ci: reverify synchronized QA regression contracts 20261121'
+      github.event.before == '98f8b790f1a07df224367078c5392de2c8aa4d79' &&
+      github.event.head_commit.message == 'ci: build before full Node verification 20261121'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -58,8 +58,8 @@ jobs:
               'tests/qa-identity-reconnect.test.mjs',
               'tests/qa-release-live-version.test.mjs',
               'tests/default-desktop-layout.test.mjs'],time:300000},
-            {name:'all-node',bin:'node',args:['--test','--test-concurrency=1'],time:900000},
-            {name:'vite-build',bin:'npm',args:['run','build'],time:480000}
+            {name:'vite-build',bin:'npm',args:['run','build'],time:480000},
+            {name:'all-node',bin:'node',args:['--test','--test-concurrency=1'],time:900000}
           ];
           for(const step of steps){
             const r=run(step.bin,step.args,step.time);
