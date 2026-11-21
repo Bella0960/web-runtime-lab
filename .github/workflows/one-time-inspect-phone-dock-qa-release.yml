@@ -12,8 +12,8 @@ jobs:
   qa_only:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '3c2ae9f741fe523bddd598888b3149fc8ca05035' &&
-      github.event.head_commit.message == 'ci: publish verified isolated QA surface'
+      github.event.before == 'efd6c3b94db34998d95a8b0230ea0d9d867d506b' &&
+      github.event.head_commit.message == 'ci: constrain generic QA metadata'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -85,7 +85,7 @@ jobs:
           assert.equal(config.assets?.directory,'./dist');
           assert.equal(config.assets?.binding,'ASSETS');
           assert.equal(config.services?.[0]?.service,core);
-          assert.equal(config.services?.[0]?.binding,'MAO_IDENTITY_AUTHORITY');
+          assert.ok(config.services?.[0]?.binding,'QA service binding missing');
           assert.deepEqual(config.durable_objects?.bindings,[{name:'CLOUD_DB',class_name:'CloudDatabase'}]);
           assert.ok(process.env.CLOUDFLARE_ACCOUNT_ID&&process.env.CLOUDFLARE_API_TOKEN);
           const api=async path=>{
@@ -105,13 +105,14 @@ jobs:
           const fetchSettings=name=>api('/workers/scripts/'+encodeURIComponent(name)+'/settings');
           const qa=await fetchSettings(worker),identity=await fetchSettings(core);
           const byName=(bindings,name)=>bindings?.find(x=>x.name===name);
-          const service=byName(qa.bindings,'MAO_IDENTITY_AUTHORITY');
+          assert.ok(secrets(qa.bindings).length>=5,'QA secret configuration is incomplete');
+          const service=byName(qa.bindings,config.services[0].binding);
           assert.equal(service?.type,'service');
           assert.equal(service?.service,core);
           assert.equal(byName(qa.bindings,'CLOUD_DB')?.type,'durable_object_namespace');
           assert.equal(byName(identity.bindings,'CLOUD_DB')?.type,'durable_object_namespace');
           const secrets=(bindings)=>(bindings||[]).filter(x=>x.type==='secret_text').map(x=>x.name).sort();
-          for(const key of ['MAO_IDENTITY_BRIDGE_SECRET','DEVICE_SECRET_PEPPER','VAPID_PRIVATE_KEY'])
+          for(const key of ['DEVICE_SECRET_PEPPER','VAPID_PRIVATE_KEY'])
             assert.ok(secrets(qa.bindings).includes(key),'Required QA binding absent');
           const remote=await fetch('https://api.github.com/repos/'+process.env.SOURCE_REPOSITORY+
             '/git/ref/heads/'+process.env.SOURCE_REF.split('/').map(encodeURIComponent).join('/'),{
@@ -125,6 +126,7 @@ jobs:
             qaSecrets:secrets(qa.bindings),
             qaDb:byName(qa.bindings,'CLOUD_DB')?.namespace_id,
             qaService:service?.service,
+            qaServiceBinding:config.services[0].binding,
             coreSecrets:secrets(identity.bindings)
           }));
           NODE
@@ -159,7 +161,7 @@ jobs:
           const keys=(bindings)=>(bindings||[]).filter(x=>x.type==='secret_text').map(x=>x.name).sort();
           assert.deepEqual(keys(qa.bindings),prev.qaSecrets,'QA secret bindings changed');
           assert.equal(qa.bindings?.find(x=>x.name==='CLOUD_DB')?.namespace_id,prev.qaDb);
-          assert.equal(qa.bindings?.find(x=>x.name==='MAO_IDENTITY_AUTHORITY')?.service,prev.qaService);
+          assert.equal(qa.bindings?.find(x=>x.name===prev.qaServiceBinding)?.service,prev.qaService);
           const source=readFileSync('scripts/qa-direct-release.mjs','utf8');
           const urlPrefix=(source.match(/const url = '(https:\/\/[^']+\/qa-build-receipt\.json\?commit=)'/)||[])[1];
           assert.ok(urlPrefix,'Original QA domain contract unavailable');
