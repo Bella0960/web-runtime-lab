@@ -12,8 +12,8 @@ jobs:
   qa_release:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == 'da7939e5a8b8cda1e813047815ef19fa91168e8f' &&
-      github.event.head_commit.message == 'ci: publish PR350 mobile editor with IDB photos to existing QA only'
+      github.event.before == '02a7bdd3dd81c26c75100958aae6c8e0bcfef4ef' &&
+      github.event.head_commit.message == 'ci: release PR350+351 native mobile theme studio QA-only'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -57,7 +57,7 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'da5df63b37ca5ca01990ee5b7f45d03397850e16'
+          test "$(git rev-parse HEAD)" = 'c9cf33e7c6bf67ed3842426efc9dba6bb7932da5'
           test "$(git branch --show-current)" = 'integration/account-fanwai-stack-20261115'
           test -z "$(git status --porcelain)"
           test -f tests/theme-studio.test.mjs
