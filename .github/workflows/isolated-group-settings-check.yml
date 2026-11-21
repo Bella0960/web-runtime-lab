@@ -25,14 +25,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = 'ea4d7b672913ca38ac94fe0af5fb9d1af24f9172'
+          test "$(git rev-parse HEAD^)" = '6ab2f2d70e1ec74e7462fb22c4eac3997457fbb1'
           test "$(git show --pretty='' --name-only HEAD | sed '/^$/d')" = '.github/workflows/isolated-group-settings-check.yml'
           node scripts/public-content-check.mjs
       - name: Checkout pinned test candidate
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: c00f7eb4dafe06f7aae2c1a5cf7adae16d2c8099
+          ref: ecf05ba270afe7b323c6dd6172e8029a308cf219
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           persist-credentials: false
           path: candidate
@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           cd candidate
-          test "$(git rev-parse HEAD)" = 'c00f7eb4dafe06f7aae2c1a5cf7adae16d2c8099'
+          test "$(git rev-parse HEAD)" = 'ecf05ba270afe7b323c6dd6172e8029a308cf219'
           npm ci --no-audit --no-fund >"$RUNNER_TEMP/group-install.log" 2>&1 || { echo 'dependency install failed'; exit 1; }
           npx playwright install --with-deps chromium >"$RUNNER_TEMP/group-browser.log" 2>&1 || { echo 'Chromium install failed'; exit 1; }
           set +e
