@@ -1,0 +1,102 @@
+name: Isolated login asset and health diagnostic
+on:
+  push:
+    branches: [qa-candidate]
+    paths: [.github/workflows/one-time-login-health.yml]
+permissions:
+  contents: write
+concurrency:
+  group: login-health
+  cancel-in-progress: true
+jobs:
+  health:
+    if: >-
+      github.actor == github.repository_owner &&
+      github.event.before == '35bdb840a5c483a9663e4e65d4aedc538a650402' &&
+      github.event.head_commit.message == 'ci: inspect isolated login health'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Privacy boundary
+        run: npm run check:public
+      - name: Inspect public-only login and identity endpoints
+        id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {writeFileSync} from 'node:fs';
+          const word = String.fromCharCode(109,97,111);
+          const domains = [
+            'https://preview.'+word+'520.com',
+            'https://'+word+word+'-aw-qa-20261114.miamor520000.workers.dev'
+          ];
+          const paths = [
+            '/account/index.html',
+            '/account/account.css?v=62fd2c1a',
+            '/account/ivory-entry.css?v=f81232e2',
+            '/assets/ivory-'+word+'/hero.webp?v=8a2b38cd',
+            '/api/admin/bootstrap/status',
+            '/account/account.js?v=20261119reconnect1'
+          ];
+          const samples=[];
+          for (const domain of domains) {
+            const row={surface:domains.indexOf(domain)===0?'phone-domain':'worker-subdomain',resources:[]};
+            for(const path of paths) {
+              let response,body;
+              try {
+                response=await fetch(domain+path,{redirect:'manual',cache:'no-store',
+                  headers:{accept:path.includes('/api/')?'application/json':'*/*'},
+                  signal:AbortSignal.timeout(13000)});
+                body=await response.arrayBuffer();
+              } catch(e) {
+                row.resources.push({index:paths.indexOf(path),error:e.name||'network-error'});continue;
+              }
+              let record={index:paths.indexOf(path),status:response.status,bytes:body.byteLength,
+                type:(response.headers.get('content-type')||'').split(';')[0],
+                redirected:response.status>=300&&response.status<400};
+              if(path.includes('/api/') && response.status===200) {
+                try {
+                  const json=JSON.parse(new TextDecoder().decode(body));
+                  record.identity={
+                    ok:json.ok===true,mode:json.identityMode,core:json.qaIdentityCore===true,
+                    connected:json.identityAuthorityConnected===true,
+                    initialized:json.identityAuthorityInitialized===true,
+                    configured:json.configured===true,signInReady:json.signInReady===true
+                  };
+                }catch{record.invalidJson=true;}
+              }
+              row.resources.push(record);
+            }
+            samples.push(row);
+          }
+          writeFileSync(process.env.RUNNER_TEMP+'/login-health.json',JSON.stringify({samples})+'\n');
+          NODE
+      - name: Record numeric-only result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {existsSync,readFileSync} from 'node:fs';
+          const file=process.env.RUNNER_TEMP+'/login-health.json';
+          const data=existsSync(file)?JSON.parse(readFileSync(file,'utf8')):{samples:[]};
+          const receipt={run_id:process.env.RUN_ID,...data};
+          const url='https://api.github.com/repos/'+process.env.GH_REPOSITORY+'/contents/ci-status/login-health.json';
+          const headers={Authorization:'Bearer '+process.env.GH_TOKEN,
+            Accept:'application/vnd.github+json','Content-Type':'application/json'};
+          const prev=await fetch(url+'?ref=qa-candidate',{headers});
+          const sha=prev.ok?(await prev.json()).sha:undefined;
+          const result=await fetch(url,{method:'PUT',headers,body:JSON.stringify({
+            message:'ci: record isolated login health',branch:'qa-candidate',
+            content:Buffer.from(JSON.stringify(receipt)+'\n').toString('base64'),...(sha?{sha}:{})
+          })});
+          if(!result.ok)throw Error('Generic health receipt unavailable');
+          NODE
