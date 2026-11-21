@@ -87,8 +87,10 @@ try {
     const stage = summarizeSealedFailure(releaseSource, sealedLog, {
       timedOut: result.error?.code === 'ETIMEDOUT'
     });
-    if (stage.endsWith('-tests') &&
-        sealedLog.includes('QA release stopped: node --test --test-concurrency=1 failed (exit ')) {
+    // Any failed Node-based gate may emit TAP failures, not only the full
+    // Node suite at gate 18. Only allowlisted test paths and fixed codes
+    // leave the ephemeral runner; never echo raw npm/Node logs.
+    if (/^gate-\d+-of-\d+-tests$/.test(stage)) {
       const testDir = join(source, 'tests');
       const files = existsSync(testDir)
         ? readdirSync(testDir, { withFileTypes: true })
