@@ -13,8 +13,8 @@ jobs:
   diagnostic:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '178c4365cf421cf31eb24cf95d2ecbc9a89320bf' &&
-      github.event.head_commit.message == 'ci: diagnose isolated regression gate'
+      github.event.before == '84a03d449c942c16373a2d68d94b1a95fd9cf4d4' &&
+      github.event.head_commit.message == 'ci: fix diagnostic workflow expression'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -52,7 +52,7 @@ jobs:
           node --test --test-concurrency=1 > "$RUNNER_TEMP/private-node.log" 2>&1
           status=$?
           set -e
-          if ${{  "$status" -ne 0  }}; then echo "fail" > "$RUNNER_TEMP/diagnostic-result"; else echo "pass" > "$RUNNER_TEMP/diagnostic-result"; fi
+          if test "$status" -ne 0; then echo "fail" > "$RUNNER_TEMP/diagnostic-result"; else echo "pass" > "$RUNNER_TEMP/diagnostic-result"; fi
       - name: Save numeric-only failure diagnostics
         if: always()
         env:
