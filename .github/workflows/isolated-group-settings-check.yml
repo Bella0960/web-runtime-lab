@@ -25,14 +25,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = '6ab2f2d70e1ec74e7462fb22c4eac3997457fbb1'
+          test "$(git rev-parse HEAD^)" = '7464341f344d74a19c2d790d2c1d5ca681bb360c'
           test "$(git show --pretty='' --name-only HEAD | sed '/^$/d')" = '.github/workflows/isolated-group-settings-check.yml'
           node scripts/public-content-check.mjs
       - name: Checkout pinned test candidate
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ecf05ba270afe7b323c6dd6172e8029a308cf219
+          ref: 7a5cb991e4f4bea9e9cfa1719ef729df5d35621a
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           persist-credentials: false
           path: candidate
@@ -41,18 +41,19 @@ jobs:
         run: |
           set -euo pipefail
           cd candidate
-          test "$(git rev-parse HEAD)" = 'ecf05ba270afe7b323c6dd6172e8029a308cf219'
+          test "$(git rev-parse HEAD)" = '7a5cb991e4f4bea9e9cfa1719ef729df5d35621a'
           npm ci --no-audit --no-fund >"$RUNNER_TEMP/group-install.log" 2>&1 || { echo 'dependency install failed'; exit 1; }
           npx playwright install --with-deps chromium >"$RUNNER_TEMP/group-browser.log" 2>&1 || { echo 'Chromium install failed'; exit 1; }
+          npm run build >"$RUNNER_TEMP/group-build.log" 2>&1 || { echo 'Vite build failed'; exit 1; }
           set +e
-          timeout 300s node --test --test-concurrency=1 tests/group-settings-home.browser.test.mjs tests/group-chat-invite-e2e.test.mjs tests/group-ui-collapse-invite.test.mjs >"$RUNNER_TEMP/group-test.log" 2>&1
+          timeout 300s node --test --test-concurrency=1 tests/group-settings-home.browser.test.mjs tests/group-chat-invite-e2e.test.mjs tests/group-ui-collapse-invite.test.mjs tests/memory-space-cleanup.browser.test.mjs >"$RUNNER_TEMP/group-test.log" 2>&1
           result=$?
           set -e
           if [ "$result" -ne 0 ]; then
             node --input-type=module <<'SAFE'
           import {readFileSync} from 'node:fs';
           const log=readFileSync(process.env.RUNNER_TEMP+'/group-test.log','utf8');
-          const lc=log.match(/(?:group-settings-home\.browser|group-chat-invite-e2e|group-ui-collapse-invite)\.test\.mjs:\d+:\d+/g)||[];
+          const lc=log.match(/(?:group-settings-home\.browser|group-chat-invite-e2e|group-ui-collapse-invite|memory-space-cleanup\.browser)\.test\.mjs:\d+:\d+/g)||[];
           console.log('Classifications='+['TimeoutError','AssertionError','test timed out','page.waitForURL','locator.click','locator.waitFor','page.goto','evaluate','Navigation interrupted'].map(v=>Number(log.includes(v))).join(''));
           console.log('Checkpoints='+[...new Set(lc)].join(','));
           SAFE
