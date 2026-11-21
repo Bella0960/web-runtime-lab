@@ -12,8 +12,8 @@ jobs:
   verify:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '1d066b64db20e342fa7a7e2f9468ddd6d5eafc0f' &&
-      github.event.head_commit.message == 'ci: verify enhanced mobile theme editor and IDB photo imports 002'
+      github.event.before == 'c52aaba23753accf5d52b8b4b06e11279a70c1d8' &&
+      github.event.head_commit.message == 'ci: reverify enhanced studio synthetic image contract 002'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -38,7 +38,7 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '3c8a1a5d1d2a6a4d298a54fb8ce19633627aa60b'
+          test "$(git rev-parse HEAD)" = '1335fadcde56a97c377ee9bfab6a84764726fb12'
           test -z "$(git status --porcelain)"
           test -f shared/js/theme-studio-assets.js
       - name: Native Node, Vite, Chromium and IDB image verification
