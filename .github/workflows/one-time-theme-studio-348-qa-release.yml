@@ -12,8 +12,8 @@ jobs:
   qa_release:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '2a3cb3ce1a533c8ff1b4a5e3dc3aada51379a34c' &&
-      github.event.head_commit.message == 'ci: release PR349 repaired mobile workbench to existing QA only'
+      github.event.before == 'da7939e5a8b8cda1e813047815ef19fa91168e8f' &&
+      github.event.head_commit.message == 'ci: publish PR350 mobile editor with IDB photos to existing QA only'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -57,7 +57,7 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'f4c7c4488384a03f4030c66c60453d1b5f3ea78f'
+          test "$(git rev-parse HEAD)" = 'da5df63b37ca5ca01990ee5b7f45d03397850e16'
           test "$(git branch --show-current)" = 'integration/account-fanwai-stack-20261115'
           test -z "$(git status --porcelain)"
           test -f tests/theme-studio.test.mjs
@@ -71,7 +71,7 @@ jobs:
           log="$RUNNER_TEMP/theme-studio-private.log"
           trap 'rm -f "$log"' EXIT
           if (cd candidate && npm ci --no-audit --no-fund && \
-              node --test tests/theme-studio.test.mjs && \
+              node --test tests/theme-studio.test.mjs tests/theme-studio-advanced.test.mjs && \
               npm run test:tutorial && \
               npm run build && \
               npx playwright install --with-deps chromium && \
