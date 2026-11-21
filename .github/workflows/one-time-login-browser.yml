@@ -12,8 +12,8 @@ jobs:
   inspect:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '3e2dac14e531ad703752e8048d0d1b19b1f35853' &&
-      github.event.head_commit.message == 'ci: inspect isolated login viewport'
+      github.event.before == '06f71f2e6c366347796a809f33a46148b1f7027e' &&
+      github.event.head_commit.message == 'ci: repair isolated viewport invocation'
     runs-on: ubuntu-latest
     timeout-minutes: 18
     steps:
@@ -37,11 +37,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          {
+          (
             cd candidate
             npm ci --no-audit --no-fund
             npx playwright install --with-deps chromium
-          } > "$RUNNER_TEMP/private-browser-install.log" 2>&1
+          ) > "$RUNNER_TEMP/private-browser-install.log" 2>&1
           cd candidate
           node --input-type=module <<'NODE'
           import {chromium} from 'playwright';
