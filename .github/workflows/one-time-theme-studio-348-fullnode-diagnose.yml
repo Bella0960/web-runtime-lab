@@ -12,8 +12,8 @@ jobs:
   diagnose:
     if: >-
       github.actor == github.repository_owner &&
-      github.event.before == '064564b91a9af61858317d704f1c3a000284fa1e' &&
-      github.event.head_commit.message == 'ci: establish pre-studio full Node baseline 348'
+      github.event.before == '110afa8d58743c62e0205430bae68ffa5b039313' &&
+      github.event.head_commit.message == 'ci: diagnose isolated PR350 full Node gate failure without private output'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: 00e52d51282ae9126b49696247ed0b3fe24d6d47
+          ref: ${{ secrets.CANDIDATE_REF }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -38,7 +38,7 @@ jobs:
         working-directory: candidate
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '00e52d51282ae9126b49696247ed0b3fe24d6d47'
+          test "$(git rev-parse HEAD)" = 'da5df63b37ca5ca01990ee5b7f45d03397850e16'
           test -z "$(git status --porcelain)"
       - name: Run true Node suite and classify failures without private data
         shell: bash
