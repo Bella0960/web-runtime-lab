@@ -95,7 +95,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '50708b1a54b46c928dcfe79dbb4d7cccc977d601' || { echo 'API UI v123 candidate SHA mismatch'; exit 1; }
+          test "$(git -C candidate rev-parse HEAD)" = 'd9abd7036914c4f506103a3061c6e185eeba0a77' || { echo 'API UI v123 candidate SHA mismatch'; exit 1; }
           git -C candidate fetch --quiet --no-tags origin integration/qa-api-ui-411-v122-on-v121-20261123
           previous="$(git -C candidate rev-parse FETCH_HEAD)"
           test "$previous" = 'c4dfbcc79a4fe288293584ff38296ce4e31f37fb' || { echo 'v122 QA source moved; release cancelled'; exit 1; }
