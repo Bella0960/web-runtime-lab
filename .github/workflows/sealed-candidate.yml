@@ -64,9 +64,9 @@ jobs:
         shell: bash
         env:
           SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
-          SOURCE_REF: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PORTRAIT_ARCHIVE_AI_20261122' && 'integration/qa-portrait-archive-ai-20261122' || github.event_name == 'push' && 'integration/qa-role-copy-errors-20261122' || inputs.candidate == 'role-copy-v119' && 'integration/qa-role-copy-errors-20261122' || inputs.candidate == 'role-editor-v118' && 'integration/qa-role-editor-labels-v118-20261122' || inputs.candidate == 'role-list-v117' && 'integration/qa-role-list-v117-20261122' || inputs.candidate == 'batch1-p0-376' && 'integration/qa-batch1-376' || inputs.candidate == 'chat-p0-375' && 'integration/qa-single-chat-375' || secrets.CANDIDATE_REF }}
+          SOURCE_REF: ${{ github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_PORTRAIT_ARCHIVE_AI_20261122' || github.event.head_commit.message == 'RELEASE_PORTRAIT_ARCHIVE_AI_QA_ONLY_20261122') && 'integration/qa-portrait-archive-ai-20261122' || github.event_name == 'push' && 'integration/qa-role-copy-errors-20261122' || inputs.candidate == 'role-copy-v119' && 'integration/qa-role-copy-errors-20261122' || inputs.candidate == 'role-editor-v118' && 'integration/qa-role-editor-labels-v118-20261122' || inputs.candidate == 'role-list-v117' && 'integration/qa-role-list-v117-20261122' || inputs.candidate == 'batch1-p0-376' && 'integration/qa-batch1-376' || inputs.candidate == 'chat-p0-375' && 'integration/qa-single-chat-375' || secrets.CANDIDATE_REF }}
           SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          OPERATION: ${{ (github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_COPY_QA_ONLY_20261122') && 'release' || github.event_name == 'push' && 'verify' || inputs.operation }}
+          OPERATION: ${{ (github.event_name == 'push' && (github.event.head_commit.message == 'RELEASE_ROLE_COPY_QA_ONLY_20261122' || github.event.head_commit.message == 'RELEASE_PORTRAIT_ARCHIVE_AI_QA_ONLY_20261122')) && 'release' || github.event_name == 'push' && 'verify' || inputs.operation }}
         run: |
           set -euo pipefail
           if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" ]]; then
@@ -80,17 +80,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PORTRAIT_ARCHIVE_AI_20261122' && 'integration/qa-portrait-archive-ai-20261122' || github.event_name == 'push' && 'integration/qa-role-copy-errors-20261122' || inputs.candidate == 'role-copy-v119' && 'integration/qa-role-copy-errors-20261122' || inputs.candidate == 'role-editor-v118' && 'integration/qa-role-editor-labels-v118-20261122' || inputs.candidate == 'role-list-v117' && 'integration/qa-role-list-v117-20261122' || inputs.candidate == 'batch1-p0-376' && 'integration/qa-batch1-376' || inputs.candidate == 'chat-p0-375' && 'integration/qa-single-chat-375' || secrets.CANDIDATE_REF }}
+          ref: ${{ github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_PORTRAIT_ARCHIVE_AI_20261122' || github.event.head_commit.message == 'RELEASE_PORTRAIT_ARCHIVE_AI_QA_ONLY_20261122') && 'integration/qa-portrait-archive-ai-20261122' || github.event_name == 'push' && 'integration/qa-role-copy-errors-20261122' || inputs.candidate == 'role-copy-v119' && 'integration/qa-role-copy-errors-20261122' || inputs.candidate == 'role-editor-v118' && 'integration/qa-role-editor-labels-v118-20261122' || inputs.candidate == 'role-list-v117' && 'integration/qa-role-list-v117-20261122' || inputs.candidate == 'batch1-p0-376' && 'integration/qa-batch1-376' || inputs.candidate == 'chat-p0-375' && 'integration/qa-single-chat-375' || secrets.CANDIDATE_REF }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: true
           fetch-depth: 100
       - name: Verify pinned portrait-archive-AI QA candidate SHA
-        if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PORTRAIT_ARCHIVE_AI_20261122' }}
+        if: ${{ github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_PORTRAIT_ARCHIVE_AI_20261122' || github.event.head_commit.message == 'RELEASE_PORTRAIT_ARCHIVE_AI_QA_ONLY_20261122') }}
         shell: bash
         run: |
           set -euo pipefail
-          expected='1ebbeff3e803ae1da00525db7047de55e39c84b0'
+          expected='73eee52d3c84dd2d0afe419efc86adff2003d9fa'
           actual="$(git -C candidate rev-parse HEAD)"
           if [[ "$actual" != "$expected" ]]; then
             echo 'Portrait-archive QA candidate moved; refusing validation.'
@@ -141,7 +141,7 @@ jobs:
             exit 1
           fi
       - name: Verify pinned role-copy QA candidate SHA
-        if: ${{ (github.event_name == 'push' && github.event.head_commit.message != 'VERIFY_PORTRAIT_ARCHIVE_AI_20261122') || inputs.candidate == 'role-copy-v119' }}
+        if: ${{ (github.event_name == 'push' && github.event.head_commit.message != 'VERIFY_PORTRAIT_ARCHIVE_AI_20261122' && github.event.head_commit.message != 'RELEASE_PORTRAIT_ARCHIVE_AI_QA_ONLY_20261122') || inputs.candidate == 'role-copy-v119' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -221,10 +221,27 @@ jobs:
             echo 'Role-copy staging differs from tested candidate; refusing release.'
             exit 1
           fi
+      - name: Verify merged staging matches pinned portrait-archive QA candidate
+        if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_PORTRAIT_ARCHIVE_AI_QA_ONLY_20261122' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C candidate fetch --quiet --no-tags origin integration/batch1-qa-merge-20261122
+          merged="$(git -C candidate rev-parse FETCH_HEAD)"
+          if [[ "$merged" != '1bffbc14846dda5558c25b124bfb544fedfdcbf7' ]]; then
+            echo 'Merged source moved; refusing QA release.'
+            exit 1
+          fi
+          actual="$(git -C candidate diff --name-only "$merged" HEAD)"
+          expected="$(printf '%s\n' 'scripts/qa-direct-release.mjs' 'tests/memory-space-cleanup.browser.test.mjs')"
+          if [[ "$actual" != "$expected" ]]; then
+            echo 'Unapproved application difference; refusing QA release.'
+            exit 1
+          fi
       # The runner prints allowlisted failing-test locations only; raw logs remain ephemeral.
       - name: Run sealed validation with sanitized failure locations
         env:
-          CANDIDATE_RELEASE_ACK: ${{ (github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_COPY_QA_ONLY_20261122') && 'qa-only' || github.event_name == 'workflow_dispatch' && inputs.confirmation || '' }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ ((github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_COPY_QA_ONLY_20261122') || (github.event_name == 'workflow_dispatch' && inputs.operation == 'release')) && secrets.CANDIDATE_ACCOUNT_ID || '' }}
-          CLOUDFLARE_API_TOKEN: ${{ ((github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_COPY_QA_ONLY_20261122') || (github.event_name == 'workflow_dispatch' && inputs.operation == 'release')) && secrets.CANDIDATE_DEPLOY_TOKEN || '' }}
-        run: node scripts/run-candidate.mjs "${{ (github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_COPY_QA_ONLY_20261122') && 'release' || github.event_name == 'push' && 'verify' || inputs.operation }}"
+          CANDIDATE_RELEASE_ACK: ${{ (github.event_name == 'push' && (github.event.head_commit.message == 'RELEASE_ROLE_COPY_QA_ONLY_20261122' || github.event.head_commit.message == 'RELEASE_PORTRAIT_ARCHIVE_AI_QA_ONLY_20261122')) && 'qa-only' || github.event_name == 'workflow_dispatch' && inputs.confirmation || '' }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ ((github.event_name == 'push' && (github.event.head_commit.message == 'RELEASE_ROLE_COPY_QA_ONLY_20261122' || github.event.head_commit.message == 'RELEASE_PORTRAIT_ARCHIVE_AI_QA_ONLY_20261122')) || (github.event_name == 'workflow_dispatch' && inputs.operation == 'release')) && secrets.CANDIDATE_ACCOUNT_ID || '' }}
+          CLOUDFLARE_API_TOKEN: ${{ ((github.event_name == 'push' && (github.event.head_commit.message == 'RELEASE_ROLE_COPY_QA_ONLY_20261122' || github.event.head_commit.message == 'RELEASE_PORTRAIT_ARCHIVE_AI_QA_ONLY_20261122')) || (github.event_name == 'workflow_dispatch' && inputs.operation == 'release')) && secrets.CANDIDATE_DEPLOY_TOKEN || '' }}
+        run: node scripts/run-candidate.mjs "${{ (github.event_name == 'push' && (github.event.head_commit.message == 'RELEASE_ROLE_COPY_QA_ONLY_20261122' || github.event.head_commit.message == 'RELEASE_PORTRAIT_ARCHIVE_AI_QA_ONLY_20261122')) && 'release' || github.event_name == 'push' && 'verify' || inputs.operation }}"
