@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected='c59ba16afaf25545efd12ff9b031a4e9670d0dd9'
+          expected='c1ce177a5ca501e5244208739b0a5b83aa24f603'
           actual="$(git -C candidate rev-parse HEAD)"
           if [[ "$actual" != "$expected" ]]; then
             echo 'Follow-up stop candidate moved; refusing verification.'
