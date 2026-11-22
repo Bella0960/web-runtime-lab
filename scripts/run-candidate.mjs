@@ -105,6 +105,16 @@ try {
         .sort((a, b) => a - b);
       if (gates.length) console.error('Failed required QA gate numbers: ' + gates.join(','));
     }
+    // Browser suites do not use TAP. Emit only a fixed numeric progress
+    // checkpoint rather than private browser errors, source or page data.
+    if (mode === 'verify') {
+      const checkpoints = [...sealedLog.matchAll(/^SEALED_BROWSER_CHECKPOINT:([0-9]{1,3})$/gm)];
+      const latest = checkpoints.at(-1)?.[1];
+      const checkpoint = latest === undefined ? NaN : Number(latest);
+      if ([0, 10, 375, 390, 391, 392, 393, 394, 430, 500, 600, 700].includes(checkpoint)) {
+        console.error('Sanitized browser checkpoint: ' + checkpoint);
+      }
+    }
     if (/^gate-\d+-of-\d+-tests$/.test(stage) ||
         stage === 'multiple-required-test-gates') {
       const testDir = join(source, 'tests');
