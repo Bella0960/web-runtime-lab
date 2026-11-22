@@ -1,4 +1,5 @@
 name: Sealed candidate verification
+# QA-only post-test failures emit a fixed sanitized category; never raw logs.
 
 on:
   # Existing sealed workflow: owner pushes to this file automatically verify
