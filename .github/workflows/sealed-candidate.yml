@@ -395,7 +395,7 @@ jobs:
             echo 'Chat search staging moved; refusing QA release.'
             exit 1
           fi
-          actual="$(git -C candidate diff --name-only "$merged" HEAD)
+          actual="$(git -C candidate diff --name-only "$merged" HEAD)"
           expected="$(printf '%s\n' 'docs/engineering/EXECUTION_LOG.md' 'scripts/qa-direct-release.mjs' 'tests/memory-space-cleanup.browser.test.mjs')"
           if [[ "$actual" != "$expected" ]]; then
             echo 'Unreviewed chat search changes; refusing QA release.'
