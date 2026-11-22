@@ -95,13 +95,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = 'd9abd7036914c4f506103a3061c6e185eeba0a77' || { echo 'API UI v123 candidate SHA mismatch'; exit 1; }
+          test "$(git -C candidate rev-parse HEAD)" = '844ff812ecf1e216a57be74045dbbe33ea644138' || { echo 'API UI v123 candidate SHA mismatch'; exit 1; }
           git -C candidate fetch --quiet --no-tags origin integration/qa-api-ui-411-v122-on-v121-20261123
           previous="$(git -C candidate rev-parse FETCH_HEAD)"
           test "$previous" = 'c4dfbcc79a4fe288293584ff38296ce4e31f37fb' || { echo 'v122 QA source moved; release cancelled'; exit 1; }
           git -C candidate merge-base --is-ancestor "$previous" HEAD || { echo 'QA candidate drops existing v122 features'; exit 1; }
           actual="$(git -C candidate diff --name-only "$previous" HEAD)"
-          approved="$(printf '%s\n' 'scripts/qa-direct-release.mjs' 'settings/css/api-editorial.css' 'settings/settings.html' 'sw.js' 'tests/api-settings-editorial-browser.mjs' 'tests/api-settings-editorial.test.mjs')"
+          approved="$(printf '%s\n' 'scripts/qa-direct-release.mjs' 'settings/css/api-editorial.css' 'settings/settings.html' 'sw.js' 'tests/api-config-mobile.browser.mjs' 'tests/api-settings-editorial-browser.mjs' 'tests/api-settings-editorial.test.mjs')"
           test "$actual" = "$approved" || { echo 'Unexpected change set for API UI v123'; exit 1; }
       - name: Verify API UI #411 v122-on-v121 pinned source and no lost features
         if: ${{ github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_API_UI_411_V122_V121_20261123' || github.event.head_commit.message == 'RELEASE_API_UI_411_V122_V121_QA_ONLY_20261123') }}
