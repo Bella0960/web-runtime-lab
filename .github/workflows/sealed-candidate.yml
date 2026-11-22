@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected='27aad7b63efe664e83395746899a8974c8229f90'
+          expected='78db173f62e3c1aa8ebcd271b1d98a5a6fcfc59b'
           actual="$(git -C candidate rev-parse HEAD)"
           if [[ "$actual" != "$expected" ]]; then
             echo 'Plus-menu card QA candidate moved; refusing verification.'
