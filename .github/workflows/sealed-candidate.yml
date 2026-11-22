@@ -228,7 +228,7 @@ jobs:
           set -euo pipefail
           git -C candidate fetch --quiet --no-tags origin integration/batch1-qa-merge-20261122
           merged="$(git -C candidate rev-parse FETCH_HEAD)"
-          if [[ "$merged" != '1bffbc14846dda5558c25b124bfb544fedfdcbf7' ]]; then
+          if [[ "$merged" != '75a2d39861bc7b5fc04c750ac36155688cd6a74d' ]]; then
             echo 'Merged source moved; refusing QA release.'
             exit 1
           fi
