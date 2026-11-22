@@ -63,7 +63,7 @@ jobs:
           SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
           SOURCE_REF: ${{ github.event_name == 'push' && 'integration/qa-batch1-376' || inputs.candidate == 'batch1-p0-376' && 'integration/qa-batch1-376' || inputs.candidate == 'chat-p0-375' && 'integration/qa-single-chat-375' || secrets.CANDIDATE_REF }}
           SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          OPERATION: ${{ (github.event_name == 'push' && github.event.head_commit.message == 'ci(qa): release merged batch1 to existing QA') && 'release' || github.event_name == 'push' && 'verify' || inputs.operation }}
+          OPERATION: ${{ (github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122') && 'release' || github.event_name == 'push' && 'verify' || inputs.operation }}
         run: |
           set -euo pipefail
           if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" ]]; then
@@ -105,7 +105,7 @@ jobs:
             exit 1
           fi
       - name: Verify approved staging matches tested batch1 before one-time QA release
-        if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'ci(qa): release merged batch1 to existing QA' }}
+        if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -124,7 +124,7 @@ jobs:
       # The runner prints allowlisted failing-test locations only; raw logs remain ephemeral.
       - name: Run sealed validation with sanitized failure locations
         env:
-          CANDIDATE_RELEASE_ACK: ${{ (github.event_name == 'push' && github.event.head_commit.message == 'ci(qa): release merged batch1 to existing QA') && 'qa-only' || github.event_name == 'workflow_dispatch' && inputs.confirmation || '' }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ ((github.event_name == 'push' && github.event.head_commit.message == 'ci(qa): release merged batch1 to existing QA') || (github.event_name == 'workflow_dispatch' && inputs.operation == 'release')) && secrets.CANDIDATE_ACCOUNT_ID || '' }}
-          CLOUDFLARE_API_TOKEN: ${{ ((github.event_name == 'push' && github.event.head_commit.message == 'ci(qa): release merged batch1 to existing QA') || (github.event_name == 'workflow_dispatch' && inputs.operation == 'release')) && secrets.CANDIDATE_DEPLOY_TOKEN || '' }}
-        run: node scripts/run-candidate.mjs "${{ (github.event_name == 'push' && github.event.head_commit.message == 'ci(qa): release merged batch1 to existing QA') && 'release' || github.event_name == 'push' && 'verify' || inputs.operation }}"
+          CANDIDATE_RELEASE_ACK: ${{ (github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122') && 'qa-only' || github.event_name == 'workflow_dispatch' && inputs.confirmation || '' }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ ((github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122') || (github.event_name == 'workflow_dispatch' && inputs.operation == 'release')) && secrets.CANDIDATE_ACCOUNT_ID || '' }}
+          CLOUDFLARE_API_TOKEN: ${{ ((github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122') || (github.event_name == 'workflow_dispatch' && inputs.operation == 'release')) && secrets.CANDIDATE_DEPLOY_TOKEN || '' }}
+        run: node scripts/run-candidate.mjs "${{ (github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122') && 'release' || github.event_name == 'push' && 'verify' || inputs.operation }}"
