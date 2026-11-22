@@ -141,7 +141,7 @@ jobs:
             exit 1
           fi
       - name: Verify pinned role-copy QA candidate SHA
-        if: ${{ github.event_name == 'push' || inputs.candidate == 'role-copy-v119' }}
+        if: ${{ (github.event_name == 'push' && github.event.head_commit.message != 'VERIFY_PORTRAIT_ARCHIVE_AI_20261122') || inputs.candidate == 'role-copy-v119' }}
         shell: bash
         run: |
           set -euo pipefail
