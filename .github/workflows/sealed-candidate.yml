@@ -96,7 +96,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = '07d73bea1dab66e05ab050098b66594051e9da55' || { echo 'ECO QA candidate SHA mismatch'; exit 1; }
+          test "$(git -C candidate rev-parse HEAD)" = 'f57b619842adc6addab5e87cd04e8b463431d6aa' || { echo 'ECO QA candidate SHA mismatch'; exit 1; }
           git -C candidate fetch --quiet --no-tags origin integration/qa-api-ui-003-v123-20261123
           previous="$(git -C candidate rev-parse FETCH_HEAD)"
           test "$previous" = '844ff812ecf1e216a57be74045dbbe33ea644138' || { echo 'Previously approved QA baseline moved'; exit 1; }
