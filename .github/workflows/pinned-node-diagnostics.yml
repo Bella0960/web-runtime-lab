@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ${{ github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || 'ad341afc481063c4a0943380650722e306f3ba20' }}
+          ref: ${{ github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_395_20261122' && '92b4785c91cc61149070d7ac7e62c86823ffd300' || 'ad341afc481063c4a0943380650722e306f3ba20' }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -45,10 +45,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected="${{ github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || 'ad341afc481063c4a0943380650722e306f3ba20' }}"
+          expected="${{ github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_395_20261122' && '92b4785c91cc61149070d7ac7e62c86823ffd300' || 'ad341afc481063c4a0943380650722e306f3ba20' }}"
           test "$(git -C candidate rev-parse HEAD)" = "$expected"
           cd candidate
           npm ci --no-audit --no-fund >"$RUNNER_TEMP/install.log" 2>&1 || { echo 'FAILED dependencies'; exit 1; }
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_STORAGE_QA_395_20261122' ]]; then
+            npm run test:storage:reliability >"$RUNNER_TEMP/storage-qa.log" 2>&1 || { echo 'QA_STORAGE failed: Node quota tests'; exit 1; }
+            echo 'QA_STORAGE Node quota tests PASS'
+            npm run test:chat:contract >"$RUNNER_TEMP/chat-qa.log" 2>&1 || { echo 'QA_STORAGE failed: chat contract'; exit 1; }
+            echo 'QA_STORAGE chat contract PASS'
+            npm run test:chat:isolation >"$RUNNER_TEMP/isolation-qa.log" 2>&1 || { echo 'QA_STORAGE failed: chat isolation'; exit 1; }
+            echo 'QA_STORAGE chat isolation PASS'
+            npm run build >"$RUNNER_TEMP/vite-qa.log" 2>&1 || { echo 'QA_STORAGE failed: Vite'; exit 1; }
+            echo 'QA_STORAGE Vite build PASS'
+            npx playwright install --with-deps chromium >"$RUNNER_TEMP/chromium-qa.log" 2>&1 || { echo 'QA_STORAGE failed: Chromium dependencies'; exit 1; }
+            npm run test:chat:isolation:browser >"$RUNNER_TEMP/browser-qa.log" 2>&1 || { echo 'QA_STORAGE failed: Chromium chat isolation'; exit 1; }
+            echo 'QA_STORAGE Chromium browser PASS, verify-only (no deploy)'
+            exit 0
+          fi
           if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_STORAGE_BASELINE_20261122' ]]; then
             chat_status=0
             isolation_status=0
