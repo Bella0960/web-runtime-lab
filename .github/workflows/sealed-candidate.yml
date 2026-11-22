@@ -117,7 +117,7 @@ jobs:
             exit 1
           fi
       - name: Verify approved staging matches tested batch1 before one-time QA release
-        if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_LAYOUT_QA_ONLY_20261122' }}
+        if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -141,7 +141,7 @@ jobs:
           git -C candidate fetch --quiet --no-tags origin integration/batch1-qa-merge-20261122
           merged="$(git -C candidate rev-parse FETCH_HEAD)"
           # Must be set only after the isolated PR has been safely merged.
-          if [[ "$merged" != '0000000000000000000000000000000000000000' ]]; then
+          if [[ "$merged" != 'f650496ec93ce1c80a61ab1927e08f3c92ca474c' ]]; then
             echo 'Role-layout staging SHA mismatch; refusing QA release.'
             exit 1
           fi
