@@ -122,7 +122,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected='8c72efd0708fdc99d5621880b31a7298aa77c73d'
+          expected='8eb94f0c7ad69d799e96a05be83762005f3795b1'
           actual="$(git -C candidate rev-parse HEAD)"
           if [[ "$actual" != "$expected" ]]; then
             echo 'Neutral editor candidate changed; refusing unverified source.'
