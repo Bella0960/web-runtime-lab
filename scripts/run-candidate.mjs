@@ -146,6 +146,26 @@ try {
       }
       if (size > length) console.error('Diagnostic log was truncated to a bounded tail.');
     }
+    // Emit only a fixed allowlisted reason for the QA post-test safety gate.
+    // Never echo private logs, variable values, requests or account identifiers.
+    if (stage === 'post-test-safety-gate') {
+      const safeCauses = [
+        ['checkout-changed', /Tests altered the checkout|Checkout must be clean/],
+        ['candidate-ref-moved', /Unexpected remote branch ref|Remote QA HEAD changed|QA snapshot|candidate HEAD/],
+        ['assets-missing', /QA Vite asset missing after build/],
+        ['runtime-config-mismatch', /runtime variable|runtime binding|QA bootstrap lifecycle mismatch|Unexpected identity service binding/],
+        ['identity-db-proof', /Cloudflare account counts are invalid|Cloudflare account query|founder\/admin no longer matches|identity core contains conflicting accounts/],
+        ['cloudflare-read-failed', /Read-only Cloudflare preflight failed/],
+        ['worker-version-changed', /QA Worker was deployed by another release|QA identity core changed|QA Worker changed after preflight|QA identity authority changed/],
+        ['identity-route-check', /original QA workers\.dev|isolated identity core is unexpectedly public|preview URLs are enabled/],
+        ['target-auth-check', /Cloudflare account ID is required|Cloudflare API token is required|QA-only confirmation/],
+        ['qa-http-smoke', /QA login document|QA login stylesheet|QA setup cannot accept|QA core is not reachable|QA status endpoint/],
+        ['post-upload-check', /QA deployment version did not advance|QA latest deployment|QA identity authority|QA deployed|owner QA domain/]
+      ];
+      const matched = safeCauses.find(([, pattern]) => pattern.test(sealedLog));
+      console.error('Sanitized QA post-test safety category: ' +
+        (matched ? matched[0] : 'other-guard'));
+    }
     throw new Error('Candidate validation stopped at ' + stage +
       '; private logs were withheld');
   }
