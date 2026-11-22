@@ -90,7 +90,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected='c64acd212c88601dbc15fbf2c4e34034ac50973e'
+          expected='1ebbeff3e803ae1da00525db7047de55e39c84b0'
           actual="$(git -C candidate rev-parse HEAD)"
           if [[ "$actual" != "$expected" ]]; then
             echo 'Portrait-archive QA candidate moved; refusing validation.'
