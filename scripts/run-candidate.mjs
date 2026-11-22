@@ -115,6 +115,19 @@ try {
         console.error('Sanitized browser checkpoint: ' + checkpoint);
       }
     }
+    // A complete Node suite includes browser tests without TAP stack frames.
+    // Only bounded numeric checkpoints are allowed into public logs.
+    if (mode === 'verify') {
+      const memoryMatches = [...sealedLog.matchAll(/^SEALED_MEMORY_CHECKPOINT:([0-9]{1,4})$/gm)];
+      const lastMemory = memoryMatches.at(-1)?.[1];
+      const memoryCheckpoint = lastMemory === undefined ? NaN : Number(lastMemory);
+      const widths = [375, 390, 430, 1100];
+      const permitted = [1, 2].concat(widths.flatMap(width =>
+        [0, 1, 2, 3, 4, 5, 6, 7].map(n => width + n)));
+      if (permitted.includes(memoryCheckpoint)) {
+        console.error('Sanitized memory-browser checkpoint: ' + memoryCheckpoint);
+      }
+    }
     if (/^gate-\d+-of-\d+-tests$/.test(stage) ||
         stage === 'multiple-required-test-gates') {
       const testDir = join(source, 'tests');
