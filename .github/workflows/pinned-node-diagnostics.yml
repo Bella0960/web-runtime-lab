@@ -70,12 +70,37 @@ jobs:
           SAFE_CHAT_FAILURE
               echo 'CHAT CONTRACT FAILED: continuing other gates without bypassing this failure'
             }
-            npm run test:chat:isolation >"$RUNNER_TEMP/isolation.log" 2>&1 || { echo 'FAILED chat isolation regression'; exit 1; }
-            npm run build >"$RUNNER_TEMP/build.log" 2>&1 || { echo 'FAILED Vite'; exit 1; }
-            npx playwright install --with-deps chromium >"$RUNNER_TEMP/chromium.log" 2>&1 || { echo 'FAILED Chromium dependencies'; exit 1; }
-            npm run test:chat:isolation:browser >"$RUNNER_TEMP/browser.log" 2>&1 || { echo 'FAILED Chromium chat isolation'; exit 1; }
-            if [[ "$chat_contract_failed" -ne 0 ]]; then
-              echo 'FAILED chat contract (storage Node, Vite and Chromium gates executed)'
+            isolation_failed=0
+            npm run test:chat:isolation >"$RUNNER_TEMP/isolation.log" 2>&1 || {
+              isolation_failed=1
+              node --input-type=module -e '
+                import { readFileSync } from "node:fs";
+                import { createHash } from "node:crypto";
+                const log = readFileSync(process.env.RUNNER_TEMP + "/isolation.log", "utf8").split(/\r?\n/);
+                const hash = s => createHash("sha256").update(s).digest("hex").slice(0,12);
+                for(const line of log) {
+                  const match = line.match(/^not ok (\d+) - (.*)$/);
+                  if(match) console.log("ISOLATION_FAIL ordinal=" + match[1] + " titleHash=" + hash(match[2]));
+                  if(/^# (?:tests|pass|fail|skipped) \d+$/.test(line)) console.log(line);
+                }
+              '
+              echo 'FAILED chat isolation regression'
+            }
+            build_failed=0
+            npm run build >"$RUNNER_TEMP/build.log" 2>&1 || { build_failed=1; echo 'FAILED Vite'; }
+            browser_failed=0
+            if [[ "$build_failed" -eq 0 ]]; then
+              npx playwright install --with-deps chromium >"$RUNNER_TEMP/chromium.log" 2>&1 || { browser_failed=1; echo 'FAILED Chromium dependencies'; }
+              if [[ "$browser_failed" -eq 0 ]]; then
+                npm run test:chat:isolation:browser >"$RUNNER_TEMP/browser.log" 2>&1 || { browser_failed=1; echo 'FAILED Chromium chat isolation'; }
+              fi
+            else
+              browser_failed=1
+              echo 'NOT_RUN Chromium due to failed Vite build'
+            fi
+            echo "GATES storage=pass chat_contract_failed=$chat_contract_failed isolation_failed=$isolation_failed vite_failed=$build_failed browser_failed=$browser_failed"
+            if [[ "$chat_contract_failed" -ne 0 || "$isolation_failed" -ne 0 || "$build_failed" -ne 0 || "$browser_failed" -ne 0 ]]; then
+              echo 'FAILED storage candidate verification; no deployment performed'
               exit 1
             fi
             echo 'PASS storage Node, chat contract, chat isolation, Vite and Chromium'
