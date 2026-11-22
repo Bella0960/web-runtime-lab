@@ -334,6 +334,17 @@ jobs:
             echo 'Dock QA candidate contains unreviewed app changes; refusing deployment.'
             exit 1
           fi
+      - name: Pristine baseline check for existing character contracts
+        if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_CHAT_FOLLOWUP_STOP_20261122' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if (cd candidate && node --test tests/character-ai-json-recovery.test.mjs tests/character-visible-labels.test.mjs > /dev/null 2>&1); then
+            echo 'Existing character contracts passed before the full regression suite.'
+          else
+            echo 'Existing character contracts failed on the clean candidate; verification blocked.'
+            exit 1
+          fi
       # The runner prints allowlisted failing-test locations only; raw logs remain ephemeral.
       - name: Run sealed validation with sanitized failure locations
         env:
