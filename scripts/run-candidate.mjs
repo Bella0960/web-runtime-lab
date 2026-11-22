@@ -169,6 +169,40 @@ try {
     throw new Error('Candidate validation stopped at ' + stage +
       '; private logs were withheld');
   }
+  // Only safe numeric ECO performance receipts leave the sealed runner.
+  // Neither raw private logs nor account names, roles or chat texts are published.
+  if (mode === 'verify') {
+    const receiptPath = join(source, 'test-results', 'eco-unified-browser-receipt.json');
+    if (existsSync(receiptPath)) {
+      const actual = spawnSync('git', ['-C', source, 'rev-parse', 'HEAD'],
+        { encoding: 'utf8', timeout: 10000 });
+      if (actual.status !== 0 || !/^[0-9a-f]{40}$/.test(String(actual.stdout || '').trim())) {
+        throw new Error('Cannot pin ECO browser performance receipt to a verified SHA');
+      }
+      const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'));
+      if (receipt.gitHead !== actual.stdout.trim() ||
+          receipt.scope !== 'synthetic-browser-account-metadata (not real Worker login)' ||
+          !Array.isArray(receipt.viewports) ||
+          receipt.viewports.join(',') !== '375,390,430') {
+        throw new Error('ECO browser performance receipt missing or candidate mismatched');
+      }
+      for (const width of [375, 390, 430]) {
+        const times = ['singleChatMemoryQueryMs', 'syntheticAccountSwitchMs',
+          'syntheticAccountIsolationQueryMs'].map(key => {
+            const value = receipt.timings?.[key + width];
+            if (typeof value !== 'number' || !Number.isFinite(value) ||
+                value < 0 || value > 120000) {
+              throw new Error('ECO browser metric missing: ' + key + width);
+            }
+            return value.toFixed(3);
+          });
+        console.log('ECO_CHROMIUM_METRIC:' + width +
+          ':memory_query_ms=' + times[0] +
+          ':synthetic_account_switch_ms=' + times[1] +
+          ':synthetic_account_query_ms=' + times[2]);
+      }
+    }
+  }
   console.log(mode === 'release'
     ? 'Isolated QA-only release passed its private safety and origin checks.'
     : 'Isolated candidate validation passed; no deployment was attempted.');
