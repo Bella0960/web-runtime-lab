@@ -1,5 +1,6 @@
 name: Sealed candidate verification
 # QA-only post-test failures emit a fixed sanitized category; never raw logs.
+# Pinned QA-only storage-after-edit publish request: 08a3ab59f75df89caa6b56a3467ab8cbac9062f8 (guarded by full release gates).
 
 on:
   # Existing sealed workflow: owner pushes to this file automatically verify
