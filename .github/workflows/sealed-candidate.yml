@@ -697,6 +697,7 @@ jobs:
             exit 1
           fi
       # The runner prints allowlisted failing-test locations only; raw logs remain ephemeral.
+# Approved FOOTPRINT v121 QA-only release of tested SHA 9ba56d64f168e59ce5110d1f2bbe3f6da0aabb5e; no identity/vars update.
 # Pinned character AI active-profile QA-only code release 6d53a4f0da3a18c9478cbc048a050a730ae7a8cc; variables unchanged.
       - name: Run sealed validation with sanitized failure locations
         env:
