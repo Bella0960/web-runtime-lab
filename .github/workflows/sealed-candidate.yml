@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected='ef7c9632d8a2dca58d9f437c1a98e9e352062939'
+          expected='00dd4acb658a6327d6682743caff638de3c9966d'
           actual="$(git -C candidate rev-parse HEAD)"
           if [[ "$actual" != "$expected" ]]; then
             echo 'Single-delete QA candidate moved; refusing verification.'
