@@ -1,5 +1,6 @@
 name: Sealed candidate verification
 # QA-only post-test failures emit a fixed sanitized category; never raw logs.
+# v120 QA-only release approved after sealed verify run 45065271085; pinned source 74433602f3be43a18e962e76dda437008c180ae5.
 # Approved final3 code-only music QA release, fixed source e136fc74c879ae10a4048daa8d4e04f6ae209541.
 # Pinned QA-only storage-after-edit publish request: 08a3ab59f75df89caa6b56a3467ab8cbac9062f8 (guarded by full release gates).
 
