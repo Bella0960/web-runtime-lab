@@ -51,7 +51,24 @@ jobs:
           npm ci --no-audit --no-fund >"$RUNNER_TEMP/install.log" 2>&1 || { echo 'FAILED dependencies'; exit 1; }
           if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_STORAGE_395_20261122' ]]; then
             npm run test:storage:reliability >"$RUNNER_TEMP/storage.log" 2>&1 || { echo 'FAILED storage Node regression'; exit 1; }
-            npm run test:chat:contract >"$RUNNER_TEMP/chat.log" 2>&1 || { echo 'FAILED chat contract regression'; exit 1; }
+            npm run test:chat:contract >"$RUNNER_TEMP/chat.log" 2>&1 || {
+              node --input-type=module <<'SAFE_CHAT_FAILURE'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const log = readFileSync(process.env.RUNNER_TEMP + '/chat.log', 'utf8').split(/\\r?\\n/);
+          const hash = s => createHash('sha256').update(s).digest('hex').slice(0, 12);
+          for (let i = 0; i < log.length; i++) {
+            const failure = log[i].match(/^not ok (\\d+) - (.*)$/);
+            if (!failure) continue;
+            const context = log.slice(i, i + 28).join(' ');
+            const location = context.match(/(?:tests\\/)[A-Za-z0-9_.-]+\\.test\\.mjs(?::\\d+(?::\\d+)?)?/);
+            console.log('CHAT_FAIL ordinal=' + failure[1] + ' titleHash=' + hash(failure[2]) + ' source=' + (location?.[0] || 'unknown'));
+          }
+          for (const line of log) if (/^# (?:tests|pass|fail|skipped) \\d+$/.test(line)) console.log(line);
+          SAFE_CHAT_FAILURE
+              echo 'FAILED chat contract regression';
+              exit 1;
+            }
             npm run test:chat:isolation >"$RUNNER_TEMP/isolation.log" 2>&1 || { echo 'FAILED chat isolation regression'; exit 1; }
             npm run build >"$RUNNER_TEMP/build.log" 2>&1 || { echo 'FAILED Vite'; exit 1; }
             npx playwright install --with-deps chromium >"$RUNNER_TEMP/chromium.log" 2>&1 || { echo 'FAILED Chromium dependencies'; exit 1; }
