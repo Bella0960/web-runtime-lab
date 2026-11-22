@@ -19,7 +19,7 @@ on:
           - verify
           - release
       candidate:
-        description: 'Sealed baseline, single-chat QA, or first-batch QA candidate'
+        description: 'Sealed baseline, single-chat, first-batch or role layout QA candidate'
         type: choice
         required: true
         default: sealed
@@ -27,6 +27,7 @@ on:
           - sealed
           - chat-p0-375
           - batch1-p0-376
+          - role-list-v117
       confirmation:
         description: 'For release only: enter qa-only'
         required: false
@@ -43,7 +44,7 @@ jobs:
   candidate:
     # No private deployment credentials enter an unapproved verify-only run.
     if: >-
-      ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor == github.repository_owner) || (github.event_name == 'workflow_dispatch' && (inputs.candidate == 'sealed' || ((inputs.candidate == 'chat-p0-375' || inputs.candidate == 'batch1-p0-376') && github.actor == github.repository_owner)) && (inputs.operation == 'verify' || (inputs.operation == 'release' && github.actor == github.repository_owner && inputs.confirmation == 'qa-only'))) }}
+      ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor == github.repository_owner) || (github.event_name == 'workflow_dispatch' && (inputs.candidate == 'sealed' || ((inputs.candidate == 'chat-p0-375' || inputs.candidate == 'batch1-p0-376' || inputs.candidate == 'role-list-v117') && github.actor == github.repository_owner)) && (inputs.operation == 'verify' || (inputs.operation == 'release' && github.actor == github.repository_owner && inputs.confirmation == 'qa-only'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -61,9 +62,9 @@ jobs:
         shell: bash
         env:
           SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
-          SOURCE_REF: ${{ github.event_name == 'push' && 'integration/qa-batch1-376' || inputs.candidate == 'batch1-p0-376' && 'integration/qa-batch1-376' || inputs.candidate == 'chat-p0-375' && 'integration/qa-single-chat-375' || secrets.CANDIDATE_REF }}
+          SOURCE_REF: ${{ github.event_name == 'push' && 'integration/qa-role-list-v117-20261122' || inputs.candidate == 'role-list-v117' && 'integration/qa-role-list-v117-20261122' || inputs.candidate == 'batch1-p0-376' && 'integration/qa-batch1-376' || inputs.candidate == 'chat-p0-375' && 'integration/qa-single-chat-375' || secrets.CANDIDATE_REF }}
           SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          OPERATION: ${{ (github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122') && 'release' || github.event_name == 'push' && 'verify' || inputs.operation }}
+          OPERATION: ${{ (github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_LAYOUT_QA_ONLY_20261122') && 'release' || github.event_name == 'push' && 'verify' || inputs.operation }}
         run: |
           set -euo pipefail
           if [[ -z "$SOURCE_REPOSITORY" || -z "$SOURCE_REF" || -z "$SOURCE_TOKEN" ]]; then
@@ -77,7 +78,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ${{ github.event_name == 'push' && 'integration/qa-batch1-376' || inputs.candidate == 'batch1-p0-376' && 'integration/qa-batch1-376' || inputs.candidate == 'chat-p0-375' && 'integration/qa-single-chat-375' || secrets.CANDIDATE_REF }}
+          ref: ${{ github.event_name == 'push' && 'integration/qa-role-list-v117-20261122' || inputs.candidate == 'role-list-v117' && 'integration/qa-role-list-v117-20261122' || inputs.candidate == 'batch1-p0-376' && 'integration/qa-batch1-376' || inputs.candidate == 'chat-p0-375' && 'integration/qa-single-chat-375' || secrets.CANDIDATE_REF }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: true
@@ -94,7 +95,7 @@ jobs:
             exit 1
           fi
       - name: Verify approved batch1 QA candidate SHA
-        if: ${{ github.event_name == 'push' || inputs.candidate == 'batch1-p0-376' }}
+        if: ${{ inputs.candidate == 'batch1-p0-376' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -104,8 +105,19 @@ jobs:
             echo 'Batch1 candidate ref changed; refuse unverified source.'
             exit 1
           fi
+      - name: Verify pinned role-layout QA candidate SHA
+        if: ${{ github.event_name == 'push' || inputs.candidate == 'role-list-v117' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected='32f02124c3eee942f9569c5ac4127a180e44f872'
+          actual="$(git -C candidate rev-parse HEAD)"
+          if [[ "$actual" != "$expected" ]]; then
+            echo 'Role layout candidate ref changed; refusing unverified source.'
+            exit 1
+          fi
       - name: Verify approved staging matches tested batch1 before one-time QA release
-        if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122' }}
+        if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_LAYOUT_QA_ONLY_20261122' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -121,10 +133,28 @@ jobs:
             echo 'Merged staging differs from sealed tested app; refusing QA release.'
             exit 1
           fi
+      - name: Verify role-layout staging matches pinned QA candidate before release
+        if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_LAYOUT_QA_ONLY_20261122' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C candidate fetch --quiet --no-tags origin integration/batch1-qa-merge-20261122
+          merged="$(git -C candidate rev-parse FETCH_HEAD)"
+          # Must be set only after the isolated PR has been safely merged.
+          if [[ "$merged" != '0000000000000000000000000000000000000000' ]]; then
+            echo 'Role-layout staging SHA mismatch; refusing QA release.'
+            exit 1
+          fi
+          actual="$(git -C candidate diff --name-only "$merged" HEAD)"
+          expected="$(printf '%s\n' 'scripts/qa-direct-release.mjs' 'tests/memory-space-cleanup.browser.test.mjs')"
+          if [[ "$actual" != "$expected" ]]; then
+            echo 'Role-layout staging differs from tested QA app; refusing release.'
+            exit 1
+          fi
       # The runner prints allowlisted failing-test locations only; raw logs remain ephemeral.
       - name: Run sealed validation with sanitized failure locations
         env:
-          CANDIDATE_RELEASE_ACK: ${{ (github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122') && 'qa-only' || github.event_name == 'workflow_dispatch' && inputs.confirmation || '' }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ ((github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122') || (github.event_name == 'workflow_dispatch' && inputs.operation == 'release')) && secrets.CANDIDATE_ACCOUNT_ID || '' }}
-          CLOUDFLARE_API_TOKEN: ${{ ((github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122') || (github.event_name == 'workflow_dispatch' && inputs.operation == 'release')) && secrets.CANDIDATE_DEPLOY_TOKEN || '' }}
-        run: node scripts/run-candidate.mjs "${{ (github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_BATCH1_QA_ONLY_20261122') && 'release' || github.event_name == 'push' && 'verify' || inputs.operation }}"
+          CANDIDATE_RELEASE_ACK: ${{ (github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_LAYOUT_QA_ONLY_20261122') && 'qa-only' || github.event_name == 'workflow_dispatch' && inputs.confirmation || '' }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ ((github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_LAYOUT_QA_ONLY_20261122') || (github.event_name == 'workflow_dispatch' && inputs.operation == 'release')) && secrets.CANDIDATE_ACCOUNT_ID || '' }}
+          CLOUDFLARE_API_TOKEN: ${{ ((github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_LAYOUT_QA_ONLY_20261122') || (github.event_name == 'workflow_dispatch' && inputs.operation == 'release')) && secrets.CANDIDATE_DEPLOY_TOKEN || '' }}
+        run: node scripts/run-candidate.mjs "${{ (github.event_name == 'push' && github.event.head_commit.message == 'RELEASE_ROLE_LAYOUT_QA_ONLY_20261122') && 'release' || github.event_name == 'push' && 'verify' || inputs.operation }}"
