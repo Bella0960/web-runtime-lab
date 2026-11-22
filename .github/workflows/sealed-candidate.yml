@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected='77eccb3a82d291044e5d3d4032e4eb8ead9062e0'
+          expected='1555b90047aad098ca67d87c0379a2a7a67c9138'
           actual="$(git -C candidate rev-parse HEAD)"
           if [[ "$actual" != "$expected" ]]; then
             echo 'Batch1 candidate ref changed; refuse unverified source.'
