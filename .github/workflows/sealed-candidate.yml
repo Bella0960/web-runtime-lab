@@ -90,7 +90,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected='1e13cab6fb09bee8602497f333868d4b78072655'
+          expected='55869b52753a557ec2b4383569535212af02d289'
           actual="$(git -C candidate rev-parse HEAD)"
           if [[ "$actual" != "$expected" ]]; then
             echo 'Character AI source moved; refusing verification.'
