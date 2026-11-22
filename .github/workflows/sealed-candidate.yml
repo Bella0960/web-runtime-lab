@@ -134,7 +134,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected='e6ede377ce1b1d2d0a1628c43662ac83574c7841'
+          expected='da9dbb00b33eebe8152c469e7635646efdc36db0'
           actual="$(git -C candidate rev-parse HEAD)"
           if [[ "$actual" != "$expected" ]]; then
             echo 'Role-copy QA candidate changed; refusing unverified source.'
