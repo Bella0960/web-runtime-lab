@@ -559,7 +559,7 @@ jobs:
           set -euo pipefail
           git -C candidate fetch --quiet --no-tags origin integration/batch1-qa-merge-20261122
           merged="$(git -C candidate rev-parse FETCH_HEAD)"
-          if [[ "$merged" != '85d4f4ee9b7fce5c780234c65027584dfcb63de8' ]]; then
+          if [[ "$merged" != '2184d2bc64d565a7c80167d9ec973f136bb8e907' ]]; then
             echo 'Single-delete staging branch moved; refusing QA release.'
             exit 1
           fi
