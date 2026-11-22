@@ -108,7 +108,7 @@ try {
     // Browser suites do not use TAP. Emit only a fixed numeric progress
     // checkpoint rather than private browser errors, source or page data.
     if (mode === 'verify') {
-      const checkpoints = [...sealedLog.matchAll(/^SEALED_BROWSER_CHECKPOINT:([0-9]{1,3})$/gm)];
+      const checkpoints = [...sealedLog.matchAll(/^(?:#\s*)?SEALED_BROWSER_CHECKPOINT:([0-9]{1,3})$/gm)];
       const latest = checkpoints.at(-1)?.[1];
       const checkpoint = latest === undefined ? NaN : Number(latest);
       if ([0, 10, 375, 390, 391, 392, 393, 394, 430, 500, 600, 700].includes(checkpoint)) {
@@ -118,7 +118,7 @@ try {
     // A complete Node suite includes browser tests without TAP stack frames.
     // Only bounded numeric checkpoints are allowed into public logs.
     if (mode === 'verify') {
-      const memoryMatches = [...sealedLog.matchAll(/^SEALED_MEMORY_CHECKPOINT:([0-9]{1,4})$/gm)];
+      const memoryMatches = [...sealedLog.matchAll(/^(?:#\s*)?SEALED_MEMORY_CHECKPOINT:([0-9]{1,4})$/gm)];
       const lastMemory = memoryMatches.at(-1)?.[1];
       const memoryCheckpoint = lastMemory === undefined ? NaN : Number(lastMemory);
       const widths = [375, 390, 430, 1100];
