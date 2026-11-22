@@ -200,7 +200,7 @@ jobs:
           set -euo pipefail
           git -C candidate fetch --quiet --no-tags origin integration/batch1-qa-merge-20261122
           merged="$(git -C candidate rev-parse FETCH_HEAD)"
-          if [[ "$merged" != '0000000000000000000000000000000000000000' ]]; then
+          if [[ "$merged" != '36606bd5cb4cc5909f0ce8e30f2c804623022f84' ]]; then
             echo 'Role-copy staging SHA mismatch; refusing QA release.'
             exit 1
           fi
