@@ -171,7 +171,7 @@ jobs:
           git -C candidate fetch --quiet --no-tags origin integration/batch1-qa-merge-20261122
           merged="$(git -C candidate rev-parse FETCH_HEAD)"
           # Fail closed until PR #383 is independently verified and merged.
-          if [[ "$merged" != '0000000000000000000000000000000000000000' ]]; then
+          if [[ "$merged" != '80bad1174e04c90d0b256790cf685f456fe92203' ]]; then
             echo 'Neutral editor staging SHA mismatch; refusing QA release.'
             exit 1
           fi
