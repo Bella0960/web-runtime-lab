@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ${{ github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || 'ad341afc481063c4a0943380650722e306f3ba20' }}
+          ref: ${{ github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || 'ad341afc481063c4a0943380650722e306f3ba20' }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -45,10 +45,31 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected="${{ github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || 'ad341afc481063c4a0943380650722e306f3ba20' }}"
+          expected="${{ github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || 'ad341afc481063c4a0943380650722e306f3ba20' }}"
           test "$(git -C candidate rev-parse HEAD)" = "$expected"
           cd candidate
           npm ci --no-audit --no-fund >"$RUNNER_TEMP/install.log" 2>&1 || { echo 'FAILED dependencies'; exit 1; }
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_STORAGE_BASELINE_20261122' ]]; then
+            chat_status=0
+            isolation_status=0
+            npm run test:chat:contract >"$RUNNER_TEMP/baseline-chat.log" 2>&1 || chat_status=$?
+            npm run test:chat:isolation >"$RUNNER_TEMP/baseline-isolation.log" 2>&1 || isolation_status=$?
+            node --input-type=module <<'SAFE_BASELINE_REPORT'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const hash = s => createHash('sha256').update(s).digest('hex').slice(0,12);
+          for(const [name,file] of [['chat','baseline-chat.log'],['isolation','baseline-isolation.log']]) {
+            const lines = readFileSync(process.env.RUNNER_TEMP + '/' + file, 'utf8').split(/\r?\n/);
+            for(const line of lines) {
+              const fail=line.match(/^not ok (\d+) - (.*)$/);
+              if(fail) console.log('BASELINE_FAIL suite='+name+' ordinal='+fail[1]+' hash='+hash(fail[2]));
+              if(/^# (?:tests|pass|fail|skipped) \d+$/.test(line)) console.log('BASELINE '+name+' '+line);
+            }
+          }
+          SAFE_BASELINE_REPORT
+            echo "BASELINE_COMPARE chat_status=$chat_status isolation_status=$isolation_status"
+            exit 0
+          fi
           if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_STORAGE_395_20261122' ]]; then
             npm run test:storage:reliability >"$RUNNER_TEMP/storage.log" 2>&1 || { echo 'FAILED storage Node regression'; exit 1; }
             chat_contract_failed=0
