@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected='a814728a95166b3034b65d58a535b2110856610e'
+          expected='bcf66177a93de40db5164e68494f7f597607519a'
           actual="$(git -C candidate rev-parse HEAD)"
           if [[ "$actual" != "$expected" ]]; then
             echo 'Chat search candidate moved; refusing verification.'
