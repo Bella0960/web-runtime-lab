@@ -37,9 +37,9 @@ const args = [script];
 // Run the complete diagnostic sweep only for non-deploy validation.
 // Release remains strict fail-fast with all existing deployment guards.
 if (mode === 'verify') {
-  environment.MAOMAO_QA_DIAGNOSE_ALL = '1';
+  environment.SEALED_VERIFY_COLLECT_GATES = '1';
 } else {
-  delete environment.MAOMAO_QA_DIAGNOSE_ALL;
+  delete environment.SEALED_VERIFY_COLLECT_GATES;
 }
 if (mode === 'release') {
   // Verify the immutable Worker identity and config before any deployment.
