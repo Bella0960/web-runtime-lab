@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ${{ github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_395_20261122' && '92b4785c91cc61149070d7ac7e62c86823ffd300' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_FINAL_395_20261122' && 'integration/qa-storage-395-20261122' || 'ad341afc481063c4a0943380650722e306f3ba20' }}
+          ref: ${{ github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_395_20261122' && '92b4785c91cc61149070d7ac7e62c86823ffd300' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_FINAL_395_20261122' && 'integration/qa-storage-395-20261122' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_CACHE_FINAL_395_20261122' && 'integration/qa-storage-395-20261122' || 'ad341afc481063c4a0943380650722e306f3ba20' }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -45,10 +45,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected="${{ github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_395_20261122' && '92b4785c91cc61149070d7ac7e62c86823ffd300' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_FINAL_395_20261122' && 'adaa0dc67bfa6759ded721a6618a7f8a9e08b4d1' || 'ad341afc481063c4a0943380650722e306f3ba20' }}"
+          expected="${{ github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_395_20261122' && '92b4785c91cc61149070d7ac7e62c86823ffd300' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_FINAL_395_20261122' && 'adaa0dc67bfa6759ded721a6618a7f8a9e08b4d1' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_CACHE_FINAL_395_20261122' && 'c67ffe4c21aca0f1de6a02ec066264fce7cf78f7' || 'ad341afc481063c4a0943380650722e306f3ba20' }}"
           test "$(git -C candidate rev-parse HEAD)" = "$expected"
           cd candidate
-          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_STORAGE_QA_FINAL_395_20261122' ]]; then
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_STORAGE_QA_FINAL_395_20261122' || "${{ github.event.head_commit.message }}" == 'VERIFY_STORAGE_QA_CACHE_FINAL_395_20261122' ]]; then
             test "$(git rev-parse --abbrev-ref HEAD)" = 'integration/qa-storage-395-20261122' || { echo 'FAILED QA candidate branch guard'; exit 1; }
             # Existing candidate script checks clean HEAD, exact remote ref, account safety,
             # all original Node/Vite/Chromium gates; no --deploy or --qa-only flag.
