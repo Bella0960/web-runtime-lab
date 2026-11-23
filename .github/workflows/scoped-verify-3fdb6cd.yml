@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   candidate:
-    if: github.actor == github.repository_owner && github.event.head_commit.message != 'VERIFY_ADMIN_MAIN_482_20261124' && github.event.head_commit.message != 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && github.event.head_commit.message != 'VERIFY_ENVELOPE_MAIN_460_20261124' && github.event.head_commit.message != 'VERIFY_STORY_MAIN_450_20261124' && github.event.head_commit.message != 'VERIFY_DIARY_MAIN_438_20261124' && github.event.head_commit.message != 'VERIFY_BATCH2_INTEGRATED_20261124' && github.event.head_commit.message != 'DIAG_BATCH2_GUARDS_20261124'
+    if: github.actor == github.repository_owner && github.event.head_commit.message != 'VERIFY_ADMIN_MAIN_482_20261124' && github.event.head_commit.message != 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && github.event.head_commit.message != 'VERIFY_ENVELOPE_MAIN_460_20261124' && github.event.head_commit.message != 'VERIFY_STORY_MAIN_450_20261124' && github.event.head_commit.message != 'VERIFY_DIARY_MAIN_438_20261124' && github.event.head_commit.message != 'VERIFY_BATCH2_INTEGRATED_20261124' && github.event.head_commit.message != 'DIAG_BATCH2_GUARDS_20261124' && github.event.head_commit.message != 'VERIFY_KITCHEN_COMBINED_431_20261124'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -1657,7 +1657,7 @@ jobs:
           node scripts/run-candidate.mjs release
 
   main-feature-verification:
-    if: github.actor == github.repository_owner && (github.event.head_commit.message == 'VERIFY_ADMIN_MAIN_482_20261124' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' || github.event.head_commit.message == 'VERIFY_DIARY_MAIN_438_20261124' || github.event.head_commit.message == 'VERIFY_BATCH2_INTEGRATED_20261124' || github.event.head_commit.message == 'DIAG_BATCH2_GUARDS_20261124')
+    if: github.actor == github.repository_owner && (github.event.head_commit.message == 'VERIFY_ADMIN_MAIN_482_20261124' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' || github.event.head_commit.message == 'VERIFY_DIARY_MAIN_438_20261124' || github.event.head_commit.message == 'VERIFY_BATCH2_INTEGRATED_20261124' || github.event.head_commit.message == 'DIAG_BATCH2_GUARDS_20261124' || github.event.head_commit.message == 'VERIFY_KITCHEN_COMBINED_431_20261124')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -1672,7 +1672,7 @@ jobs:
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          ref: ${{ github.event.head_commit.message == 'DIAG_BATCH2_GUARDS_20261124' && 'integration/qa-second-batch-20261124' || github.event.head_commit.message == 'VERIFY_BATCH2_INTEGRATED_20261124' && 'integration/qa-second-batch-20261124' || github.event.head_commit.message == 'VERIFY_DIARY_MAIN_438_20261124' && '6d0a8ca40eb46687fd9693ac4eff9ce39f53c99e' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' && 'f765548ea50032891ab9f98c5b940565ddb610aa' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && '57e177a6b7a53671523f7b1fe0956ad4fcbb3ab4' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && '0b8e7250e0f111e4c5dbc68679094b28988dc365' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
+          ref: ${{ github.event.head_commit.message == 'VERIFY_KITCHEN_COMBINED_431_20261124' && 'APP-KITCHEN-001-storage-trust' || github.event.head_commit.message == 'DIAG_BATCH2_GUARDS_20261124' && 'integration/qa-second-batch-20261124' || github.event.head_commit.message == 'VERIFY_BATCH2_INTEGRATED_20261124' && 'integration/qa-second-batch-20261124' || github.event.head_commit.message == 'VERIFY_DIARY_MAIN_438_20261124' && '6d0a8ca40eb46687fd9693ac4eff9ce39f53c99e' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' && 'f765548ea50032891ab9f98c5b940565ddb610aa' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && '57e177a6b7a53671523f7b1fe0956ad4fcbb3ab4' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && '0b8e7250e0f111e4c5dbc68679094b28988dc365' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
           path: candidate
           persist-credentials: false
       - name: Read-only QA post-test safety diagnosis (no release)
@@ -1706,8 +1706,8 @@ jobs:
       - name: Verify fixed source in isolation
         if: github.event.head_commit.message != 'DIAG_BATCH2_GUARDS_20261124'
         env:
-          VERIFY_MODE: ${{ github.event.head_commit.message == 'VERIFY_BATCH2_INTEGRATED_20261124' && 'batch2' || github.event.head_commit.message == 'VERIFY_DIARY_MAIN_438_20261124' && 'batch2' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' && 'story' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && 'envelope' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && 'cafe' || 'admin' }}
-          EXPECTED_REF: ${{ github.event.head_commit.message == 'VERIFY_BATCH2_INTEGRATED_20261124' && '2a3d096632f8bb03200ee74938eb8dfccad7e16d' || github.event.head_commit.message == 'VERIFY_DIARY_MAIN_438_20261124' && '6d0a8ca40eb46687fd9693ac4eff9ce39f53c99e' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' && 'f765548ea50032891ab9f98c5b940565ddb610aa' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && '57e177a6b7a53671523f7b1fe0956ad4fcbb3ab4' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && '0b8e7250e0f111e4c5dbc68679094b28988dc365' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
+          VERIFY_MODE: ${{ github.event.head_commit.message == 'VERIFY_KITCHEN_COMBINED_431_20261124' && 'kitchen' || github.event.head_commit.message == 'VERIFY_BATCH2_INTEGRATED_20261124' && 'batch2' || github.event.head_commit.message == 'VERIFY_DIARY_MAIN_438_20261124' && 'batch2' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' && 'story' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && 'envelope' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && 'cafe' || 'admin' }}
+          EXPECTED_REF: ${{ github.event.head_commit.message == 'VERIFY_KITCHEN_COMBINED_431_20261124' && '27a2759fa80cd23aa9c2227eb47f49e794feddc5' || github.event.head_commit.message == 'VERIFY_BATCH2_INTEGRATED_20261124' && '2a3d096632f8bb03200ee74938eb8dfccad7e16d' || github.event.head_commit.message == 'VERIFY_DIARY_MAIN_438_20261124' && '6d0a8ca40eb46687fd9693ac4eff9ce39f53c99e' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' && 'f765548ea50032891ab9f98c5b940565ddb610aa' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && '57e177a6b7a53671523f7b1fe0956ad4fcbb3ab4' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && '0b8e7250e0f111e4c5dbc68679094b28988dc365' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
         working-directory: candidate
         shell: bash
         run: |
@@ -1739,6 +1739,13 @@ jobs:
             run_check story-build npm run build
             run_check story-browser-install npx playwright install --with-deps chromium
             run_check story-browser node tests/story-save.browser.mjs
+            exit 0
+          fi
+          if [[ "$VERIFY_MODE" == kitchen ]]; then
+            run_check node node --test tests/cooking-storage-trust.test.mjs tests/cooking-interaction-guard.test.mjs
+            run_check build npm run build
+            run_check browser-install npx playwright install --with-deps chromium
+            run_check kitchen-browser node tests/cooking-interaction.browser.mjs
             exit 0
           fi
           if [[ "$VERIFY_MODE" == batch2 ]]; then
