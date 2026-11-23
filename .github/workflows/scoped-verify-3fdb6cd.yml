@@ -45,13 +45,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ${{ github.event.head_commit.message == 'VERIFY_ADMIN_USAGE_LEDGER_001_20261123' && 'feature/admin-usage-ledger-contract-20261123' || github.event.head_commit.message == 'RELEASE_ADMIN_WORKSPACE_V147_QA_ONLY_20261123' && 'integration/qa-admin-workspace-on-v146-20261123' || github.event.head_commit.message == 'VERIFY_ADMIN_WORKSPACE_V147_FULL_20261123' && 'integration/qa-admin-workspace-on-v146-20261123' || github.event.head_commit.message == 'VERIFY_ADMIN_WORKSPACE_002_20261123' && 'feature/admin-workspace-dashboard-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_ON_V145_RELEASE_459_20261123' && 'integration/qa-hd-wallpaper-on-v145-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_R2_RELEASE_459_20261123' && 'integration/qa-hd-wallpaper-on-v144-20261123' || github.event.head_commit.message == 'RELEASE_ADMIN_EDITORIAL_V145_QA_ONLY_20261123' && 'integration/qa-admin-editorial-on-v144-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_RELEASE_459_20261123' && 'integration/qa-hd-wallpaper-on-v144-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_INTEGRATION_459_20261123' && 'fix/desktop-wallpaper-hd-quality-20261123' || github.event.head_commit.message == 'VERIFY_ADMIN_EDITORIAL_V145_FULL_20261123' && 'integration/qa-admin-editorial-on-v144-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_HD_R3_459_20261123' && 'fix/desktop-wallpaper-hd-quality-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_HD_R2_459_20261123' && 'fix/desktop-wallpaper-hd-quality-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_HD_459_20261123' && 'fix/desktop-wallpaper-hd-quality-20261123' || github.event.head_commit.message == 'VERIFY_ADMIN_EDITORIAL_UI_20261123' && 'ui/admin-editorial-context-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_PHOTO_V125_RELEASE_20261123' && 'integration/qa-desktop-photo-on-v125-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_PHOTO_STORAGE_454_20261123' && 'fix/desktop-photo-storage-reliability-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_WIDGET_CATALOG_453_20261123' && 'test/desktop-widget-catalog-qa-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_FIX_20261123' && 'test/desktop-personalization-qa-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_20261123' && 'test/desktop-personalization-qa-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_PERSONALIZATION_QA_20261123' && 'qa/desktop-personalization-audit-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_FIXED2_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_FIXED_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_CLOCK_FIX_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_CLOCK_DIAG_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_RETRY_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_439_20261123' && 'integration/qa-desktop-439-20261123' || (github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_QA_V125_PWA_20261123' || github.event.head_commit.message == 'RELEASE_ADMIN_CLOUD_V125_QA_ONLY_20261123') && 'integration/qa-admin-cloud-on-desktop-v125-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_GATE_R10_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_INTERACTIONS_R9_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_STORAGE_R6_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R4_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_OVERFLOW_DIAG_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VIEWPORT_R2_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_CORE_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || '3db5c6764d2daa12effd6bc0aa49a1ec16a91938' }}
+          ref: ${{ github.event.head_commit.message == 'VERIFY_ADMIN_V147_POSTTEST_GUARD_DIAG_20261123' && 'fix/admin-v147-post-test-diagnostics-20261123' || github.event.head_commit.message == 'VERIFY_ADMIN_USAGE_LEDGER_001_20261123' && 'feature/admin-usage-ledger-contract-20261123' || github.event.head_commit.message == 'RELEASE_ADMIN_WORKSPACE_V147_QA_ONLY_20261123' && 'integration/qa-admin-workspace-on-v146-20261123' || github.event.head_commit.message == 'VERIFY_ADMIN_WORKSPACE_V147_FULL_20261123' && 'integration/qa-admin-workspace-on-v146-20261123' || github.event.head_commit.message == 'VERIFY_ADMIN_WORKSPACE_002_20261123' && 'feature/admin-workspace-dashboard-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_ON_V145_RELEASE_459_20261123' && 'integration/qa-hd-wallpaper-on-v145-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_R2_RELEASE_459_20261123' && 'integration/qa-hd-wallpaper-on-v144-20261123' || github.event.head_commit.message == 'RELEASE_ADMIN_EDITORIAL_V145_QA_ONLY_20261123' && 'integration/qa-admin-editorial-on-v144-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_RELEASE_459_20261123' && 'integration/qa-hd-wallpaper-on-v144-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_INTEGRATION_459_20261123' && 'fix/desktop-wallpaper-hd-quality-20261123' || github.event.head_commit.message == 'VERIFY_ADMIN_EDITORIAL_V145_FULL_20261123' && 'integration/qa-admin-editorial-on-v144-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_HD_R3_459_20261123' && 'fix/desktop-wallpaper-hd-quality-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_HD_R2_459_20261123' && 'fix/desktop-wallpaper-hd-quality-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_HD_459_20261123' && 'fix/desktop-wallpaper-hd-quality-20261123' || github.event.head_commit.message == 'VERIFY_ADMIN_EDITORIAL_UI_20261123' && 'ui/admin-editorial-context-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_PHOTO_V125_RELEASE_20261123' && 'integration/qa-desktop-photo-on-v125-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_PHOTO_STORAGE_454_20261123' && 'fix/desktop-photo-storage-reliability-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_WIDGET_CATALOG_453_20261123' && 'test/desktop-widget-catalog-qa-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_FIX_20261123' && 'test/desktop-personalization-qa-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_20261123' && 'test/desktop-personalization-qa-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_PERSONALIZATION_QA_20261123' && 'qa/desktop-personalization-audit-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_FIXED2_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_FIXED_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_CLOCK_FIX_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_CLOCK_DIAG_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_RETRY_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_439_20261123' && 'integration/qa-desktop-439-20261123' || (github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_QA_V125_PWA_20261123' || github.event.head_commit.message == 'RELEASE_ADMIN_CLOUD_V125_QA_ONLY_20261123') && 'integration/qa-admin-cloud-on-desktop-v125-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_GATE_R10_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_INTERACTIONS_R9_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_STORAGE_R6_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R4_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_OVERFLOW_DIAG_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VIEWPORT_R2_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_CORE_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || '3db5c6764d2daa12effd6bc0aa49a1ec16a91938' }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
           fetch-depth: 100
       - name: Run all existing candidate gates with sealed logs
-        if: github.event.head_commit.message != 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_STORAGE_R6_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_FINAL_GATE_R10_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_RELEASE_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_RELEASE_RETRY_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_CLOCK_DIAG_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_CLOCK_FIX_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_RELEASE_FIXED_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_RELEASE_FIXED2_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_PERSONALIZATION_QA_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_FIX_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_WIDGET_CATALOG_453_20261123' && github.event.head_commit.message != 'RELEASE_ADMIN_CLOUD_V125_QA_ONLY_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_PHOTO_STORAGE_454_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_PHOTO_V125_RELEASE_20261123' && github.event.head_commit.message != 'VERIFY_ADMIN_EDITORIAL_UI_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_WALLPAPER_HD_459_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_WALLPAPER_HD_R2_459_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_WALLPAPER_HD_R3_459_20261123' && github.event.head_commit.message != 'VERIFY_ADMIN_EDITORIAL_V145_FULL_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_WALLPAPER_INTEGRATION_459_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_HD_WALLPAPER_RELEASE_459_20261123' && github.event.head_commit.message != 'RELEASE_ADMIN_EDITORIAL_V145_QA_ONLY_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_HD_WALLPAPER_R2_RELEASE_459_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_HD_WALLPAPER_ON_V145_RELEASE_459_20261123' && github.event.head_commit.message != 'VERIFY_ADMIN_WORKSPACE_002_20261123' && github.event.head_commit.message != 'VERIFY_ADMIN_WORKSPACE_V147_FULL_20261123' && github.event.head_commit.message != 'RELEASE_ADMIN_WORKSPACE_V147_QA_ONLY_20261123' && github.event.head_commit.message != 'VERIFY_ADMIN_USAGE_LEDGER_001_20261123'
+        if: github.event.head_commit.message != 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_STORAGE_R6_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_FINAL_GATE_R10_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_RELEASE_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_RELEASE_RETRY_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_CLOCK_DIAG_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_CLOCK_FIX_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_RELEASE_FIXED_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_RELEASE_FIXED2_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_PERSONALIZATION_QA_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_FIX_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_WIDGET_CATALOG_453_20261123' && github.event.head_commit.message != 'RELEASE_ADMIN_CLOUD_V125_QA_ONLY_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_PHOTO_STORAGE_454_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_PHOTO_V125_RELEASE_20261123' && github.event.head_commit.message != 'VERIFY_ADMIN_EDITORIAL_UI_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_WALLPAPER_HD_459_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_WALLPAPER_HD_R2_459_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_WALLPAPER_HD_R3_459_20261123' && github.event.head_commit.message != 'VERIFY_ADMIN_EDITORIAL_V145_FULL_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_WALLPAPER_INTEGRATION_459_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_HD_WALLPAPER_RELEASE_459_20261123' && github.event.head_commit.message != 'RELEASE_ADMIN_EDITORIAL_V145_QA_ONLY_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_HD_WALLPAPER_R2_RELEASE_459_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_HD_WALLPAPER_ON_V145_RELEASE_459_20261123' && github.event.head_commit.message != 'VERIFY_ADMIN_WORKSPACE_002_20261123' && github.event.head_commit.message != 'VERIFY_ADMIN_WORKSPACE_V147_FULL_20261123' && github.event.head_commit.message != 'RELEASE_ADMIN_WORKSPACE_V147_QA_ONLY_20261123' && github.event.head_commit.message != 'VERIFY_ADMIN_USAGE_LEDGER_001_20261123' && github.event.head_commit.message != 'VERIFY_ADMIN_V147_POSTTEST_GUARD_DIAG_20261123'
         shell: bash
         run: |
           set -euo pipefail
@@ -236,6 +236,1658 @@ jobs:
           }
           grep -E '^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-usage-ledger.log" | tail -n 3 || true
           echo 'USAGE_LEDGER_PASS no deployment'
+
+      - name: Pinned v147 read-only segmented post-test guard diagnosis
+        if: github.event.head_commit.message == 'VERIFY_ADMIN_V147_POSTTEST_GUARD_DIAG_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'de700f7c230c667b938704b7a361ab20e36259b6' || { echo 'QA_GUARD_DIAG_FAIL:source:sha'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'fix/admin-v147-post-test-diagnostics-20261123' || { echo 'QA_GUARD_DIAG_FAIL:source:branch'; exit 1; }
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN" || { echo 'QA_GUARD_DIAG_FAIL:source:secrets'; exit 1; }
+          askpass="$RUNNER_TEMP/qa-v147-diag-askpass"
+          cat > "$askpass" <<'QA_V147_GIT_READ'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          QA_V147_GIT_READ
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          if (cd candidate && node scripts/qa-direct-release.mjs --diagnose-guards) >"$RUNNER_TEMP/qa-v147-diag-sealed.log" 2>&1; then
+            grep -E '^QA_GUARD_DIAG_(OK|PASS):[a-z-]+
+        if: github.event.head_commit.message == 'VERIFY_ADMIN_WORKSPACE_V147_FULL_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '93348b35cd5c2f0136444691585438334bc90c73' || { echo 'ADMIN_V147_FAIL source-sha'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-admin-workspace-on-v146-20261123' || { echo 'ADMIN_V147_FAIL source-branch'; exit 1; }
+          test -n "$CANDIDATE_READ_TOKEN" || { echo 'ADMIN_V147_FAIL private-read-token'; exit 1; }
+          askpass="$RUNNER_TEMP/admin-v147-askpass"
+          cat > "$askpass" <<'ADMIN_V147_READ'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ADMIN_V147_READ
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs verify
+          echo 'ADMIN_WORKSPACE_V147_FULL_PASS; no deployment'
+
+      - name: Pinned admin workspace functional and mobile QA
+        if: github.event.head_commit.message == 'VERIFY_ADMIN_WORKSPACE_002_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '797375133b286e95cfd2522758f3c40034d9891b' || { echo 'ADMIN_WORKSPACE_FAIL source-sha'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'feature/admin-workspace-dashboard-20261123' || { echo 'ADMIN_WORKSPACE_FAIL source-branch'; exit 1; }
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-workspace-npm.log" 2>&1 || { echo 'ADMIN_WORKSPACE_FAIL dependencies'; exit 1; }
+          node --check admin/admin-center.js || { echo 'ADMIN_WORKSPACE_FAIL js-syntax'; exit 1; }
+          node --check tests/admin-center-editorial.browser.mjs || { echo 'ADMIN_WORKSPACE_FAIL browser-test-syntax'; exit 1; }
+          node --test tests/admin-center-ui.test.mjs tests/admin-center-mobile-release.test.mjs tests/admin-center-editorial.test.mjs tests/admin-workspace.test.mjs tests/account-qa-admin-proxy.test.mjs >"$RUNNER_TEMP/admin-workspace-node.log" 2>&1 || {
+            echo 'ADMIN_WORKSPACE_FAIL node';
+            grep -E '^not ok [0-9]+|^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-workspace-node.log" | tail -n 14 | cut -c1-140 || true;
+            exit 1;
+          }
+          grep -E '^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-workspace-node.log" | tail -n 3 || true
+          echo 'ADMIN_WORKSPACE_PASS Node'
+          npm run build >"$RUNNER_TEMP/admin-workspace-vite.log" 2>&1 || { echo 'ADMIN_WORKSPACE_FAIL Vite'; exit 1; }
+          test -f dist/admin/admin-center.html && test -f dist/admin/admin-workspace.css || { echo 'ADMIN_WORKSPACE_FAIL built-assets'; exit 1; }
+          echo 'ADMIN_WORKSPACE_PASS Vite'
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/admin-workspace-chromium-install.log" 2>&1 || { echo 'ADMIN_WORKSPACE_FAIL Chromium-install'; exit 1; }
+          node tests/admin-center-editorial.browser.mjs >"$RUNNER_TEMP/admin-workspace-chromium.log" 2>&1 || {
+            echo 'ADMIN_WORKSPACE_FAIL Chromium';
+            grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-workspace-chromium.log" | tail -n 4 || true;
+            exit 1;
+          }
+          grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-workspace-chromium.log" | tail -n 3 || true
+          npx playwright install --with-deps webkit >"$RUNNER_TEMP/admin-workspace-webkit-install.log" 2>&1 || { echo 'ADMIN_WORKSPACE_FAIL WebKit-install'; exit 1; }
+          ADMIN_BROWSER=webkit node tests/admin-center-editorial.browser.mjs >"$RUNNER_TEMP/admin-workspace-webkit.log" 2>&1 || {
+            echo 'ADMIN_WORKSPACE_FAIL WebKit';
+            grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-workspace-webkit.log" | tail -n 4 || true;
+            exit 1;
+          }
+          grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-workspace-webkit.log" | tail -n 3 || true
+          echo 'ADMIN_WORKSPACE_ALL_PASS; verify only'
+
+      - name: Pinned admin editorial mobile UI verification
+        if: github.event.head_commit.message == 'VERIFY_ADMIN_EDITORIAL_UI_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '0137533b4b50b339302777552d24dab8b1fe1a5e' || { echo 'ADMIN_EDITORIAL_FAIL source SHA'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'ui/admin-editorial-context-20261123' || { echo 'ADMIN_EDITORIAL_FAIL source branch'; exit 1; }
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-editorial-npm.log" 2>&1 || { echo 'ADMIN_EDITORIAL_FAIL dependencies'; exit 1; }
+          node --check admin/admin-center.js || { echo 'ADMIN_EDITORIAL_FAIL js syntax'; exit 1; }
+          node --check tests/admin-center-editorial.browser.mjs || { echo 'ADMIN_EDITORIAL_FAIL test syntax'; exit 1; }
+          node --test tests/admin-center-ui.test.mjs tests/admin-center-mobile-release.test.mjs tests/admin-center-editorial.test.mjs tests/account-qa-admin-proxy.test.mjs >"$RUNNER_TEMP/admin-editorial-node.log" 2>&1 || {
+            echo 'ADMIN_EDITORIAL_FAIL node test'
+            grep -E '^not ok [0-9]+|^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-editorial-node.log" | tail -n 15 | cut -c1-110 || true
+            exit 1
+          }
+          grep -E '^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-editorial-node.log" | tail -n 3 || true
+          echo 'ADMIN_EDITORIAL_PASS Node'
+          npm run build >"$RUNNER_TEMP/admin-editorial-vite.log" 2>&1 || { echo 'ADMIN_EDITORIAL_FAIL vite'; exit 1; }
+          test -f dist/admin/admin-center.html && test -f dist/admin/admin-center-editorial.css || { echo 'ADMIN_EDITORIAL_FAIL built UI assets'; exit 1; }
+          echo 'ADMIN_EDITORIAL_PASS Vite'
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/admin-editorial-chromium-install.log" 2>&1 || { echo 'ADMIN_EDITORIAL_FAIL chromium install'; exit 1; }
+          node tests/admin-center-editorial.browser.mjs >"$RUNNER_TEMP/admin-editorial-chromium.log" 2>&1 || {
+            echo 'ADMIN_EDITORIAL_FAIL Chromium'
+            grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-editorial-chromium.log" | tail -n 4 || true
+            exit 1
+          }
+          grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-editorial-chromium.log" | tail -n 3 || true
+          npx playwright install --with-deps webkit >"$RUNNER_TEMP/admin-editorial-webkit-install.log" 2>&1 || { echo 'ADMIN_EDITORIAL_FAIL webkit install'; exit 1; }
+          ADMIN_BROWSER=webkit node tests/admin-center-editorial.browser.mjs >"$RUNNER_TEMP/admin-editorial-webkit.log" 2>&1 || {
+            echo 'ADMIN_EDITORIAL_FAIL WebKit'
+            grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-editorial-webkit.log" | tail -n 4 || true
+            exit 1
+          }
+          grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-editorial-webkit.log" | tail -n 3 || true
+          echo 'ADMIN_EDITORIAL_ALL_PASS; verify-only, no deploy'
+
+      - name: Pinned editorial integrated full QA v145 verification
+        if: github.event.head_commit.message == 'VERIFY_ADMIN_EDITORIAL_V145_FULL_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'ec1f615c420cd0b32d7e18a7bf20d682ff4ea669' || { echo 'ADMIN_V145_FULL_FAIL source mismatch'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-admin-editorial-on-v144-20261123' || { echo 'ADMIN_V145_FULL_FAIL branch mismatch'; exit 1; }
+          test -n "$CANDIDATE_READ_TOKEN" || { echo 'ADMIN_V145_FULL_FAIL restricted read capability missing'; exit 1; }
+          askpass="$RUNNER_TEMP/admin-v145-read-askpass"
+          cat > "$askpass" <<'ADMIN_V145_GIT_ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ADMIN_V145_GIT_ASKPASS
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          # The same complete release script runs every Node, Vite, browser,
+          # real Workerd and identity gate; verify mode has no Cloudflare write token.
+          node scripts/run-candidate.mjs verify
+          echo 'ADMIN_V145_FULL_PASS; verify only and no deployment'
+
+      - name: Pinned desktop browser and data-safety QA
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_STORAGE_R6_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_UNBLOCK_R8_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '8ff181c2afbf2d3c15130684fe7f196e6adb33f8'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/desktop-ci.log" 2>&1 || { echo 'DQA_FAIL dependency'; exit 1; }
+          npm run build >"$RUNNER_TEMP/desktop-build.log" 2>&1 || { echo 'DQA_FAIL vite'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/desktop-browser-install.log" 2>&1 || { echo 'DQA_FAIL browser-install'; exit 1; }
+          set +e
+          node --input-type=module >"$RUNNER_TEMP/desktop-visible.log" 2>&1 <<'DESKTOP_VISIBLE_QA'
+          import assert from 'node:assert/strict';
+          import {createServer} from 'node:http';
+          import {readFile} from 'node:fs/promises';
+          import path from 'node:path';
+          import {chromium} from 'playwright';
+          const root=path.resolve('dist');
+          const server=createServer(async(req,res)=>{
+            try{
+              const name=new URL(req.url||'/','http://127.0.0.1').pathname;
+              const file=path.resolve(root,'.'+(name==='/'?'/index.html':name));
+              if(!file.startsWith(root+path.sep)){res.writeHead(403).end();return;}
+              const data=await readFile(file);
+              res.setHeader('Content-Type',({'.html':'text/html','.css':'text/css','.js':'text/javascript','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.woff2':'font/woff2'})[path.extname(file)]||'application/octet-stream');
+              res.end(data);
+            }catch{res.writeHead(404).end();}
+          });
+          await new Promise((yes,no)=>{server.once('error',no);server.listen(0,'127.0.0.1',yes);});
+          const browser=await chromium.launch({headless:true});
+          let stage='setup';
+          try{
+            for(const [w,h] of [[375,667],[390,844],[430,932]]){
+              stage='start'+w;
+              const context=await browser.newContext({viewport:{width:w,height:h},isMobile:true,hasTouch:true,deviceScaleFactor:2});
+              const page=await context.newPage(),errors=[];
+              page.on('pageerror',e=>errors.push(e.message));
+              const response=await page.goto('http://127.0.0.1:'+server.address().port+'/index.html',{waitUntil:'load'});
+              assert.equal(response?.status(),200);
+              await page.locator('#gridPage0 > [data-drag="clock-lg"]').waitFor({timeout:18000});
+              stage='geometry'+w;
+              const visible=await page.evaluate(()=>{
+                const g=document.querySelector('#gridPage0'),items=[...g.querySelectorAll(':scope > [data-drag]')].map(x=>x.dataset.drag);
+                const rects=['.simulator-stage','.phone','.phone-screen','.pages-container','#gridPage0','#dockBar'].map(id=>document.querySelector(id).getBoundingClientRect());
+                return {items,default:g.classList.contains('is-default-layout'),bodyWidth:document.body.scrollWidth,viewport:innerWidth,clip:getComputedStyle(document.documentElement).overflowX,rects:rects.map(r=>({left:r.left,right:r.right}))};
+              });
+              assert.equal(visible.items.length,11);
+              assert.equal(new Set(visible.items).size,11);
+              assert.equal(visible.default,true);
+              assert.ok(visible.bodyWidth<=w+3,'visible body overflow');
+              assert.ok(visible.clip==='hidden'||visible.clip==='clip','visible overflow not clipped');
+              for(const rect of visible.rects)assert.ok(rect.left>=-3&&rect.right<=w+3,'visible element outside viewport');
+              console.log('DQA_PASS geometry_'+w);
+              stage='storage'+w;
+              const order=[...visible.items];[order[1],order[2]]=[order[2],order[1]];
+              await page.evaluate(ids=>{
+                const old=JSON.parse(localStorage.getItem('ds_layout_v14'));
+                if(!old||!Array.isArray(old.pages)||old.pages.length<3)throw Error('Invalid complete baseline fixture');
+                old.pages[0]=ids;
+                localStorage.setItem('ds_layout_v14',JSON.stringify(old));
+              },order);
+              await page.reload({waitUntil:'load'});
+              await page.waitForFunction(()=>document.querySelector('#gridPage0 > [data-drag]')?.dataset.drag==='clock-lg');
+              const restored=await page.evaluate(()=>{const grid=document.querySelector('#gridPage0');return {ids:[...grid.querySelectorAll(':scope > [data-drag]')].map(x=>x.dataset.drag),fixed:grid.classList.contains('is-default-layout'),saved:JSON.parse(localStorage.getItem('ds_layout_v14'))}});
+              console.log('DQA_STATE storage_'+w+' original='+order.length+' actual='+restored.ids.length+
+                ' first3='+Number(JSON.stringify(restored.ids.slice(0,3))===JSON.stringify(order.slice(0,3)))+
+                ' fixed='+Number(restored.fixed)+' savedLen='+restored.saved.pages[0].length+
+                ' savedMatch='+Number(JSON.stringify(restored.saved.pages[0])===JSON.stringify(order)));
+              assert.deepEqual(restored.ids.slice(0,3),order.slice(0,3));
+              assert.equal(restored.fixed,false);
+              assert.deepEqual(restored.saved.pages[0],order);
+              console.log('DQA_PASS persistence_'+w);
+              if(w===390){
+                stage='mouse-drag';
+                const source=page.locator('#gridPage0 > [data-drag="app_inspect"]'),dest=page.locator('#gridPage0 > [data-drag="app_worldbook"]');
+                await source.scrollIntoViewIfNeeded();
+                const box=await source.boundingBox(),target=await dest.boundingBox();
+                assert.ok(box&&target);
+                await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+                await page.mouse.down();await page.waitForTimeout(320);
+                await page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:6});await page.mouse.up();
+                const drag=await page.evaluate(()=>({ids:[...document.querySelectorAll('#gridPage0 > [data-drag]')].map(x=>x.dataset.drag),stored:JSON.parse(localStorage.getItem('ds_layout_v14')),ghosts:document.querySelectorAll('.drag-placeholder,.drag-avatar').length}));
+                assert.equal(drag.ids.length,order.length);
+                assert.equal(new Set(drag.ids).size,order.length);
+                assert.deepEqual(drag.stored.pages[0],drag.ids);
+                assert.equal(drag.ghosts,0);
+                console.log('DQA_PASS mouse_drag_390');
+                stage='touch-cancel';
+                const before=await page.evaluate(()=>localStorage.getItem('ds_layout_v14'));
+                await page.evaluate(()=>{
+                  const el=document.querySelector('#gridPage0 > [data-drag="app_inspect"]'),r=el.getBoundingClientRect();
+                  const t=new Touch({identifier:2,target:el,clientX:r.left+r.width/2,clientY:r.top+r.height/2});
+                  el.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,touches:[t],targetTouches:[t],changedTouches:[t]}));
+                });
+                await page.waitForTimeout(170);
+                await page.evaluate(()=>document.dispatchEvent(new TouchEvent('touchcancel',{bubbles:true,touches:[],changedTouches:[]})));
+                const cancel=await page.evaluate(()=>({saved:localStorage.getItem('ds_layout_v14'),ghosts:document.querySelectorAll('.drag-placeholder,.drag-avatar').length,hidden:document.querySelector('#gridPage0 > [data-drag="app_inspect"]')?.classList.contains('is-dragging-source')}));
+                assert.equal(cancel.saved,before);assert.equal(cancel.ghosts,0);assert.equal(cancel.hidden,false);
+                console.log('DQA_PASS cancel_390');
+              }
+              assert.deepEqual(errors,[]);
+              await page.screenshot({path:process.env.RUNNER_TEMP+'/desktop-'+w+'.png'});
+              await context.close();
+            }
+          }catch(e){console.log('DQA_FAIL '+stage+' '+String(e.name||'Error').replace(/[^A-Za-z]/g,''));throw e;}
+          finally{await browser.close();await new Promise(done=>server.close(done));}
+          DESKTOP_VISIBLE_QA
+          outcome=$?
+          set -e
+          grep -E '^DQA_(PASS|FAIL|STATE) ' "$RUNNER_TEMP/desktop-visible.log" | tail -n 20 | cut -c1-120 || true
+          test "$outcome" -eq 0 || { echo 'DQA_FAILED test-only; no merge or deploy'; exit 1; }
+          echo 'DQA_ALL_PASS verify-only; no deployment'
+
+      - name: Pinned desktop final interaction verification
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_INTERACTIONS_R9_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_GATE_R10_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '8ff181c2afbf2d3c15130684fe7f196e6adb33f8'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/desktop-final-ci.log" 2>&1 || { echo 'DFINAL_FAIL dependencies'; exit 1; }
+          npm run build >"$RUNNER_TEMP/desktop-final-build.log" 2>&1 || { echo 'DFINAL_FAIL build'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/desktop-final-browser.log" 2>&1 || { echo 'DFINAL_FAIL chromium-install'; exit 1; }
+          set +e
+          node --input-type=module >"$RUNNER_TEMP/desktop-final.log" 2>&1 <<'DESKTOP_FINAL_QA'
+          import assert from 'node:assert/strict';
+          import {createServer} from 'node:http';
+          import {readFile} from 'node:fs/promises';
+          import path from 'node:path';
+          import {chromium} from 'playwright';
+          const base=path.resolve('dist');
+          const server=createServer(async(req,res)=>{
+            try{
+              const url=new URL(req.url||'/','http://127.0.0.1');
+              const file=path.resolve(base,'.'+(url.pathname==='/'?'/index.html':url.pathname));
+              if(!file.startsWith(base+path.sep)){res.writeHead(403).end();return;}
+              const payload=await readFile(file);
+              res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.webp':'image/webp','.woff2':'font/woff2','.json':'application/json'})[path.extname(file)]||'application/octet-stream');
+              res.setHeader('Cache-Control','no-store');
+              res.end(payload);
+            }catch{res.writeHead(404).end();}
+          });
+          await new Promise((yes,no)=>{server.once('error',no);server.listen(0,'127.0.0.1',yes);});
+          const browser=await chromium.launch({headless:true});
+          const url=()=> 'http://127.0.0.1:'+server.address().port+'/index.html';
+          const open=async()=>{
+            const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});
+            const page=await context.newPage();
+            await page.goto(url(),{waitUntil:'load'});
+            await page.locator('#gridPage0 [data-drag="clock-lg"]').waitFor({timeout:18000});
+            return {context,page};
+          };
+          const drag=async(page,selector,toX,toY)=>{
+            const el=page.locator(selector);await el.scrollIntoViewIfNeeded();
+            const b=await el.boundingBox();assert.ok(b);
+            await page.mouse.move(b.x+b.width/2,b.y+b.height/2);
+            await page.mouse.down();
+            await page.waitForTimeout(340);
+            await page.mouse.move(toX,toY,{steps:10});
+          };
+          let stage='init';
+          try{
+            stage='cross-page-prepare';
+            {
+              const {context,page}=await open();
+              await page.evaluate(()=>{
+                const l=JSON.parse(localStorage.getItem('ds_layout_v14'));
+                l.removed=l.removed.filter(x=>x!=='social');
+                l.pages[1].unshift('social');
+                localStorage.setItem('ds_layout_v14',JSON.stringify(l));
+              });
+              await page.reload({waitUntil:'load'});
+              await page.locator('#gridPage1 > [data-drag="social"]').waitFor();
+              const span=await page.locator('#gridPage1 > [data-drag="social"]').evaluate(el=>{const s=getComputedStyle(el);return [s.gridColumnStart,s.gridColumnEnd,s.gridRowStart,s.gridRowEnd]});
+              assert.ok(span.join(' ').includes('span 4'),'social width not four columns');
+              assert.ok(span.join(' ').includes('span 3'),'social height not three rows');
+              console.log('DFINAL_PASS wide-widget-4x3');
+              stage='cross-page-drag';
+              await page.evaluate(()=>document.querySelectorAll('.page-dots .dot')[1].click());
+              await page.waitForTimeout(500);
+              await drag(page,'#gridPage1 > [data-drag="social"]',380,210);
+              await page.waitForTimeout(530);
+              await page.mouse.up();
+              const end=await page.evaluate(()=>({
+                onLast:!!document.querySelector('#gridPage2 > [data-drag="social"]'),
+                stored:JSON.parse(localStorage.getItem('ds_layout_v14')),
+                ghostCount:document.querySelectorAll('.drag-avatar,.drag-placeholder').length
+              }));
+              assert.equal(end.onLast,true,'wide widget did not cross to next page');
+              assert.equal(end.stored.pages[2].includes('social'),true);
+              assert.equal(end.ghostCount,0);
+              await page.reload({waitUntil:'load'});
+              assert.equal(await page.locator('#gridPage2 > [data-drag="social"]').count(),1);
+              console.log('DFINAL_PASS wide-widget-cross-page-and-reload');
+              await context.close();
+            }
+            stage='dock-limit';
+            {
+              const {context,page}=await open();
+              await page.evaluate(()=>{
+                const v=JSON.parse(localStorage.getItem('ds_layout_v14'));
+                const extra=['app_inspect','app_worldbook','app_memory'];
+                v.pages=v.pages.map(p=>p.filter(id=>!extra.includes(id)));
+                v.dock=[...v.dock,...extra];
+                localStorage.setItem('ds_layout_v14',JSON.stringify(v));
+              });
+              await page.reload({waitUntil:'load'});
+              assert.equal(await page.locator('#dockBar > [data-drag]').count(),5);
+              const box=await page.locator('#dockBar').boundingBox();assert.ok(box);
+              await drag(page,'#gridPage0 > [data-drag="app_forum"]',box.x+box.width/2,box.y+box.height/2);
+              await page.mouse.up();
+              const state=await page.evaluate(()=>({
+                dock:[...document.querySelectorAll('#dockBar > [data-drag]')].map(el=>el.dataset.drag),
+                forumInGrid:!!document.querySelector('#gridPage0 > [data-drag="app_forum"]'),
+                persisted:JSON.parse(localStorage.getItem('ds_layout_v14')),
+                ghosts:document.querySelectorAll('.drag-placeholder,.drag-avatar').length
+              }));
+              assert.equal(state.dock.length,5);
+              assert.equal(state.forumInGrid,true);
+              assert.equal(state.persisted.dock.length,5);
+              assert.equal(state.persisted.pages[0].includes('app_forum'),true);
+              assert.equal(state.ghosts,0);
+              console.log('DFINAL_PASS dock-max-five-no-data-loss');
+              await context.close();
+            }
+            stage='legacy-preservation';
+            {
+              const {context,page}=await open();
+              const original=await page.evaluate(()=>{
+                const old=localStorage.getItem('ds_layout_v14');
+                localStorage.setItem('ds_layout_v13',old);
+                localStorage.removeItem('ds_layout_v14');
+                return old;
+              });
+              await page.reload({waitUntil:'load'});
+              const migrated=await page.evaluate(()=>({old:localStorage.getItem('ds_layout_v13'),latest:localStorage.getItem('ds_layout_v14')}));
+              assert.equal(migrated.old,original,'legacy record deleted or rewritten');
+              assert.ok(migrated.latest,'new version was not created');
+              await page.evaluate(()=>localStorage.setItem('ds_layout_v14','{broken'));
+              await page.reload({waitUntil:'load'});
+              const recovered=await page.evaluate(()=>({old:localStorage.getItem('ds_layout_v13'),latest:JSON.parse(localStorage.getItem('ds_layout_v14'))}));
+              assert.equal(recovered.old,original);
+              assert.equal(recovered.latest.v,14);
+              assert.ok(recovered.latest.pages.length>=3);
+              console.log('DFINAL_PASS legacy-preserved-and-corrupt-recovered');
+              await context.close();
+            }
+          }catch(e){console.log('DFINAL_FAIL '+stage+' '+String(e.name||'Error').replace(/[^a-zA-Z]/ig,''));throw e;}
+          finally{await browser.close();await new Promise(done=>server.close(done));}
+          DESKTOP_FINAL_QA
+          status=$?
+          set -e
+          grep -E '^DFINAL_(PASS|FAIL) ' "$RUNNER_TEMP/desktop-final.log" | tail -n 15 | cut -c1-120 || true
+          test "$status" -eq 0 || exit 1
+          echo 'DFINAL_ALL_PASS; no deploy'
+
+      - name: Pinned desktop integrated QA-only release
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_439_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_RETRY_439_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_FIXED_439_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_FIXED2_439_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          expected='c1d6d04422350c81f67a806c786a9175ffaadfba'
+          if [[ "${{ github.event.head_commit.message }}" == "VERIFY_LAYOUT_QA_RELEASE_FIXED_439_20261123" || "${{ github.event.head_commit.message }}" == "VERIFY_LAYOUT_QA_RELEASE_FIXED2_439_20261123" ]]; then expected='c6e952ef1b971447db98e36fea4860fd6b540db3'; fi
+          test "$(git -C candidate rev-parse HEAD)" = "$expected"
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-desktop-439-20261123'
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN"
+          # Ephemeral read-only Git auth for release preflight; no persistent credentials.
+          askpass="$RUNNER_TEMP/desktop-qa-read-askpass"
+          cat > "$askpass" <<'QA_GIT_ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          QA_GIT_ASKPASS
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs release
+
+      - name: Pinned admin workspace v147 QA-only release
+        if: github.event.head_commit.message == 'RELEASE_ADMIN_WORKSPACE_V147_QA_ONLY_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '93348b35cd5c2f0136444691585438334bc90c73' || { echo 'ADMIN_V147_RELEASE_BLOCK source-sha'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-admin-workspace-on-v146-20261123' || { echo 'ADMIN_V147_RELEASE_BLOCK source-branch'; exit 1; }
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN" || { echo 'ADMIN_V147_RELEASE_BLOCK missing-credentials'; exit 1; }
+          # Check the deployed QA and delegated identity Worker before any upload.
+          # Worker names are resolved only from the protected candidate checkout.
+          node --input-type=module <<'ADMIN_V147_PIN'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const source = readFileSync('candidate/scripts/qa-direct-release.mjs', 'utf8');
+          const target = key => {
+            const line = source.split('\n').find(s => s.startsWith('const ' + key + ' = '));
+            const match = line?.match(/^const [A-Z]+ = '([^']+)';$/);
+            assert.ok(match, 'ADMIN_V147_RELEASE_BLOCK target missing');
+            return match[1];
+          };
+          const locks = [
+            [target('QA'), '0f39865a-266d-4606-9e5b-869bd98aaf85'],
+            [target('CORE'), '7a038308-a934-4458-82f2-2cebd53c6793']
+          ];
+          for (const [worker, expectedVersion] of locks) {
+            const url = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CLOUDFLARE_ACCOUNT_ID + '/workers/scripts/' + worker + '/deployments?per_page=1';
+            const result = await fetch(url, {headers: {authorization: 'Bearer ' + process.env.CLOUDFLARE_API_TOKEN},signal:AbortSignal.timeout(20000)});
+            assert.equal(result.status, 200, 'ADMIN_V147_RELEASE_BLOCK cloudflare-read');
+            const body = await result.json();
+            assert.equal(body.success, true, 'ADMIN_V147_RELEASE_BLOCK cloudflare-result');
+            const active = body.result?.deployments?.[0]?.versions;
+            assert.equal(active?.length, 1, 'ADMIN_V147_RELEASE_BLOCK weighted-deployment');
+            assert.equal(Number(active[0].percentage), 100, 'ADMIN_V147_RELEASE_BLOCK unexpected-traffic');
+            assert.equal(active[0].version_id, expectedVersion, 'ADMIN_V147_RELEASE_BLOCK deployed-version-advanced');
+          }
+          console.log('ADMIN_V147_RELEASE_PIN_PASS');
+          ADMIN_V147_PIN
+          askpass="$RUNNER_TEMP/admin-workspace-v147-askpass"
+          cat > "$askpass" <<'ADMIN_V147_READ'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ADMIN_V147_READ
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs release
+          echo 'ADMIN_WORKSPACE_V147_QA_ONLY_RELEASE_PASS'
+
+      - name: Pinned editorial v145 QA-only deploy
+        if: github.event.head_commit.message == 'RELEASE_ADMIN_EDITORIAL_V145_QA_ONLY_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'ec1f615c420cd0b32d7e18a7bf20d682ff4ea669' || { echo 'ADMIN_V145_RELEASE_BLOCK source-sha'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-admin-editorial-on-v144-20261123' || { echo 'ADMIN_V145_RELEASE_BLOCK source-branch'; exit 1; }
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN" || { echo 'ADMIN_V145_RELEASE_BLOCK scoped credentials'; exit 1; }
+          # Explicitly pin the already-deployed QA web and separate identity core.
+          # No Worker name, account identifier or private project source is
+          # placed into this public workflow or its logs.
+          node --input-type=module <<'ADMIN_V145_LOCK'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const source = readFileSync('candidate/scripts/qa-direct-release.mjs', 'utf8');
+          const target = variable => {
+            const expression = source.split('\n').find(line => line.startsWith('const ' + variable + ' = '));
+            const result = expression?.match(/^const [A-Z]+ = '([^']+)';$/);
+            assert.ok(result, 'ADMIN_V145_RELEASE_BLOCK target declaration');
+            return result[1];
+          };
+          const approved = [
+            [target('QA'), 'd53bec83-8a86-41e4-9d31-4707e95f6be7'],
+            [target('CORE'), '7a038308-a934-4458-82f2-2cebd53c6793']
+          ];
+          for (const [name, version] of approved) {
+            const uri = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CLOUDFLARE_ACCOUNT_ID + '/workers/scripts/' + name + '/deployments?per_page=1';
+            const response = await fetch(uri, {
+              headers: { authorization: 'Bearer ' + process.env.CLOUDFLARE_API_TOKEN },
+              signal: AbortSignal.timeout(20000)
+            });
+            assert.equal(response.status, 200, 'ADMIN_V145_RELEASE_BLOCK cloudflare-read');
+            const body = await response.json();
+            assert.equal(body.success, true, 'ADMIN_V145_RELEASE_BLOCK cloudflare-result');
+            const deployed = body.result?.deployments?.[0]?.versions;
+            assert.equal(deployed?.length, 1, 'ADMIN_V145_RELEASE_BLOCK split deployment');
+            assert.equal(Number(deployed[0]?.percentage), 100, 'ADMIN_V145_RELEASE_BLOCK traffic');
+            assert.equal(deployed[0]?.version_id, version, 'ADMIN_V145_RELEASE_BLOCK version-advanced');
+          }
+          console.log('ADMIN_V145_RELEASE_PIN_PASS both approved QA versions unchanged');
+          ADMIN_V145_LOCK
+          askpass="$RUNNER_TEMP/admin-v145-release-read-askpass"
+          cat > "$askpass" <<'ADMIN_V145_READ'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ADMIN_V145_READ
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs release
+          echo 'ADMIN_V145_QA_ONLY_RELEASE_PASS'
+
+      - name: Pinned ADMIN-CLOUD v125 integrated QA-only release
+        if: github.event.head_commit.message == 'RELEASE_ADMIN_CLOUD_V125_QA_ONLY_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '646c2df3a0953ac2727e0e0b13cc5a0644bd3364' || { echo 'ADMIN_QA_RELEASE_BLOCK source-sha-changed'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-admin-cloud-on-desktop-v125-20261123' || { echo 'ADMIN_QA_RELEASE_BLOCK source-ref-changed'; exit 1; }
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN" || { echo 'ADMIN_QA_RELEASE_BLOCK missing-credentials'; exit 1; }
+          # Preserve current deployed desktop QA Worker and original isolated identity core.
+          # Abort if either deployment advanced after this exact candidate was approved.
+          node --input-type=module <<'ADMIN_QA_PIN_CHECK'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const qaReleaseCode = readFileSync('candidate/scripts/qa-direct-release.mjs', 'utf8');
+          const extractTarget = symbol => {
+            const line = qaReleaseCode.split('\n').find(s => s.startsWith('const ' + symbol + ' = '));
+            const match = line?.match(/^const [A-Z]+ = '([^']+)';$/);
+            assert.ok(match, 'ADMIN_QA_RELEASE_BLOCK missing-target');
+            return match[1];
+          };
+          const expected = [
+            [extractTarget('QA'), '664d674a-0039-4e1f-8750-85503a0a3102'],
+            [extractTarget('CORE'), '7a038308-a934-4458-82f2-2cebd53c6793']
+          ];
+          for (const [name, approvedVersion] of expected) {
+            const url = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CLOUDFLARE_ACCOUNT_ID + '/workers/scripts/' + name + '/deployments?per_page=1';
+            const r = await fetch(url, { headers: { authorization: 'Bearer ' + process.env.CLOUDFLARE_API_TOKEN }, signal: AbortSignal.timeout(20000) });
+            assert.equal(r.status, 200, 'ADMIN_QA_RELEASE_BLOCK cloudflare-read');
+            const json = await r.json();
+            assert.equal(json.success, true, 'ADMIN_QA_RELEASE_BLOCK cloudflare-response');
+            const active = json.result?.deployments?.[0]?.versions;
+            assert.equal(active?.length, 1, 'ADMIN_QA_RELEASE_BLOCK split-deployment');
+            assert.equal(active[0].percentage, 100, 'ADMIN_QA_RELEASE_BLOCK split-traffic');
+            assert.equal(active[0].version_id, approvedVersion, 'ADMIN_QA_RELEASE_BLOCK deployed-version-changed');
+          }
+          console.log('ADMIN_QA_PIN_PASS existing QA web and identity core unchanged');
+          ADMIN_QA_PIN_CHECK
+          # Only read private git refs during the safety gate; no persistent credential helper.
+          askpass="$RUNNER_TEMP/admin-qa-read-askpass"
+          cat > "$askpass" <<'ADMIN_QA_GIT_ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ADMIN_QA_GIT_ASKPASS
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs release
+
+      - name: Pinned clock gesture regression diagnosis
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_CLOCK_DIAG_439_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_CLOCK_FIX_439_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected='c1d6d04422350c81f67a806c786a9175ffaadfba'
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_CLOCK_FIX_439_20261123' ]]; then expected='c6e952ef1b971447db98e36fea4860fd6b540db3'; fi
+          test "$(git -C candidate rev-parse HEAD)" = "$expected"
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/clock-install.log" 2>&1 || { echo 'CLOCK_QA_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/clock-install-browser.log" 2>&1 || { echo 'CLOCK_QA_FAIL browser-install'; exit 1; }
+          set +e
+          node tests/clock-palette-longpress.test.mjs >"$RUNNER_TEMP/clock-regression.log" 2>&1
+          code=$?
+          set -e
+          node --input-type=module <<'CLOCK_REPORT'
+          import {readFileSync} from 'node:fs';
+          const rows=readFileSync(process.env.RUNNER_TEMP+'/clock-regression.log','utf8').split('\n');
+          const total=rows.find(s=>/^RESULT pass=\d+ fail=\d+ total=\d+$/.test(s));
+          console.log(total ? 'CLOCK_QA_'+total : 'CLOCK_QA_SUMMARY_UNAVAILABLE');
+          for(const s of rows.filter(s=>s.startsWith('FAIL '))){
+            const name=s.slice(5).split(' {')[0].replace(/[^a-zA-Z0-9 -]/g,'');
+            console.log('CLOCK_QA_CHECK '+(/^(large clock|small clock|gesture edges|edit mode|non-clock|palette)/.test(name)?name.slice(0,96):'other'));
+          }
+          CLOCK_REPORT
+          test "$code" -eq 0 || { echo 'CLOCK_QA_FAILED; no deployment'; exit 1; }
+          echo 'CLOCK_QA_PASS'
+
+      - name: Synthetic desktop personalization Chromium QA
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_PERSONALIZATION_QA_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_FIX_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected='d1cb6d1e484a2935a6a80ce17a6221166fda5531'
+          expected_branch='qa/desktop-personalization-audit-20261123'
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_20261123' || "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_FIX_20261123' ]]; then
+            expected='a2fa49074d7fd5facda210f2ad4f4f4b190cce00'
+            expected_branch='test/desktop-personalization-qa-20261123'
+          fi
+          test "$(git -C candidate rev-parse HEAD)" = "$expected"
+          test "$(git -C candidate branch --show-current)" = "$expected_branch"
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/desktop-personalization-deps.log" 2>&1 || { echo 'DESKTOP_AUDIT_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/desktop-personalization-browser.log" 2>&1 || { echo 'DESKTOP_AUDIT_FAIL browser-install'; exit 1; }
+          set +e
+          node tests/desktop-personalization.browser.mjs >"$RUNNER_TEMP/desktop-personalization-tests.log" 2>&1
+          result=$?
+          set -e
+          grep -E '^DESKTOP_AUDIT_(PASS|FAIL|METRIC|ALL_PASS) ' "$RUNNER_TEMP/desktop-personalization-tests.log" | tail -n 40 | cut -c1-160 || true
+          test "$result" -eq 0 || { echo 'DESKTOP_PERSONALIZATION_GATE_FAILED; no deployment'; exit 1; }
+          echo 'DESKTOP_PERSONALIZATION_GATE_PASS; no deployment'
+
+      - name: Synthetic full desktop widget catalog QA
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_WIDGET_CATALOG_453_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '4a23e5ed4ae67944864cacc487ddaabe71282bf1'
+          test "$(git -C candidate branch --show-current)" = 'test/desktop-widget-catalog-qa-20261123'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/desktop-widgets-npm.log" 2>&1 || { echo 'WIDGET_CATALOG_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/desktop-widgets-browser.log" 2>&1 || { echo 'WIDGET_CATALOG_FAIL chromium'; exit 1; }
+          set +e
+          node tests/desktop-widget-catalog.browser.mjs >"$RUNNER_TEMP/desktop-widgets-test.log" 2>&1
+          code=$?
+          set -e
+          grep -E '^WIDGET_CATALOG_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/desktop-widgets-test.log" | tail -n 30 | cut -c1-140 || true
+          test "$code" -eq 0 || { echo 'WIDGET_CATALOG_GATE_FAILED; no deployment'; exit 1; }
+          echo 'WIDGET_CATALOG_GATE_PASS; no deployment'
+
+      - name: Synthetic desktop image storage migration and failure QA
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_PHOTO_STORAGE_454_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '2fbf760096d341cd0a735126ff582ff26aad366c'
+          test "$(git -C candidate branch --show-current)" = 'fix/desktop-photo-storage-reliability-20261123'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/photo-storage-ci.log" 2>&1 || { echo 'PHOTO_SAFETY_FAIL dependencies'; exit 1; }
+          node --test tests/default-desktop-layout.test.mjs tests/storage-quota-reliability.test.mjs >"$RUNNER_TEMP/photo-storage-node.log" 2>&1 || {
+            echo 'PHOTO_SAFETY_FAIL node';
+            grep -E '^not ok [0-9]+|^# (tests|pass|fail) ' "$RUNNER_TEMP/photo-storage-node.log" | tail -n 9 | cut -c1-125 || true;
+            exit 1;
+          }
+          echo 'PHOTO_SAFETY_PASS node_contracts'
+          npm run build >"$RUNNER_TEMP/photo-storage-vite.log" 2>&1 || { echo 'PHOTO_SAFETY_FAIL vite'; exit 1; }
+          echo 'PHOTO_SAFETY_PASS vite_build'
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/photo-storage-browser-install.log" 2>&1 || { echo 'PHOTO_SAFETY_FAIL chromium_install'; exit 1; }
+          set +e
+          node tests/desktop-photo-storage.browser.mjs >"$RUNNER_TEMP/photo-storage-browser.log" 2>&1
+          status=$?
+          set -e
+          grep -E '^PHOTO_SAFETY_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/photo-storage-browser.log" | tail -n 16 | cut -c1-120 || true
+          test "$status" -eq 0 || { echo 'PHOTO_SAFETY_GATE_FAILED; no deployment'; exit 1; }
+          echo 'PHOTO_SAFETY_GATE_PASS; no deployment'
+      - name: Pinned desktop photo v125 QA-only release
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_QA_PHOTO_V125_RELEASE_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '66b05c0b7002265732afec70ac3ac5877e6532fb'
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-desktop-photo-on-v125-20261123'
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN"
+          askpass="$RUNNER_TEMP/desktop-v125-photo-qa-askpass"
+          cat > "$askpass" <<'QA_GIT_ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          QA_GIT_ASKPASS
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs release
+      - name: Pinned high-definition wallpaper Chromium quality QA
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_HD_459_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '0620b9dfedf041ad4ef235de2d24beff25c7401e'
+          test "$(git -C candidate branch --show-current)" = 'fix/desktop-wallpaper-hd-quality-20261123'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/wallpaper-hd-deps.log" 2>&1 || { echo 'WALLPAPER_HD_FAIL dependencies'; exit 1; }
+          node --test tests/default-desktop-layout.test.mjs >"$RUNNER_TEMP/wallpaper-hd-node.log" 2>&1 || { echo 'WALLPAPER_HD_FAIL node'; grep -E '^not ok [0-9]+|^# (tests|pass|fail) ' "$RUNNER_TEMP/wallpaper-hd-node.log" | tail -n 8 | cut -c1-140 || true; exit 1; }
+          echo 'WALLPAPER_HD_PASS node_layout_contracts'
+          npm run build >"$RUNNER_TEMP/wallpaper-hd-build.log" 2>&1 || { echo 'WALLPAPER_HD_FAIL vite'; exit 1; }
+          echo 'WALLPAPER_HD_PASS vite_build'
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/wallpaper-hd-chromium.log" 2>&1 || { echo 'WALLPAPER_HD_FAIL chromium_install'; exit 1; }
+          set +e
+          node tests/desktop-wallpaper-hd.browser.mjs >"$RUNNER_TEMP/wallpaper-hd-browser.log" 2>&1
+          outcome=$?
+          set -e
+          grep -E '^WALLPAPER_HD_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/wallpaper-hd-browser.log" | tail -n 16 | cut -c1-180 || true
+          test "$outcome" -eq 0 || { echo 'WALLPAPER_HD_GATE_FAILED; no deployment'; exit 1; }
+          set +e
+          node tests/desktop-personalization.browser.mjs >"$RUNNER_TEMP/wallpaper-hd-integration.log" 2>&1
+          integration=$?
+          set -e
+          grep -E '^DESKTOP_AUDIT_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/wallpaper-hd-integration.log" | tail -n 22 | cut -c1-160 || true
+          test "$integration" -eq 0 || { echo 'WALLPAPER_HD_FAIL existing_personalization; no deployment'; exit 1; }
+          echo 'WALLPAPER_HD_ALL_GATES_PASS; no deployment'
+      - name: Pinned HD wallpaper browser-only checkpoint rerun
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_HD_R2_459_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_HD_R3_459_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected='e74e12145ed14b76341c7581784c5aaae77fe476'
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_WALLPAPER_HD_R3_459_20261123' ]]; then expected='3da4d7d9dca879003e5b37c02f05c64b27b72202'; fi
+          test "$(git -C candidate rev-parse HEAD)" = "$expected"
+          test "$(git -C candidate branch --show-current)" = 'fix/desktop-wallpaper-hd-quality-20261123'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/hd-r2-ci.log" 2>&1 || { echo 'HD_R2_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/hd-r2-chromium.log" 2>&1 || { echo 'HD_R2_FAIL chromium'; exit 1; }
+          echo 'HD_R2_REUSE Node layout contract and Vite build PASS from run 45194110245'
+          set +e
+          node tests/desktop-wallpaper-hd.browser.mjs >"$RUNNER_TEMP/hd-r2-browser.log" 2>&1
+          result=$?
+          set -e
+          grep -E '^WALLPAPER_HD_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/hd-r2-browser.log" | tail -n 20 | cut -c1-160 || true
+          test "$result" -eq 0 || { echo 'HD_R2_GATE_FAILED; no deploy'; exit 1; }
+          echo 'HD_R2_GATE_PASS; no deployment'
+      - name: Pinned HD wallpaper existing personalization regression
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_INTEGRATION_459_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '3da4d7d9dca879003e5b37c02f05c64b27b72202'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/hd-integration-ci.log" 2>&1 || { echo 'HD_INT_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/hd-integration-chromium.log" 2>&1 || { echo 'HD_INT_FAIL browser'; exit 1; }
+          set +e
+          node tests/desktop-personalization.browser.mjs >"$RUNNER_TEMP/hd-integration-results.log" 2>&1
+          code=$?
+          set -e
+          grep -E '^DESKTOP_AUDIT_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/hd-integration-results.log" | tail -n 24 | cut -c1-170 || true
+          test "$code" -eq 0 || { echo 'HD_INT_GATE_FAILED; no deploy'; exit 1; }
+          echo 'HD_INT_GATE_PASS; no deployment'
+      - name: Pinned HD wallpaper integrated QA-only release
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_RELEASE_459_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_R2_RELEASE_459_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_ON_V145_RELEASE_459_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          expected='45897a6eb348c2d38eaf277201e134694fbb1f9c'
+          expected_branch='integration/qa-hd-wallpaper-on-v144-20261123'
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_R2_RELEASE_459_20261123' ]]; then expected='7d204156cb27c45a91a027752119e66b34b5b1ef'; fi
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_ON_V145_RELEASE_459_20261123' ]]; then expected='b767d3cea8bb0861ba83c9022d258e52d22f480b'; expected_branch='integration/qa-hd-wallpaper-on-v145-20261123'; fi
+          test "$(git -C candidate rev-parse HEAD)" = "$expected"
+          test "$(git -C candidate branch --show-current)" = "$expected_branch"
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN"
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/qa-hd-wallpaper-install.log" 2>&1 || { echo 'HD_QA_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/qa-hd-wallpaper-chromium.log" 2>&1 || { echo 'HD_QA_FAIL chromium'; exit 1; }
+          set +e
+          node tests/desktop-wallpaper-hd.browser.mjs >"$RUNNER_TEMP/qa-hd-wallpaper-quality.log" 2>&1
+          quality=$?
+          set -e
+          grep -E '^WALLPAPER_HD_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/qa-hd-wallpaper-quality.log" | tail -n 14 | cut -c1-140 || true
+          test "$quality" -eq 0 || { echo 'HD_QA_FAIL quality_gate; no deployment'; exit 1; }
+          set +e
+          node tests/desktop-personalization.browser.mjs >"$RUNNER_TEMP/qa-hd-wallpaper-personalization.log" 2>&1
+          integration=$?
+          set -e
+          grep -E '^DESKTOP_AUDIT_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/qa-hd-wallpaper-personalization.log" | tail -n 22 | cut -c1-150 || true
+          test "$integration" -eq 0 || { echo 'HD_QA_FAIL personalization_gate; no deployment'; exit 1; }
+          echo 'HD_QA_PASS quality_and_personalization; protected full release next'
+          cd ..
+          askpass="$RUNNER_TEMP/hd-qa-git-askpass"
+          cat > "$askpass" <<'QA_GIT_ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          QA_GIT_ASKPASS
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs release
+ "$RUNNER_TEMP/qa-v147-diag-sealed.log" | tail -n 10 || true
+            echo 'QA_GUARD_DIAG_ALL_PASS no deployment'
+          else
+            grep -E '^QA_GUARD_DIAG_(OK|FAIL):[a-z-]+(:[a-z-]+)?
+        if: github.event.head_commit.message == 'VERIFY_ADMIN_WORKSPACE_V147_FULL_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '93348b35cd5c2f0136444691585438334bc90c73' || { echo 'ADMIN_V147_FAIL source-sha'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-admin-workspace-on-v146-20261123' || { echo 'ADMIN_V147_FAIL source-branch'; exit 1; }
+          test -n "$CANDIDATE_READ_TOKEN" || { echo 'ADMIN_V147_FAIL private-read-token'; exit 1; }
+          askpass="$RUNNER_TEMP/admin-v147-askpass"
+          cat > "$askpass" <<'ADMIN_V147_READ'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ADMIN_V147_READ
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs verify
+          echo 'ADMIN_WORKSPACE_V147_FULL_PASS; no deployment'
+
+      - name: Pinned admin workspace functional and mobile QA
+        if: github.event.head_commit.message == 'VERIFY_ADMIN_WORKSPACE_002_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '797375133b286e95cfd2522758f3c40034d9891b' || { echo 'ADMIN_WORKSPACE_FAIL source-sha'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'feature/admin-workspace-dashboard-20261123' || { echo 'ADMIN_WORKSPACE_FAIL source-branch'; exit 1; }
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-workspace-npm.log" 2>&1 || { echo 'ADMIN_WORKSPACE_FAIL dependencies'; exit 1; }
+          node --check admin/admin-center.js || { echo 'ADMIN_WORKSPACE_FAIL js-syntax'; exit 1; }
+          node --check tests/admin-center-editorial.browser.mjs || { echo 'ADMIN_WORKSPACE_FAIL browser-test-syntax'; exit 1; }
+          node --test tests/admin-center-ui.test.mjs tests/admin-center-mobile-release.test.mjs tests/admin-center-editorial.test.mjs tests/admin-workspace.test.mjs tests/account-qa-admin-proxy.test.mjs >"$RUNNER_TEMP/admin-workspace-node.log" 2>&1 || {
+            echo 'ADMIN_WORKSPACE_FAIL node';
+            grep -E '^not ok [0-9]+|^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-workspace-node.log" | tail -n 14 | cut -c1-140 || true;
+            exit 1;
+          }
+          grep -E '^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-workspace-node.log" | tail -n 3 || true
+          echo 'ADMIN_WORKSPACE_PASS Node'
+          npm run build >"$RUNNER_TEMP/admin-workspace-vite.log" 2>&1 || { echo 'ADMIN_WORKSPACE_FAIL Vite'; exit 1; }
+          test -f dist/admin/admin-center.html && test -f dist/admin/admin-workspace.css || { echo 'ADMIN_WORKSPACE_FAIL built-assets'; exit 1; }
+          echo 'ADMIN_WORKSPACE_PASS Vite'
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/admin-workspace-chromium-install.log" 2>&1 || { echo 'ADMIN_WORKSPACE_FAIL Chromium-install'; exit 1; }
+          node tests/admin-center-editorial.browser.mjs >"$RUNNER_TEMP/admin-workspace-chromium.log" 2>&1 || {
+            echo 'ADMIN_WORKSPACE_FAIL Chromium';
+            grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-workspace-chromium.log" | tail -n 4 || true;
+            exit 1;
+          }
+          grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-workspace-chromium.log" | tail -n 3 || true
+          npx playwright install --with-deps webkit >"$RUNNER_TEMP/admin-workspace-webkit-install.log" 2>&1 || { echo 'ADMIN_WORKSPACE_FAIL WebKit-install'; exit 1; }
+          ADMIN_BROWSER=webkit node tests/admin-center-editorial.browser.mjs >"$RUNNER_TEMP/admin-workspace-webkit.log" 2>&1 || {
+            echo 'ADMIN_WORKSPACE_FAIL WebKit';
+            grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-workspace-webkit.log" | tail -n 4 || true;
+            exit 1;
+          }
+          grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-workspace-webkit.log" | tail -n 3 || true
+          echo 'ADMIN_WORKSPACE_ALL_PASS; verify only'
+
+      - name: Pinned admin editorial mobile UI verification
+        if: github.event.head_commit.message == 'VERIFY_ADMIN_EDITORIAL_UI_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '0137533b4b50b339302777552d24dab8b1fe1a5e' || { echo 'ADMIN_EDITORIAL_FAIL source SHA'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'ui/admin-editorial-context-20261123' || { echo 'ADMIN_EDITORIAL_FAIL source branch'; exit 1; }
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-editorial-npm.log" 2>&1 || { echo 'ADMIN_EDITORIAL_FAIL dependencies'; exit 1; }
+          node --check admin/admin-center.js || { echo 'ADMIN_EDITORIAL_FAIL js syntax'; exit 1; }
+          node --check tests/admin-center-editorial.browser.mjs || { echo 'ADMIN_EDITORIAL_FAIL test syntax'; exit 1; }
+          node --test tests/admin-center-ui.test.mjs tests/admin-center-mobile-release.test.mjs tests/admin-center-editorial.test.mjs tests/account-qa-admin-proxy.test.mjs >"$RUNNER_TEMP/admin-editorial-node.log" 2>&1 || {
+            echo 'ADMIN_EDITORIAL_FAIL node test'
+            grep -E '^not ok [0-9]+|^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-editorial-node.log" | tail -n 15 | cut -c1-110 || true
+            exit 1
+          }
+          grep -E '^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-editorial-node.log" | tail -n 3 || true
+          echo 'ADMIN_EDITORIAL_PASS Node'
+          npm run build >"$RUNNER_TEMP/admin-editorial-vite.log" 2>&1 || { echo 'ADMIN_EDITORIAL_FAIL vite'; exit 1; }
+          test -f dist/admin/admin-center.html && test -f dist/admin/admin-center-editorial.css || { echo 'ADMIN_EDITORIAL_FAIL built UI assets'; exit 1; }
+          echo 'ADMIN_EDITORIAL_PASS Vite'
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/admin-editorial-chromium-install.log" 2>&1 || { echo 'ADMIN_EDITORIAL_FAIL chromium install'; exit 1; }
+          node tests/admin-center-editorial.browser.mjs >"$RUNNER_TEMP/admin-editorial-chromium.log" 2>&1 || {
+            echo 'ADMIN_EDITORIAL_FAIL Chromium'
+            grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-editorial-chromium.log" | tail -n 4 || true
+            exit 1
+          }
+          grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-editorial-chromium.log" | tail -n 3 || true
+          npx playwright install --with-deps webkit >"$RUNNER_TEMP/admin-editorial-webkit-install.log" 2>&1 || { echo 'ADMIN_EDITORIAL_FAIL webkit install'; exit 1; }
+          ADMIN_BROWSER=webkit node tests/admin-center-editorial.browser.mjs >"$RUNNER_TEMP/admin-editorial-webkit.log" 2>&1 || {
+            echo 'ADMIN_EDITORIAL_FAIL WebKit'
+            grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-editorial-webkit.log" | tail -n 4 || true
+            exit 1
+          }
+          grep '^EDITORIAL_ADMIN_PASS ' "$RUNNER_TEMP/admin-editorial-webkit.log" | tail -n 3 || true
+          echo 'ADMIN_EDITORIAL_ALL_PASS; verify-only, no deploy'
+
+      - name: Pinned editorial integrated full QA v145 verification
+        if: github.event.head_commit.message == 'VERIFY_ADMIN_EDITORIAL_V145_FULL_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'ec1f615c420cd0b32d7e18a7bf20d682ff4ea669' || { echo 'ADMIN_V145_FULL_FAIL source mismatch'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-admin-editorial-on-v144-20261123' || { echo 'ADMIN_V145_FULL_FAIL branch mismatch'; exit 1; }
+          test -n "$CANDIDATE_READ_TOKEN" || { echo 'ADMIN_V145_FULL_FAIL restricted read capability missing'; exit 1; }
+          askpass="$RUNNER_TEMP/admin-v145-read-askpass"
+          cat > "$askpass" <<'ADMIN_V145_GIT_ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ADMIN_V145_GIT_ASKPASS
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          # The same complete release script runs every Node, Vite, browser,
+          # real Workerd and identity gate; verify mode has no Cloudflare write token.
+          node scripts/run-candidate.mjs verify
+          echo 'ADMIN_V145_FULL_PASS; verify only and no deployment'
+
+      - name: Pinned desktop browser and data-safety QA
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_STORAGE_R6_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_UNBLOCK_R8_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '8ff181c2afbf2d3c15130684fe7f196e6adb33f8'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/desktop-ci.log" 2>&1 || { echo 'DQA_FAIL dependency'; exit 1; }
+          npm run build >"$RUNNER_TEMP/desktop-build.log" 2>&1 || { echo 'DQA_FAIL vite'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/desktop-browser-install.log" 2>&1 || { echo 'DQA_FAIL browser-install'; exit 1; }
+          set +e
+          node --input-type=module >"$RUNNER_TEMP/desktop-visible.log" 2>&1 <<'DESKTOP_VISIBLE_QA'
+          import assert from 'node:assert/strict';
+          import {createServer} from 'node:http';
+          import {readFile} from 'node:fs/promises';
+          import path from 'node:path';
+          import {chromium} from 'playwright';
+          const root=path.resolve('dist');
+          const server=createServer(async(req,res)=>{
+            try{
+              const name=new URL(req.url||'/','http://127.0.0.1').pathname;
+              const file=path.resolve(root,'.'+(name==='/'?'/index.html':name));
+              if(!file.startsWith(root+path.sep)){res.writeHead(403).end();return;}
+              const data=await readFile(file);
+              res.setHeader('Content-Type',({'.html':'text/html','.css':'text/css','.js':'text/javascript','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.woff2':'font/woff2'})[path.extname(file)]||'application/octet-stream');
+              res.end(data);
+            }catch{res.writeHead(404).end();}
+          });
+          await new Promise((yes,no)=>{server.once('error',no);server.listen(0,'127.0.0.1',yes);});
+          const browser=await chromium.launch({headless:true});
+          let stage='setup';
+          try{
+            for(const [w,h] of [[375,667],[390,844],[430,932]]){
+              stage='start'+w;
+              const context=await browser.newContext({viewport:{width:w,height:h},isMobile:true,hasTouch:true,deviceScaleFactor:2});
+              const page=await context.newPage(),errors=[];
+              page.on('pageerror',e=>errors.push(e.message));
+              const response=await page.goto('http://127.0.0.1:'+server.address().port+'/index.html',{waitUntil:'load'});
+              assert.equal(response?.status(),200);
+              await page.locator('#gridPage0 > [data-drag="clock-lg"]').waitFor({timeout:18000});
+              stage='geometry'+w;
+              const visible=await page.evaluate(()=>{
+                const g=document.querySelector('#gridPage0'),items=[...g.querySelectorAll(':scope > [data-drag]')].map(x=>x.dataset.drag);
+                const rects=['.simulator-stage','.phone','.phone-screen','.pages-container','#gridPage0','#dockBar'].map(id=>document.querySelector(id).getBoundingClientRect());
+                return {items,default:g.classList.contains('is-default-layout'),bodyWidth:document.body.scrollWidth,viewport:innerWidth,clip:getComputedStyle(document.documentElement).overflowX,rects:rects.map(r=>({left:r.left,right:r.right}))};
+              });
+              assert.equal(visible.items.length,11);
+              assert.equal(new Set(visible.items).size,11);
+              assert.equal(visible.default,true);
+              assert.ok(visible.bodyWidth<=w+3,'visible body overflow');
+              assert.ok(visible.clip==='hidden'||visible.clip==='clip','visible overflow not clipped');
+              for(const rect of visible.rects)assert.ok(rect.left>=-3&&rect.right<=w+3,'visible element outside viewport');
+              console.log('DQA_PASS geometry_'+w);
+              stage='storage'+w;
+              const order=[...visible.items];[order[1],order[2]]=[order[2],order[1]];
+              await page.evaluate(ids=>{
+                const old=JSON.parse(localStorage.getItem('ds_layout_v14'));
+                if(!old||!Array.isArray(old.pages)||old.pages.length<3)throw Error('Invalid complete baseline fixture');
+                old.pages[0]=ids;
+                localStorage.setItem('ds_layout_v14',JSON.stringify(old));
+              },order);
+              await page.reload({waitUntil:'load'});
+              await page.waitForFunction(()=>document.querySelector('#gridPage0 > [data-drag]')?.dataset.drag==='clock-lg');
+              const restored=await page.evaluate(()=>{const grid=document.querySelector('#gridPage0');return {ids:[...grid.querySelectorAll(':scope > [data-drag]')].map(x=>x.dataset.drag),fixed:grid.classList.contains('is-default-layout'),saved:JSON.parse(localStorage.getItem('ds_layout_v14'))}});
+              console.log('DQA_STATE storage_'+w+' original='+order.length+' actual='+restored.ids.length+
+                ' first3='+Number(JSON.stringify(restored.ids.slice(0,3))===JSON.stringify(order.slice(0,3)))+
+                ' fixed='+Number(restored.fixed)+' savedLen='+restored.saved.pages[0].length+
+                ' savedMatch='+Number(JSON.stringify(restored.saved.pages[0])===JSON.stringify(order)));
+              assert.deepEqual(restored.ids.slice(0,3),order.slice(0,3));
+              assert.equal(restored.fixed,false);
+              assert.deepEqual(restored.saved.pages[0],order);
+              console.log('DQA_PASS persistence_'+w);
+              if(w===390){
+                stage='mouse-drag';
+                const source=page.locator('#gridPage0 > [data-drag="app_inspect"]'),dest=page.locator('#gridPage0 > [data-drag="app_worldbook"]');
+                await source.scrollIntoViewIfNeeded();
+                const box=await source.boundingBox(),target=await dest.boundingBox();
+                assert.ok(box&&target);
+                await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+                await page.mouse.down();await page.waitForTimeout(320);
+                await page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:6});await page.mouse.up();
+                const drag=await page.evaluate(()=>({ids:[...document.querySelectorAll('#gridPage0 > [data-drag]')].map(x=>x.dataset.drag),stored:JSON.parse(localStorage.getItem('ds_layout_v14')),ghosts:document.querySelectorAll('.drag-placeholder,.drag-avatar').length}));
+                assert.equal(drag.ids.length,order.length);
+                assert.equal(new Set(drag.ids).size,order.length);
+                assert.deepEqual(drag.stored.pages[0],drag.ids);
+                assert.equal(drag.ghosts,0);
+                console.log('DQA_PASS mouse_drag_390');
+                stage='touch-cancel';
+                const before=await page.evaluate(()=>localStorage.getItem('ds_layout_v14'));
+                await page.evaluate(()=>{
+                  const el=document.querySelector('#gridPage0 > [data-drag="app_inspect"]'),r=el.getBoundingClientRect();
+                  const t=new Touch({identifier:2,target:el,clientX:r.left+r.width/2,clientY:r.top+r.height/2});
+                  el.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,touches:[t],targetTouches:[t],changedTouches:[t]}));
+                });
+                await page.waitForTimeout(170);
+                await page.evaluate(()=>document.dispatchEvent(new TouchEvent('touchcancel',{bubbles:true,touches:[],changedTouches:[]})));
+                const cancel=await page.evaluate(()=>({saved:localStorage.getItem('ds_layout_v14'),ghosts:document.querySelectorAll('.drag-placeholder,.drag-avatar').length,hidden:document.querySelector('#gridPage0 > [data-drag="app_inspect"]')?.classList.contains('is-dragging-source')}));
+                assert.equal(cancel.saved,before);assert.equal(cancel.ghosts,0);assert.equal(cancel.hidden,false);
+                console.log('DQA_PASS cancel_390');
+              }
+              assert.deepEqual(errors,[]);
+              await page.screenshot({path:process.env.RUNNER_TEMP+'/desktop-'+w+'.png'});
+              await context.close();
+            }
+          }catch(e){console.log('DQA_FAIL '+stage+' '+String(e.name||'Error').replace(/[^A-Za-z]/g,''));throw e;}
+          finally{await browser.close();await new Promise(done=>server.close(done));}
+          DESKTOP_VISIBLE_QA
+          outcome=$?
+          set -e
+          grep -E '^DQA_(PASS|FAIL|STATE) ' "$RUNNER_TEMP/desktop-visible.log" | tail -n 20 | cut -c1-120 || true
+          test "$outcome" -eq 0 || { echo 'DQA_FAILED test-only; no merge or deploy'; exit 1; }
+          echo 'DQA_ALL_PASS verify-only; no deployment'
+
+      - name: Pinned desktop final interaction verification
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_INTERACTIONS_R9_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_GATE_R10_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '8ff181c2afbf2d3c15130684fe7f196e6adb33f8'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/desktop-final-ci.log" 2>&1 || { echo 'DFINAL_FAIL dependencies'; exit 1; }
+          npm run build >"$RUNNER_TEMP/desktop-final-build.log" 2>&1 || { echo 'DFINAL_FAIL build'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/desktop-final-browser.log" 2>&1 || { echo 'DFINAL_FAIL chromium-install'; exit 1; }
+          set +e
+          node --input-type=module >"$RUNNER_TEMP/desktop-final.log" 2>&1 <<'DESKTOP_FINAL_QA'
+          import assert from 'node:assert/strict';
+          import {createServer} from 'node:http';
+          import {readFile} from 'node:fs/promises';
+          import path from 'node:path';
+          import {chromium} from 'playwright';
+          const base=path.resolve('dist');
+          const server=createServer(async(req,res)=>{
+            try{
+              const url=new URL(req.url||'/','http://127.0.0.1');
+              const file=path.resolve(base,'.'+(url.pathname==='/'?'/index.html':url.pathname));
+              if(!file.startsWith(base+path.sep)){res.writeHead(403).end();return;}
+              const payload=await readFile(file);
+              res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.webp':'image/webp','.woff2':'font/woff2','.json':'application/json'})[path.extname(file)]||'application/octet-stream');
+              res.setHeader('Cache-Control','no-store');
+              res.end(payload);
+            }catch{res.writeHead(404).end();}
+          });
+          await new Promise((yes,no)=>{server.once('error',no);server.listen(0,'127.0.0.1',yes);});
+          const browser=await chromium.launch({headless:true});
+          const url=()=> 'http://127.0.0.1:'+server.address().port+'/index.html';
+          const open=async()=>{
+            const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});
+            const page=await context.newPage();
+            await page.goto(url(),{waitUntil:'load'});
+            await page.locator('#gridPage0 [data-drag="clock-lg"]').waitFor({timeout:18000});
+            return {context,page};
+          };
+          const drag=async(page,selector,toX,toY)=>{
+            const el=page.locator(selector);await el.scrollIntoViewIfNeeded();
+            const b=await el.boundingBox();assert.ok(b);
+            await page.mouse.move(b.x+b.width/2,b.y+b.height/2);
+            await page.mouse.down();
+            await page.waitForTimeout(340);
+            await page.mouse.move(toX,toY,{steps:10});
+          };
+          let stage='init';
+          try{
+            stage='cross-page-prepare';
+            {
+              const {context,page}=await open();
+              await page.evaluate(()=>{
+                const l=JSON.parse(localStorage.getItem('ds_layout_v14'));
+                l.removed=l.removed.filter(x=>x!=='social');
+                l.pages[1].unshift('social');
+                localStorage.setItem('ds_layout_v14',JSON.stringify(l));
+              });
+              await page.reload({waitUntil:'load'});
+              await page.locator('#gridPage1 > [data-drag="social"]').waitFor();
+              const span=await page.locator('#gridPage1 > [data-drag="social"]').evaluate(el=>{const s=getComputedStyle(el);return [s.gridColumnStart,s.gridColumnEnd,s.gridRowStart,s.gridRowEnd]});
+              assert.ok(span.join(' ').includes('span 4'),'social width not four columns');
+              assert.ok(span.join(' ').includes('span 3'),'social height not three rows');
+              console.log('DFINAL_PASS wide-widget-4x3');
+              stage='cross-page-drag';
+              await page.evaluate(()=>document.querySelectorAll('.page-dots .dot')[1].click());
+              await page.waitForTimeout(500);
+              await drag(page,'#gridPage1 > [data-drag="social"]',380,210);
+              await page.waitForTimeout(530);
+              await page.mouse.up();
+              const end=await page.evaluate(()=>({
+                onLast:!!document.querySelector('#gridPage2 > [data-drag="social"]'),
+                stored:JSON.parse(localStorage.getItem('ds_layout_v14')),
+                ghostCount:document.querySelectorAll('.drag-avatar,.drag-placeholder').length
+              }));
+              assert.equal(end.onLast,true,'wide widget did not cross to next page');
+              assert.equal(end.stored.pages[2].includes('social'),true);
+              assert.equal(end.ghostCount,0);
+              await page.reload({waitUntil:'load'});
+              assert.equal(await page.locator('#gridPage2 > [data-drag="social"]').count(),1);
+              console.log('DFINAL_PASS wide-widget-cross-page-and-reload');
+              await context.close();
+            }
+            stage='dock-limit';
+            {
+              const {context,page}=await open();
+              await page.evaluate(()=>{
+                const v=JSON.parse(localStorage.getItem('ds_layout_v14'));
+                const extra=['app_inspect','app_worldbook','app_memory'];
+                v.pages=v.pages.map(p=>p.filter(id=>!extra.includes(id)));
+                v.dock=[...v.dock,...extra];
+                localStorage.setItem('ds_layout_v14',JSON.stringify(v));
+              });
+              await page.reload({waitUntil:'load'});
+              assert.equal(await page.locator('#dockBar > [data-drag]').count(),5);
+              const box=await page.locator('#dockBar').boundingBox();assert.ok(box);
+              await drag(page,'#gridPage0 > [data-drag="app_forum"]',box.x+box.width/2,box.y+box.height/2);
+              await page.mouse.up();
+              const state=await page.evaluate(()=>({
+                dock:[...document.querySelectorAll('#dockBar > [data-drag]')].map(el=>el.dataset.drag),
+                forumInGrid:!!document.querySelector('#gridPage0 > [data-drag="app_forum"]'),
+                persisted:JSON.parse(localStorage.getItem('ds_layout_v14')),
+                ghosts:document.querySelectorAll('.drag-placeholder,.drag-avatar').length
+              }));
+              assert.equal(state.dock.length,5);
+              assert.equal(state.forumInGrid,true);
+              assert.equal(state.persisted.dock.length,5);
+              assert.equal(state.persisted.pages[0].includes('app_forum'),true);
+              assert.equal(state.ghosts,0);
+              console.log('DFINAL_PASS dock-max-five-no-data-loss');
+              await context.close();
+            }
+            stage='legacy-preservation';
+            {
+              const {context,page}=await open();
+              const original=await page.evaluate(()=>{
+                const old=localStorage.getItem('ds_layout_v14');
+                localStorage.setItem('ds_layout_v13',old);
+                localStorage.removeItem('ds_layout_v14');
+                return old;
+              });
+              await page.reload({waitUntil:'load'});
+              const migrated=await page.evaluate(()=>({old:localStorage.getItem('ds_layout_v13'),latest:localStorage.getItem('ds_layout_v14')}));
+              assert.equal(migrated.old,original,'legacy record deleted or rewritten');
+              assert.ok(migrated.latest,'new version was not created');
+              await page.evaluate(()=>localStorage.setItem('ds_layout_v14','{broken'));
+              await page.reload({waitUntil:'load'});
+              const recovered=await page.evaluate(()=>({old:localStorage.getItem('ds_layout_v13'),latest:JSON.parse(localStorage.getItem('ds_layout_v14'))}));
+              assert.equal(recovered.old,original);
+              assert.equal(recovered.latest.v,14);
+              assert.ok(recovered.latest.pages.length>=3);
+              console.log('DFINAL_PASS legacy-preserved-and-corrupt-recovered');
+              await context.close();
+            }
+          }catch(e){console.log('DFINAL_FAIL '+stage+' '+String(e.name||'Error').replace(/[^a-zA-Z]/ig,''));throw e;}
+          finally{await browser.close();await new Promise(done=>server.close(done));}
+          DESKTOP_FINAL_QA
+          status=$?
+          set -e
+          grep -E '^DFINAL_(PASS|FAIL) ' "$RUNNER_TEMP/desktop-final.log" | tail -n 15 | cut -c1-120 || true
+          test "$status" -eq 0 || exit 1
+          echo 'DFINAL_ALL_PASS; no deploy'
+
+      - name: Pinned desktop integrated QA-only release
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_439_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_RETRY_439_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_FIXED_439_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_FIXED2_439_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          expected='c1d6d04422350c81f67a806c786a9175ffaadfba'
+          if [[ "${{ github.event.head_commit.message }}" == "VERIFY_LAYOUT_QA_RELEASE_FIXED_439_20261123" || "${{ github.event.head_commit.message }}" == "VERIFY_LAYOUT_QA_RELEASE_FIXED2_439_20261123" ]]; then expected='c6e952ef1b971447db98e36fea4860fd6b540db3'; fi
+          test "$(git -C candidate rev-parse HEAD)" = "$expected"
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-desktop-439-20261123'
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN"
+          # Ephemeral read-only Git auth for release preflight; no persistent credentials.
+          askpass="$RUNNER_TEMP/desktop-qa-read-askpass"
+          cat > "$askpass" <<'QA_GIT_ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          QA_GIT_ASKPASS
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs release
+
+      - name: Pinned admin workspace v147 QA-only release
+        if: github.event.head_commit.message == 'RELEASE_ADMIN_WORKSPACE_V147_QA_ONLY_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '93348b35cd5c2f0136444691585438334bc90c73' || { echo 'ADMIN_V147_RELEASE_BLOCK source-sha'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-admin-workspace-on-v146-20261123' || { echo 'ADMIN_V147_RELEASE_BLOCK source-branch'; exit 1; }
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN" || { echo 'ADMIN_V147_RELEASE_BLOCK missing-credentials'; exit 1; }
+          # Check the deployed QA and delegated identity Worker before any upload.
+          # Worker names are resolved only from the protected candidate checkout.
+          node --input-type=module <<'ADMIN_V147_PIN'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const source = readFileSync('candidate/scripts/qa-direct-release.mjs', 'utf8');
+          const target = key => {
+            const line = source.split('\n').find(s => s.startsWith('const ' + key + ' = '));
+            const match = line?.match(/^const [A-Z]+ = '([^']+)';$/);
+            assert.ok(match, 'ADMIN_V147_RELEASE_BLOCK target missing');
+            return match[1];
+          };
+          const locks = [
+            [target('QA'), '0f39865a-266d-4606-9e5b-869bd98aaf85'],
+            [target('CORE'), '7a038308-a934-4458-82f2-2cebd53c6793']
+          ];
+          for (const [worker, expectedVersion] of locks) {
+            const url = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CLOUDFLARE_ACCOUNT_ID + '/workers/scripts/' + worker + '/deployments?per_page=1';
+            const result = await fetch(url, {headers: {authorization: 'Bearer ' + process.env.CLOUDFLARE_API_TOKEN},signal:AbortSignal.timeout(20000)});
+            assert.equal(result.status, 200, 'ADMIN_V147_RELEASE_BLOCK cloudflare-read');
+            const body = await result.json();
+            assert.equal(body.success, true, 'ADMIN_V147_RELEASE_BLOCK cloudflare-result');
+            const active = body.result?.deployments?.[0]?.versions;
+            assert.equal(active?.length, 1, 'ADMIN_V147_RELEASE_BLOCK weighted-deployment');
+            assert.equal(Number(active[0].percentage), 100, 'ADMIN_V147_RELEASE_BLOCK unexpected-traffic');
+            assert.equal(active[0].version_id, expectedVersion, 'ADMIN_V147_RELEASE_BLOCK deployed-version-advanced');
+          }
+          console.log('ADMIN_V147_RELEASE_PIN_PASS');
+          ADMIN_V147_PIN
+          askpass="$RUNNER_TEMP/admin-workspace-v147-askpass"
+          cat > "$askpass" <<'ADMIN_V147_READ'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ADMIN_V147_READ
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs release
+          echo 'ADMIN_WORKSPACE_V147_QA_ONLY_RELEASE_PASS'
+
+      - name: Pinned editorial v145 QA-only deploy
+        if: github.event.head_commit.message == 'RELEASE_ADMIN_EDITORIAL_V145_QA_ONLY_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'ec1f615c420cd0b32d7e18a7bf20d682ff4ea669' || { echo 'ADMIN_V145_RELEASE_BLOCK source-sha'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-admin-editorial-on-v144-20261123' || { echo 'ADMIN_V145_RELEASE_BLOCK source-branch'; exit 1; }
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN" || { echo 'ADMIN_V145_RELEASE_BLOCK scoped credentials'; exit 1; }
+          # Explicitly pin the already-deployed QA web and separate identity core.
+          # No Worker name, account identifier or private project source is
+          # placed into this public workflow or its logs.
+          node --input-type=module <<'ADMIN_V145_LOCK'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const source = readFileSync('candidate/scripts/qa-direct-release.mjs', 'utf8');
+          const target = variable => {
+            const expression = source.split('\n').find(line => line.startsWith('const ' + variable + ' = '));
+            const result = expression?.match(/^const [A-Z]+ = '([^']+)';$/);
+            assert.ok(result, 'ADMIN_V145_RELEASE_BLOCK target declaration');
+            return result[1];
+          };
+          const approved = [
+            [target('QA'), 'd53bec83-8a86-41e4-9d31-4707e95f6be7'],
+            [target('CORE'), '7a038308-a934-4458-82f2-2cebd53c6793']
+          ];
+          for (const [name, version] of approved) {
+            const uri = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CLOUDFLARE_ACCOUNT_ID + '/workers/scripts/' + name + '/deployments?per_page=1';
+            const response = await fetch(uri, {
+              headers: { authorization: 'Bearer ' + process.env.CLOUDFLARE_API_TOKEN },
+              signal: AbortSignal.timeout(20000)
+            });
+            assert.equal(response.status, 200, 'ADMIN_V145_RELEASE_BLOCK cloudflare-read');
+            const body = await response.json();
+            assert.equal(body.success, true, 'ADMIN_V145_RELEASE_BLOCK cloudflare-result');
+            const deployed = body.result?.deployments?.[0]?.versions;
+            assert.equal(deployed?.length, 1, 'ADMIN_V145_RELEASE_BLOCK split deployment');
+            assert.equal(Number(deployed[0]?.percentage), 100, 'ADMIN_V145_RELEASE_BLOCK traffic');
+            assert.equal(deployed[0]?.version_id, version, 'ADMIN_V145_RELEASE_BLOCK version-advanced');
+          }
+          console.log('ADMIN_V145_RELEASE_PIN_PASS both approved QA versions unchanged');
+          ADMIN_V145_LOCK
+          askpass="$RUNNER_TEMP/admin-v145-release-read-askpass"
+          cat > "$askpass" <<'ADMIN_V145_READ'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ADMIN_V145_READ
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs release
+          echo 'ADMIN_V145_QA_ONLY_RELEASE_PASS'
+
+      - name: Pinned ADMIN-CLOUD v125 integrated QA-only release
+        if: github.event.head_commit.message == 'RELEASE_ADMIN_CLOUD_V125_QA_ONLY_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '646c2df3a0953ac2727e0e0b13cc5a0644bd3364' || { echo 'ADMIN_QA_RELEASE_BLOCK source-sha-changed'; exit 1; }
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-admin-cloud-on-desktop-v125-20261123' || { echo 'ADMIN_QA_RELEASE_BLOCK source-ref-changed'; exit 1; }
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN" || { echo 'ADMIN_QA_RELEASE_BLOCK missing-credentials'; exit 1; }
+          # Preserve current deployed desktop QA Worker and original isolated identity core.
+          # Abort if either deployment advanced after this exact candidate was approved.
+          node --input-type=module <<'ADMIN_QA_PIN_CHECK'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const qaReleaseCode = readFileSync('candidate/scripts/qa-direct-release.mjs', 'utf8');
+          const extractTarget = symbol => {
+            const line = qaReleaseCode.split('\n').find(s => s.startsWith('const ' + symbol + ' = '));
+            const match = line?.match(/^const [A-Z]+ = '([^']+)';$/);
+            assert.ok(match, 'ADMIN_QA_RELEASE_BLOCK missing-target');
+            return match[1];
+          };
+          const expected = [
+            [extractTarget('QA'), '664d674a-0039-4e1f-8750-85503a0a3102'],
+            [extractTarget('CORE'), '7a038308-a934-4458-82f2-2cebd53c6793']
+          ];
+          for (const [name, approvedVersion] of expected) {
+            const url = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CLOUDFLARE_ACCOUNT_ID + '/workers/scripts/' + name + '/deployments?per_page=1';
+            const r = await fetch(url, { headers: { authorization: 'Bearer ' + process.env.CLOUDFLARE_API_TOKEN }, signal: AbortSignal.timeout(20000) });
+            assert.equal(r.status, 200, 'ADMIN_QA_RELEASE_BLOCK cloudflare-read');
+            const json = await r.json();
+            assert.equal(json.success, true, 'ADMIN_QA_RELEASE_BLOCK cloudflare-response');
+            const active = json.result?.deployments?.[0]?.versions;
+            assert.equal(active?.length, 1, 'ADMIN_QA_RELEASE_BLOCK split-deployment');
+            assert.equal(active[0].percentage, 100, 'ADMIN_QA_RELEASE_BLOCK split-traffic');
+            assert.equal(active[0].version_id, approvedVersion, 'ADMIN_QA_RELEASE_BLOCK deployed-version-changed');
+          }
+          console.log('ADMIN_QA_PIN_PASS existing QA web and identity core unchanged');
+          ADMIN_QA_PIN_CHECK
+          # Only read private git refs during the safety gate; no persistent credential helper.
+          askpass="$RUNNER_TEMP/admin-qa-read-askpass"
+          cat > "$askpass" <<'ADMIN_QA_GIT_ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ADMIN_QA_GIT_ASKPASS
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs release
+
+      - name: Pinned clock gesture regression diagnosis
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_CLOCK_DIAG_439_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_CLOCK_FIX_439_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected='c1d6d04422350c81f67a806c786a9175ffaadfba'
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_CLOCK_FIX_439_20261123' ]]; then expected='c6e952ef1b971447db98e36fea4860fd6b540db3'; fi
+          test "$(git -C candidate rev-parse HEAD)" = "$expected"
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/clock-install.log" 2>&1 || { echo 'CLOCK_QA_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/clock-install-browser.log" 2>&1 || { echo 'CLOCK_QA_FAIL browser-install'; exit 1; }
+          set +e
+          node tests/clock-palette-longpress.test.mjs >"$RUNNER_TEMP/clock-regression.log" 2>&1
+          code=$?
+          set -e
+          node --input-type=module <<'CLOCK_REPORT'
+          import {readFileSync} from 'node:fs';
+          const rows=readFileSync(process.env.RUNNER_TEMP+'/clock-regression.log','utf8').split('\n');
+          const total=rows.find(s=>/^RESULT pass=\d+ fail=\d+ total=\d+$/.test(s));
+          console.log(total ? 'CLOCK_QA_'+total : 'CLOCK_QA_SUMMARY_UNAVAILABLE');
+          for(const s of rows.filter(s=>s.startsWith('FAIL '))){
+            const name=s.slice(5).split(' {')[0].replace(/[^a-zA-Z0-9 -]/g,'');
+            console.log('CLOCK_QA_CHECK '+(/^(large clock|small clock|gesture edges|edit mode|non-clock|palette)/.test(name)?name.slice(0,96):'other'));
+          }
+          CLOCK_REPORT
+          test "$code" -eq 0 || { echo 'CLOCK_QA_FAILED; no deployment'; exit 1; }
+          echo 'CLOCK_QA_PASS'
+
+      - name: Synthetic desktop personalization Chromium QA
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_PERSONALIZATION_QA_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_FIX_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected='d1cb6d1e484a2935a6a80ce17a6221166fda5531'
+          expected_branch='qa/desktop-personalization-audit-20261123'
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_20261123' || "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_PERSONALIZATION_MAIN_451_FIX_20261123' ]]; then
+            expected='a2fa49074d7fd5facda210f2ad4f4f4b190cce00'
+            expected_branch='test/desktop-personalization-qa-20261123'
+          fi
+          test "$(git -C candidate rev-parse HEAD)" = "$expected"
+          test "$(git -C candidate branch --show-current)" = "$expected_branch"
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/desktop-personalization-deps.log" 2>&1 || { echo 'DESKTOP_AUDIT_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/desktop-personalization-browser.log" 2>&1 || { echo 'DESKTOP_AUDIT_FAIL browser-install'; exit 1; }
+          set +e
+          node tests/desktop-personalization.browser.mjs >"$RUNNER_TEMP/desktop-personalization-tests.log" 2>&1
+          result=$?
+          set -e
+          grep -E '^DESKTOP_AUDIT_(PASS|FAIL|METRIC|ALL_PASS) ' "$RUNNER_TEMP/desktop-personalization-tests.log" | tail -n 40 | cut -c1-160 || true
+          test "$result" -eq 0 || { echo 'DESKTOP_PERSONALIZATION_GATE_FAILED; no deployment'; exit 1; }
+          echo 'DESKTOP_PERSONALIZATION_GATE_PASS; no deployment'
+
+      - name: Synthetic full desktop widget catalog QA
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_WIDGET_CATALOG_453_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '4a23e5ed4ae67944864cacc487ddaabe71282bf1'
+          test "$(git -C candidate branch --show-current)" = 'test/desktop-widget-catalog-qa-20261123'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/desktop-widgets-npm.log" 2>&1 || { echo 'WIDGET_CATALOG_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/desktop-widgets-browser.log" 2>&1 || { echo 'WIDGET_CATALOG_FAIL chromium'; exit 1; }
+          set +e
+          node tests/desktop-widget-catalog.browser.mjs >"$RUNNER_TEMP/desktop-widgets-test.log" 2>&1
+          code=$?
+          set -e
+          grep -E '^WIDGET_CATALOG_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/desktop-widgets-test.log" | tail -n 30 | cut -c1-140 || true
+          test "$code" -eq 0 || { echo 'WIDGET_CATALOG_GATE_FAILED; no deployment'; exit 1; }
+          echo 'WIDGET_CATALOG_GATE_PASS; no deployment'
+
+      - name: Synthetic desktop image storage migration and failure QA
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_PHOTO_STORAGE_454_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '2fbf760096d341cd0a735126ff582ff26aad366c'
+          test "$(git -C candidate branch --show-current)" = 'fix/desktop-photo-storage-reliability-20261123'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/photo-storage-ci.log" 2>&1 || { echo 'PHOTO_SAFETY_FAIL dependencies'; exit 1; }
+          node --test tests/default-desktop-layout.test.mjs tests/storage-quota-reliability.test.mjs >"$RUNNER_TEMP/photo-storage-node.log" 2>&1 || {
+            echo 'PHOTO_SAFETY_FAIL node';
+            grep -E '^not ok [0-9]+|^# (tests|pass|fail) ' "$RUNNER_TEMP/photo-storage-node.log" | tail -n 9 | cut -c1-125 || true;
+            exit 1;
+          }
+          echo 'PHOTO_SAFETY_PASS node_contracts'
+          npm run build >"$RUNNER_TEMP/photo-storage-vite.log" 2>&1 || { echo 'PHOTO_SAFETY_FAIL vite'; exit 1; }
+          echo 'PHOTO_SAFETY_PASS vite_build'
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/photo-storage-browser-install.log" 2>&1 || { echo 'PHOTO_SAFETY_FAIL chromium_install'; exit 1; }
+          set +e
+          node tests/desktop-photo-storage.browser.mjs >"$RUNNER_TEMP/photo-storage-browser.log" 2>&1
+          status=$?
+          set -e
+          grep -E '^PHOTO_SAFETY_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/photo-storage-browser.log" | tail -n 16 | cut -c1-120 || true
+          test "$status" -eq 0 || { echo 'PHOTO_SAFETY_GATE_FAILED; no deployment'; exit 1; }
+          echo 'PHOTO_SAFETY_GATE_PASS; no deployment'
+      - name: Pinned desktop photo v125 QA-only release
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_QA_PHOTO_V125_RELEASE_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '66b05c0b7002265732afec70ac3ac5877e6532fb'
+          test "$(git -C candidate branch --show-current)" = 'integration/qa-desktop-photo-on-v125-20261123'
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN"
+          askpass="$RUNNER_TEMP/desktop-v125-photo-qa-askpass"
+          cat > "$askpass" <<'QA_GIT_ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          QA_GIT_ASKPASS
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs release
+      - name: Pinned high-definition wallpaper Chromium quality QA
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_HD_459_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '0620b9dfedf041ad4ef235de2d24beff25c7401e'
+          test "$(git -C candidate branch --show-current)" = 'fix/desktop-wallpaper-hd-quality-20261123'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/wallpaper-hd-deps.log" 2>&1 || { echo 'WALLPAPER_HD_FAIL dependencies'; exit 1; }
+          node --test tests/default-desktop-layout.test.mjs >"$RUNNER_TEMP/wallpaper-hd-node.log" 2>&1 || { echo 'WALLPAPER_HD_FAIL node'; grep -E '^not ok [0-9]+|^# (tests|pass|fail) ' "$RUNNER_TEMP/wallpaper-hd-node.log" | tail -n 8 | cut -c1-140 || true; exit 1; }
+          echo 'WALLPAPER_HD_PASS node_layout_contracts'
+          npm run build >"$RUNNER_TEMP/wallpaper-hd-build.log" 2>&1 || { echo 'WALLPAPER_HD_FAIL vite'; exit 1; }
+          echo 'WALLPAPER_HD_PASS vite_build'
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/wallpaper-hd-chromium.log" 2>&1 || { echo 'WALLPAPER_HD_FAIL chromium_install'; exit 1; }
+          set +e
+          node tests/desktop-wallpaper-hd.browser.mjs >"$RUNNER_TEMP/wallpaper-hd-browser.log" 2>&1
+          outcome=$?
+          set -e
+          grep -E '^WALLPAPER_HD_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/wallpaper-hd-browser.log" | tail -n 16 | cut -c1-180 || true
+          test "$outcome" -eq 0 || { echo 'WALLPAPER_HD_GATE_FAILED; no deployment'; exit 1; }
+          set +e
+          node tests/desktop-personalization.browser.mjs >"$RUNNER_TEMP/wallpaper-hd-integration.log" 2>&1
+          integration=$?
+          set -e
+          grep -E '^DESKTOP_AUDIT_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/wallpaper-hd-integration.log" | tail -n 22 | cut -c1-160 || true
+          test "$integration" -eq 0 || { echo 'WALLPAPER_HD_FAIL existing_personalization; no deployment'; exit 1; }
+          echo 'WALLPAPER_HD_ALL_GATES_PASS; no deployment'
+      - name: Pinned HD wallpaper browser-only checkpoint rerun
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_HD_R2_459_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_HD_R3_459_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected='e74e12145ed14b76341c7581784c5aaae77fe476'
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_WALLPAPER_HD_R3_459_20261123' ]]; then expected='3da4d7d9dca879003e5b37c02f05c64b27b72202'; fi
+          test "$(git -C candidate rev-parse HEAD)" = "$expected"
+          test "$(git -C candidate branch --show-current)" = 'fix/desktop-wallpaper-hd-quality-20261123'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/hd-r2-ci.log" 2>&1 || { echo 'HD_R2_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/hd-r2-chromium.log" 2>&1 || { echo 'HD_R2_FAIL chromium'; exit 1; }
+          echo 'HD_R2_REUSE Node layout contract and Vite build PASS from run 45194110245'
+          set +e
+          node tests/desktop-wallpaper-hd.browser.mjs >"$RUNNER_TEMP/hd-r2-browser.log" 2>&1
+          result=$?
+          set -e
+          grep -E '^WALLPAPER_HD_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/hd-r2-browser.log" | tail -n 20 | cut -c1-160 || true
+          test "$result" -eq 0 || { echo 'HD_R2_GATE_FAILED; no deploy'; exit 1; }
+          echo 'HD_R2_GATE_PASS; no deployment'
+      - name: Pinned HD wallpaper existing personalization regression
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_WALLPAPER_INTEGRATION_459_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '3da4d7d9dca879003e5b37c02f05c64b27b72202'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/hd-integration-ci.log" 2>&1 || { echo 'HD_INT_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/hd-integration-chromium.log" 2>&1 || { echo 'HD_INT_FAIL browser'; exit 1; }
+          set +e
+          node tests/desktop-personalization.browser.mjs >"$RUNNER_TEMP/hd-integration-results.log" 2>&1
+          code=$?
+          set -e
+          grep -E '^DESKTOP_AUDIT_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/hd-integration-results.log" | tail -n 24 | cut -c1-170 || true
+          test "$code" -eq 0 || { echo 'HD_INT_GATE_FAILED; no deploy'; exit 1; }
+          echo 'HD_INT_GATE_PASS; no deployment'
+      - name: Pinned HD wallpaper integrated QA-only release
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_RELEASE_459_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_R2_RELEASE_459_20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_ON_V145_RELEASE_459_20261123'
+        shell: bash
+        env:
+          CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          expected='45897a6eb348c2d38eaf277201e134694fbb1f9c'
+          expected_branch='integration/qa-hd-wallpaper-on-v144-20261123'
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_R2_RELEASE_459_20261123' ]]; then expected='7d204156cb27c45a91a027752119e66b34b5b1ef'; fi
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_ON_V145_RELEASE_459_20261123' ]]; then expected='b767d3cea8bb0861ba83c9022d258e52d22f480b'; expected_branch='integration/qa-hd-wallpaper-on-v145-20261123'; fi
+          test "$(git -C candidate rev-parse HEAD)" = "$expected"
+          test "$(git -C candidate branch --show-current)" = "$expected_branch"
+          test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN"
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/qa-hd-wallpaper-install.log" 2>&1 || { echo 'HD_QA_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/qa-hd-wallpaper-chromium.log" 2>&1 || { echo 'HD_QA_FAIL chromium'; exit 1; }
+          set +e
+          node tests/desktop-wallpaper-hd.browser.mjs >"$RUNNER_TEMP/qa-hd-wallpaper-quality.log" 2>&1
+          quality=$?
+          set -e
+          grep -E '^WALLPAPER_HD_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/qa-hd-wallpaper-quality.log" | tail -n 14 | cut -c1-140 || true
+          test "$quality" -eq 0 || { echo 'HD_QA_FAIL quality_gate; no deployment'; exit 1; }
+          set +e
+          node tests/desktop-personalization.browser.mjs >"$RUNNER_TEMP/qa-hd-wallpaper-personalization.log" 2>&1
+          integration=$?
+          set -e
+          grep -E '^DESKTOP_AUDIT_(PASS|FAIL|ALL_PASS) ' "$RUNNER_TEMP/qa-hd-wallpaper-personalization.log" | tail -n 22 | cut -c1-150 || true
+          test "$integration" -eq 0 || { echo 'HD_QA_FAIL personalization_gate; no deployment'; exit 1; }
+          echo 'HD_QA_PASS quality_and_personalization; protected full release next'
+          cd ..
+          askpass="$RUNNER_TEMP/hd-qa-git-askpass"
+          cat > "$askpass" <<'QA_GIT_ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$CANDIDATE_READ_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          QA_GIT_ASKPASS
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          node scripts/run-candidate.mjs release
+ "$RUNNER_TEMP/qa-v147-diag-sealed.log" | tail -n 10 || true
+            echo 'QA_GUARD_DIAG_BLOCK no deployment'
+            exit 1
+          fi
 
       - name: Pinned integrated workspace v147 full release gates
         if: github.event.head_commit.message == 'VERIFY_ADMIN_WORKSPACE_V147_FULL_20261123'
