@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   candidate:
-    if: github.actor == github.repository_owner && github.event.head_commit.message != 'VERIFY_ADMIN_MAIN_482_20261124' && github.event.head_commit.message != 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && github.event.head_commit.message != 'VERIFY_ENVELOPE_MAIN_460_20261124' && github.event.head_commit.message != 'VERIFY_STORY_MAIN_450_20261124' && github.event.head_commit.message != 'VERIFY_CAFE_STOCK_MAIN_430_R2_20261124'
+    if: github.actor == github.repository_owner && github.event.head_commit.message != 'VERIFY_ADMIN_MAIN_482_20261124' && github.event.head_commit.message != 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && github.event.head_commit.message != 'VERIFY_ENVELOPE_MAIN_460_20261124' && github.event.head_commit.message != 'VERIFY_STORY_MAIN_450_20261124' && github.event.head_commit.message != 'VERIFY_KITCHEN_MAIN_432_20261124'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -1657,7 +1657,7 @@ jobs:
           node scripts/run-candidate.mjs release
 
   main-feature-verification:
-    if: github.actor == github.repository_owner && (github.event.head_commit.message == 'VERIFY_ADMIN_MAIN_482_20261124' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' || github.event.head_commit.message == 'VERIFY_CAFE_STOCK_MAIN_430_R2_20261124')
+    if: github.actor == github.repository_owner && (github.event.head_commit.message == 'VERIFY_ADMIN_MAIN_482_20261124' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' || github.event.head_commit.message == 'VERIFY_KITCHEN_MAIN_432_20261124')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -1672,13 +1672,13 @@ jobs:
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          ref: ${{ github.event.head_commit.message == 'VERIFY_CAFE_STOCK_MAIN_430_R2_20261124' && '852e640a689dc2b9446a8cd94e980a2e3d3f9f11' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' && 'f765548ea50032891ab9f98c5b940565ddb610aa' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && '57e177a6b7a53671523f7b1fe0956ad4fcbb3ab4' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && '0b8e7250e0f111e4c5dbc68679094b28988dc365' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
+          ref: ${{ github.event.head_commit.message == 'VERIFY_KITCHEN_MAIN_432_20261124' && 'f9585588f48b264e177c2c336dbbcbd003921f27' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' && 'f765548ea50032891ab9f98c5b940565ddb610aa' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && '57e177a6b7a53671523f7b1fe0956ad4fcbb3ab4' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && '0b8e7250e0f111e4c5dbc68679094b28988dc365' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
           path: candidate
           persist-credentials: false
       - name: Verify fixed source in isolation
         env:
-          VERIFY_MODE: ${{ github.event.head_commit.message == 'VERIFY_CAFE_STOCK_MAIN_430_R2_20261124' && 'batch2' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' && 'story' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && 'envelope' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && 'cafe' || 'admin' }}
-          EXPECTED_REF: ${{ github.event.head_commit.message == 'VERIFY_CAFE_STOCK_MAIN_430_R2_20261124' && '852e640a689dc2b9446a8cd94e980a2e3d3f9f11' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' && 'f765548ea50032891ab9f98c5b940565ddb610aa' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && '57e177a6b7a53671523f7b1fe0956ad4fcbb3ab4' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && '0b8e7250e0f111e4c5dbc68679094b28988dc365' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
+          VERIFY_MODE: ${{ github.event.head_commit.message == 'VERIFY_KITCHEN_MAIN_432_20261124' && 'batch2' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' && 'story' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && 'envelope' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && 'cafe' || 'admin' }}
+          EXPECTED_REF: ${{ github.event.head_commit.message == 'VERIFY_KITCHEN_MAIN_432_20261124' && 'f9585588f48b264e177c2c336dbbcbd003921f27' || github.event.head_commit.message == 'VERIFY_STORY_MAIN_450_20261124' && 'f765548ea50032891ab9f98c5b940565ddb610aa' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && '57e177a6b7a53671523f7b1fe0956ad4fcbb3ab4' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && '0b8e7250e0f111e4c5dbc68679094b28988dc365' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
         working-directory: candidate
         shell: bash
         run: |
@@ -1713,10 +1713,10 @@ jobs:
             exit 0
           fi
           if [[ "$VERIFY_MODE" == batch2 ]]; then
-            run_check node node --test tests/cafe-stock-writes.test.mjs tests/cafe-save-reliability.test.mjs tests/cafe-app-contract.test.mjs tests/cafe-archive-entry.test.mjs tests/cafe-growth-claim.test.mjs
+            run_check node node --test tests/cooking-interaction-guard.test.mjs
             run_check build npm run build
             run_check browser-install npx playwright install --with-deps chromium
-            run_check browser node tests/cafe-partner-decision.browser.mjs
+            run_check browser node tests/cooking-interaction.browser.mjs
             exit 0
           fi
           run_check node npm run test:admin:cloud
