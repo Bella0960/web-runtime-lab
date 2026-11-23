@@ -45,13 +45,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ${{ github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_RETRY_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_QA_V125_PWA_20261123' && 'integration/qa-admin-cloud-v125-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_GATE_R10_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_INTERACTIONS_R9_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_STORAGE_R6_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R4_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_OVERFLOW_DIAG_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VIEWPORT_R2_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_CORE_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || '3db5c6764d2daa12effd6bc0aa49a1ec16a91938' }}
+          ref: ${{ github.event.head_commit.message == 'VERIFY_LAYOUT_CLOCK_DIAG_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_RETRY_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_QA_RELEASE_439_20261123' && 'integration/qa-desktop-439-20261123' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_QA_V125_PWA_20261123' && 'integration/qa-admin-cloud-v125-20261123' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_GATE_R10_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_INTERACTIONS_R9_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_STORAGE_R6_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R4_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_OVERFLOW_DIAG_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VIEWPORT_R2_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_CORE_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || '3db5c6764d2daa12effd6bc0aa49a1ec16a91938' }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
           fetch-depth: 100
       - name: Run all existing candidate gates with sealed logs
-        if: github.event.head_commit.message != 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_STORAGE_R6_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_FINAL_GATE_R10_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_RELEASE_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_RELEASE_RETRY_439_20261123'
+        if: github.event.head_commit.message != 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_STORAGE_R6_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_FINAL_GATE_R10_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_RELEASE_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_QA_RELEASE_RETRY_439_20261123' && github.event.head_commit.message != 'VERIFY_LAYOUT_CLOCK_DIAG_439_20261123'
         shell: bash
         run: |
           set -euo pipefail
@@ -501,4 +501,30 @@ jobs:
           chmod 700 "$askpass"
           export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
           node scripts/run-candidate.mjs release
+
+      - name: Pinned clock gesture regression diagnosis
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_CLOCK_DIAG_439_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = 'c1d6d04422350c81f67a806c786a9175ffaadfba'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/clock-install.log" 2>&1 || { echo 'CLOCK_QA_FAIL deps'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/clock-install-browser.log" 2>&1 || { echo 'CLOCK_QA_FAIL browser-install'; exit 1; }
+          set +e
+          node tests/clock-palette-longpress.test.mjs >"$RUNNER_TEMP/clock-regression.log" 2>&1
+          code=$?
+          set -e
+          node --input-type=module <<'CLOCK_REPORT'
+          import {readFileSync} from 'node:fs';
+          const rows=readFileSync(process.env.RUNNER_TEMP+'/clock-regression.log','utf8').split('\n');
+          const total=rows.find(s=>/^RESULT pass=\d+ fail=\d+ total=\d+$/.test(s));
+          console.log(total ? 'CLOCK_QA_'+total : 'CLOCK_QA_SUMMARY_UNAVAILABLE');
+          for(const s of rows.filter(s=>s.startsWith('FAIL '))){
+            const name=s.slice(5).split(' {')[0].replace(/[^a-zA-Z0-9 -]/g,'');
+            console.log('CLOCK_QA_CHECK '+(/^(large clock|small clock|gesture edges|edit mode|non-clock|palette)/.test(name)?name.slice(0,96):'other'));
+          }
+          CLOCK_REPORT
+          test "$code" -eq 0 || { echo 'CLOCK_QA_FAILED; no deployment'; exit 1; }
+          echo 'CLOCK_QA_PASS'
 
