@@ -224,7 +224,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = 'dc7eb2af60de959c1aa6a5e4b9951bcd3a23d305' || { echo 'ADMIN_EDITORIAL_FAIL source SHA'; exit 1; }
+          test "$(git -C candidate rev-parse HEAD)" = '0137533b4b50b339302777552d24dab8b1fe1a5e' || { echo 'ADMIN_EDITORIAL_FAIL source SHA'; exit 1; }
           test "$(git -C candidate branch --show-current)" = 'ui/admin-editorial-context-20261123' || { echo 'ADMIN_EDITORIAL_FAIL source branch'; exit 1; }
           cd candidate
           npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-editorial-npm.log" 2>&1 || { echo 'ADMIN_EDITORIAL_FAIL dependencies'; exit 1; }
