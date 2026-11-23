@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   candidate:
-    if: github.actor == github.repository_owner
+    if: github.actor == github.repository_owner && github.event.head_commit.message != 'VERIFY_ADMIN_MAIN_482_20261124'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -1589,3 +1589,44 @@ jobs:
           chmod 700 "$askpass"
           export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
           node scripts/run-candidate.mjs release
+
+  main-admin-verification:
+    if: github.actor == github.repository_owner && github.event.head_commit.message == 'VERIFY_ADMIN_MAIN_482_20261124'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/public-content-check.mjs
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          ref: 99e505e2b93002209cfa6a335c328e33da0be3b1
+          path: candidate
+          persist-credentials: false
+      - name: Verify fixed source in isolation
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_check() {
+            local label="$1"
+            shift
+            "$@" >"$RUNNER_TEMP/main-admin-$label.log" 2>&1 || { echo "FAIL $label"; return 1; }
+            echo "PASS $label"
+          }
+          test "$(git rev-parse HEAD)" = '99e505e2b93002209cfa6a335c328e33da0be3b1'
+          run_check install npm ci --no-audit --no-fund
+          run_check node npm run test:admin:cloud
+          run_check delegated node --test tests/admin-cloud-delegated-authority.test.mjs
+          run_check build npm run build
+          run_check pwa npm run test:pwa:navigation
+          run_check browsers npx playwright install --with-deps chromium webkit
+          run_check chromium npm run test:admin:cloud:browser
+          run_check webkit node tests/admin-cloud-ios-webkit.mjs
+          run_check workerd node tests/admin-cloud-workerd.runtime.mjs
