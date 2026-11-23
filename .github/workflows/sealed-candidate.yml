@@ -99,7 +99,7 @@ jobs:
           test "$(git -C candidate rev-parse HEAD)" = 'd26ce739efb9f09ae4c3e04e908f9b1f87978432' || { echo 'Theme-studio candidate SHA mismatch'; exit 1; }
           test "$(git -C candidate rev-parse HEAD^)" = '66b05c0b7002265732afec70ac3ac5877e6532fb' || { echo 'Theme-studio v144 baseline mismatch'; exit 1; }
           actual="$(git -C candidate diff --name-only HEAD^ HEAD)"
-          expected="$(printf '%s\\n' 'package.json' 'scripts/qa-direct-release.mjs' 'tests/theme-studio-import-browser.mjs' 'theme-studio/studio.js')"
+          expected="$(printf '%s\n' 'package.json' 'scripts/qa-direct-release.mjs' 'tests/theme-studio-import-browser.mjs' 'theme-studio/studio.js')"
           test "$actual" = "$expected" || { echo 'Unreviewed theme-studio candidate files'; exit 1; }
       - name: Pin v124 virtual-user test-only candidate
         if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_VIRTUAL_USER_V124_20261123' }}
