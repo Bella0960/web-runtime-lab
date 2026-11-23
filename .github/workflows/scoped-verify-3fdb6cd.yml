@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: scoped-verify-3fdb6cd-${{ github.event.head_commit.message == 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && 'desktop-only' || 'shared' }}
+  group: scoped-verify-3fdb6cd-${{ startsWith(github.event.head_commit.message, 'VERIFY_LAYOUT_') && 'desktop-only' || 'shared' }}
   cancel-in-progress: false
 
 jobs:
@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ${{ github.event.head_commit.message == 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_STORAGE_R6_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R4_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_OVERFLOW_DIAG_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VIEWPORT_R2_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_MOBILE_DELEGATED_20261123' && '68259b97db882030b03f335e99788af62a4260e0' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_FINAL_20261123' && '2a3b789bc39ef9847b453d90a6a2ab7b1b57880a' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_COMPAT_20261123' && '1aa403d01f34e4415afbd11a64c6091e237b93d9' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_LOG_20261123' && 'ddeb061d5d38f3ab9743885ab2f9722d77ffac92' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_DIAG_20261123' && 'b32b13773b792964a5e839224f2b69c93fa4c438' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_20261123' && '1238b884509606ee291f3ad2db31ae83165a216c' || github.event.head_commit.message == 'VERIFY_LAYOUT_CORE_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_001_DEPLOY_GATES_20261123' && '08b61d81024c8c98e6c168f6512dfb2fc408d0bf' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_001_SCOPED_20261123' && '08b61d81024c8c98e6c168f6512dfb2fc408d0bf' || '3db5c6764d2daa12effd6bc0aa49a1ec16a91938' }}
+          ref: ${{ github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_INTERACTIONS_R9_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_STORAGE_R6_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R4_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_OVERFLOW_DIAG_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VIEWPORT_R2_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_MOBILE_DELEGATED_20261123' && '68259b97db882030b03f335e99788af62a4260e0' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_FINAL_20261123' && '2a3b789bc39ef9847b453d90a6a2ab7b1b57880a' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_COMPAT_20261123' && '1aa403d01f34e4415afbd11a64c6091e237b93d9' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_LOG_20261123' && 'ddeb061d5d38f3ab9743885ab2f9722d77ffac92' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_DIAG_20261123' && 'b32b13773b792964a5e839224f2b69c93fa4c438' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_20261123' && '1238b884509606ee291f3ad2db31ae83165a216c' || github.event.head_commit.message == 'VERIFY_LAYOUT_CORE_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_001_DEPLOY_GATES_20261123' && '08b61d81024c8c98e6c168f6512dfb2fc408d0bf' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_001_SCOPED_20261123' && '08b61d81024c8c98e6c168f6512dfb2fc408d0bf' || '3db5c6764d2daa12effd6bc0aa49a1ec16a91938' }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -447,4 +447,147 @@ jobs:
           grep -E '^DQA_(PASS|FAIL|STATE) ' "$RUNNER_TEMP/desktop-visible.log" | tail -n 20 | cut -c1-120 || true
           test "$outcome" -eq 0 || { echo 'DQA_FAILED test-only; no merge or deploy'; exit 1; }
           echo 'DQA_ALL_PASS verify-only; no deployment'
+
+      - name: Pinned desktop final interaction verification
+        if: github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_INTERACTIONS_R9_20261123'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = '8ff181c2afbf2d3c15130684fe7f196e6adb33f8'
+          cd candidate
+          npm ci --no-audit --no-fund >"$RUNNER_TEMP/desktop-final-ci.log" 2>&1 || { echo 'DFINAL_FAIL dependencies'; exit 1; }
+          npm run build >"$RUNNER_TEMP/desktop-final-build.log" 2>&1 || { echo 'DFINAL_FAIL build'; exit 1; }
+          npx playwright install --with-deps chromium >"$RUNNER_TEMP/desktop-final-browser.log" 2>&1 || { echo 'DFINAL_FAIL chromium-install'; exit 1; }
+          set +e
+          node --input-type=module >"$RUNNER_TEMP/desktop-final.log" 2>&1 <<'DESKTOP_FINAL_QA'
+          import assert from 'node:assert/strict';
+          import {createServer} from 'node:http';
+          import {readFile} from 'node:fs/promises';
+          import path from 'node:path';
+          import {chromium} from 'playwright';
+          const base=path.resolve('dist');
+          const server=createServer(async(req,res)=>{
+            try{
+              const url=new URL(req.url||'/','http://127.0.0.1');
+              const file=path.resolve(base,'.'+(url.pathname==='/'?'/index.html':url.pathname));
+              if(!file.startsWith(base+path.sep)){res.writeHead(403).end();return;}
+              const payload=await readFile(file);
+              res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.webp':'image/webp','.woff2':'font/woff2','.json':'application/json'})[path.extname(file)]||'application/octet-stream');
+              res.setHeader('Cache-Control','no-store');
+              res.end(payload);
+            }catch{res.writeHead(404).end();}
+          });
+          await new Promise((yes,no)=>{server.once('error',no);server.listen(0,'127.0.0.1',yes);});
+          const browser=await chromium.launch({headless:true});
+          const url=()=> 'http://127.0.0.1:'+server.address().port+'/index.html';
+          const open=async()=>{
+            const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});
+            const page=await context.newPage();
+            await page.goto(url(),{waitUntil:'load'});
+            await page.locator('#gridPage0 [data-drag="clock-lg"]').waitFor({timeout:18000});
+            return {context,page};
+          };
+          const drag=async(page,selector,toX,toY)=>{
+            const el=page.locator(selector);await el.scrollIntoViewIfNeeded();
+            const b=await el.boundingBox();assert.ok(b);
+            await page.mouse.move(b.x+b.width/2,b.y+b.height/2);
+            await page.mouse.down();
+            await page.waitForTimeout(340);
+            await page.mouse.move(toX,toY,{steps:10});
+          };
+          let stage='init';
+          try{
+            stage='cross-page-prepare';
+            {
+              const {context,page}=await open();
+              await page.evaluate(()=>{
+                const l=JSON.parse(localStorage.getItem('ds_layout_v14'));
+                l.removed=l.removed.filter(x=>x!=='social');
+                l.pages[1].unshift('social');
+                localStorage.setItem('ds_layout_v14',JSON.stringify(l));
+              });
+              await page.reload({waitUntil:'load'});
+              await page.locator('#gridPage1 > [data-drag="social"]').waitFor();
+              const span=await page.locator('#gridPage1 > [data-drag="social"]').evaluate(el=>{const s=getComputedStyle(el);return [s.gridColumnStart,s.gridColumnEnd,s.gridRowStart,s.gridRowEnd]});
+              assert.ok(span.join(' ').includes('span 4'),'social width not four columns');
+              assert.ok(span.join(' ').includes('span 3'),'social height not three rows');
+              console.log('DFINAL_PASS wide-widget-4x3');
+              stage='cross-page-drag';
+              await page.evaluate(()=>document.querySelectorAll('.page-dots .dot')[1].click());
+              await page.waitForTimeout(500);
+              await drag(page,'#gridPage1 > [data-drag="social"]',380,210);
+              await page.waitForTimeout(530);
+              await page.mouse.up();
+              const end=await page.evaluate(()=>({
+                onLast:!!document.querySelector('#gridPage2 > [data-drag="social"]'),
+                stored:JSON.parse(localStorage.getItem('ds_layout_v14')),
+                ghostCount:document.querySelectorAll('.drag-avatar,.drag-placeholder').length
+              }));
+              assert.equal(end.onLast,true,'wide widget did not cross to next page');
+              assert.equal(end.stored.pages[2].includes('social'),true);
+              assert.equal(end.ghostCount,0);
+              await page.reload({waitUntil:'load'});
+              assert.equal(await page.locator('#gridPage2 > [data-drag="social"]').count(),1);
+              console.log('DFINAL_PASS wide-widget-cross-page-and-reload');
+              await context.close();
+            }
+            stage='dock-limit';
+            {
+              const {context,page}=await open();
+              await page.evaluate(()=>{
+                const v=JSON.parse(localStorage.getItem('ds_layout_v14'));
+                const extra=['app_inspect','app_worldbook','app_memory'];
+                v.pages=v.pages.map(p=>p.filter(id=>!extra.includes(id)));
+                v.dock=[...v.dock,...extra];
+                localStorage.setItem('ds_layout_v14',JSON.stringify(v));
+              });
+              await page.reload({waitUntil:'load'});
+              assert.equal(await page.locator('#dockBar > [data-drag]').count(),5);
+              const box=await page.locator('#dockBar').boundingBox();assert.ok(box);
+              await drag(page,'#gridPage0 > [data-drag="app_forum"]',box.x+box.width/2,box.y+box.height/2);
+              await page.mouse.up();
+              const state=await page.evaluate(()=>({
+                dock:[...document.querySelectorAll('#dockBar > [data-drag]')].map(el=>el.dataset.drag),
+                forumInGrid:!!document.querySelector('#gridPage0 > [data-drag="app_forum"]'),
+                persisted:JSON.parse(localStorage.getItem('ds_layout_v14')),
+                ghosts:document.querySelectorAll('.drag-placeholder,.drag-avatar').length
+              }));
+              assert.equal(state.dock.length,5);
+              assert.equal(state.forumInGrid,true);
+              assert.equal(state.persisted.dock.length,5);
+              assert.equal(state.persisted.pages[0].includes('app_forum'),true);
+              assert.equal(state.ghosts,0);
+              console.log('DFINAL_PASS dock-max-five-no-data-loss');
+              await context.close();
+            }
+            stage='legacy-preservation';
+            {
+              const {context,page}=await open();
+              const original=await page.evaluate(()=>{
+                const old=localStorage.getItem('ds_layout_v14');
+                localStorage.setItem('ds_layout_v13',old);
+                localStorage.removeItem('ds_layout_v14');
+                return old;
+              });
+              await page.reload({waitUntil:'load'});
+              const migrated=await page.evaluate(()=>({old:localStorage.getItem('ds_layout_v13'),latest:localStorage.getItem('ds_layout_v14')}));
+              assert.equal(migrated.old,original,'legacy record deleted or rewritten');
+              assert.ok(migrated.latest,'new version was not created');
+              await page.evaluate(()=>localStorage.setItem('ds_layout_v14','{broken'));
+              await page.reload({waitUntil:'load'});
+              const recovered=await page.evaluate(()=>({old:localStorage.getItem('ds_layout_v13'),latest:JSON.parse(localStorage.getItem('ds_layout_v14'))}));
+              assert.equal(recovered.old,original);
+              assert.equal(recovered.latest.v,14);
+              assert.ok(recovered.latest.pages.length>=3);
+              console.log('DFINAL_PASS legacy-preserved-and-corrupt-recovered');
+              await context.close();
+            }
+          }catch(e){console.log('DFINAL_FAIL '+stage+' '+String(e.name||'Error').replace(/[^a-zA-Z]/ig,''));throw e;}
+          finally{await browser.close();await new Promise(done=>server.close(done));}
+          DESKTOP_FINAL_QA
+          status=$?
+          set -e
+          grep -E '^DFINAL_(PASS|FAIL) ' "$RUNNER_TEMP/desktop-final.log" | tail -n 15 | cut -c1-120 || true
+          test "$status" -eq 0 || exit 1
+          echo 'DFINAL_ALL_PASS; no deploy'
 
