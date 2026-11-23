@@ -224,7 +224,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = 'a2a6efe956e96a61464a91320afec7fc3e4e1263' || { echo 'ADMIN_WORKSPACE_FAIL source-sha'; exit 1; }
+          test "$(git -C candidate rev-parse HEAD)" = '797375133b286e95cfd2522758f3c40034d9891b' || { echo 'ADMIN_WORKSPACE_FAIL source-sha'; exit 1; }
           test "$(git -C candidate branch --show-current)" = 'feature/admin-workspace-dashboard-20261123' || { echo 'ADMIN_WORKSPACE_FAIL source-branch'; exit 1; }
           cd candidate
           npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-workspace-npm.log" 2>&1 || { echo 'ADMIN_WORKSPACE_FAIL dependencies'; exit 1; }
