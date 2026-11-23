@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   candidate:
-    if: github.actor == github.repository_owner && github.event.head_commit.message != 'VERIFY_ADMIN_MAIN_482_20261124' && github.event.head_commit.message != 'VERIFY_CAFE_ARCHIVE_MAIN_427_20261124' && github.event.head_commit.message != 'VERIFY_ENVELOPE_MAIN_460_20261124'
+    if: github.actor == github.repository_owner && github.event.head_commit.message != 'VERIFY_ADMIN_MAIN_482_20261124' && github.event.head_commit.message != 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && github.event.head_commit.message != 'VERIFY_ENVELOPE_MAIN_460_20261124'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -1657,7 +1657,7 @@ jobs:
           node scripts/run-candidate.mjs release
 
   main-feature-verification:
-    if: github.actor == github.repository_owner && (github.event.head_commit.message == 'VERIFY_ADMIN_MAIN_482_20261124' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_20261124' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124')
+    if: github.actor == github.repository_owner && (github.event.head_commit.message == 'VERIFY_ADMIN_MAIN_482_20261124' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' || github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -1672,13 +1672,13 @@ jobs:
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          ref: ${{ github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && '57e177a6b7a53671523f7b1fe0956ad4fcbb3ab4' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_20261124' && '4a590b0e80d61cc1daab42afae9e065968237058' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
+          ref: ${{ github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && '57e177a6b7a53671523f7b1fe0956ad4fcbb3ab4' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && '0b8e7250e0f111e4c5dbc68679094b28988dc365' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
           path: candidate
           persist-credentials: false
       - name: Verify fixed source in isolation
         env:
-          VERIFY_MODE: ${{ github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && 'envelope' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_20261124' && 'cafe' || 'admin' }}
-          EXPECTED_REF: ${{ github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && '57e177a6b7a53671523f7b1fe0956ad4fcbb3ab4' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_20261124' && '4a590b0e80d61cc1daab42afae9e065968237058' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
+          VERIFY_MODE: ${{ github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && 'envelope' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && 'cafe' || 'admin' }}
+          EXPECTED_REF: ${{ github.event.head_commit.message == 'VERIFY_ENVELOPE_MAIN_460_20261124' && '57e177a6b7a53671523f7b1fe0956ad4fcbb3ab4' || github.event.head_commit.message == 'VERIFY_CAFE_ARCHIVE_MAIN_427_R2_20261124' && '0b8e7250e0f111e4c5dbc68679094b28988dc365' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
         working-directory: candidate
         shell: bash
         run: |
