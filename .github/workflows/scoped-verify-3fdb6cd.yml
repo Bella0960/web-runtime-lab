@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   candidate:
-    if: github.actor == github.repository_owner && github.event.head_commit.message != 'VERIFY_ADMIN_MAIN_482_20261124'
+    if: github.actor == github.repository_owner && github.event.head_commit.message != 'VERIFY_ADMIN_MAIN_482_20261124' && github.event.head_commit.message != 'VERIFY_CAFE_MAIN_425_20261124'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -1590,8 +1590,8 @@ jobs:
           export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
           node scripts/run-candidate.mjs release
 
-  main-admin-verification:
-    if: github.actor == github.repository_owner && github.event.head_commit.message == 'VERIFY_ADMIN_MAIN_482_20261124'
+  main-feature-verification:
+    if: github.actor == github.repository_owner && (github.event.head_commit.message == 'VERIFY_ADMIN_MAIN_482_20261124' || github.event.head_commit.message == 'VERIFY_CAFE_MAIN_425_20261124')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -1606,10 +1606,13 @@ jobs:
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          ref: 99e505e2b93002209cfa6a335c328e33da0be3b1
+          ref: ${{ github.event.head_commit.message == 'VERIFY_CAFE_MAIN_425_20261124' && 'a53b68a6091c8adc9e3bb7f0bba615914db56882' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
           path: candidate
           persist-credentials: false
       - name: Verify fixed source in isolation
+        env:
+          VERIFY_MODE: ${{ github.event.head_commit.message == 'VERIFY_CAFE_MAIN_425_20261124' && 'cafe' || 'admin' }}
+          EXPECTED_REF: ${{ github.event.head_commit.message == 'VERIFY_CAFE_MAIN_425_20261124' && 'a53b68a6091c8adc9e3bb7f0bba615914db56882' || '99e505e2b93002209cfa6a335c328e33da0be3b1' }}
         working-directory: candidate
         shell: bash
         run: |
@@ -1620,8 +1623,15 @@ jobs:
             "$@" >"$RUNNER_TEMP/main-admin-$label.log" 2>&1 || { echo "FAIL $label"; return 1; }
             echo "PASS $label"
           }
-          test "$(git rev-parse HEAD)" = '99e505e2b93002209cfa6a335c328e33da0be3b1'
+          test "$(git rev-parse HEAD)" = "$EXPECTED_REF"
           run_check install npm ci --no-audit --no-fund
+          if [[ "$VERIFY_MODE" == cafe ]]; then
+            run_check cafe-node node --test tests/cafe-app-contract.test.mjs
+            run_check cafe-build npm run build
+            run_check cafe-browser-install npx playwright install --with-deps chromium
+            run_check cafe-browser node tests/cafe-partner-decision.browser.mjs
+            exit 0
+          fi
           run_check node npm run test:admin:cloud
           run_check delegated node --test tests/admin-cloud-delegated-authority.test.mjs
           run_check build npm run build
