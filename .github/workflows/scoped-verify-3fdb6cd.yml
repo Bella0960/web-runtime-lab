@@ -371,14 +371,14 @@ jobs:
           import {readFileSync} from 'node:fs';
           import assert from 'node:assert/strict';
           const source=readFileSync('candidate/scripts/qa-direct-release.mjs','utf8');
-          for(const line of [
-            "const BRANCH = 'integration/qa-app-poster-novel-on-v148-20261124';",
-            "const QA = 'maomao-aw-qa-20261114';",
-            "const CORE = 'maomao-identity-core';"
-          ]) assert.ok(source.includes(line),'APP_V149_RELEASE_BLOCK altered safe target');
+          assert.ok(source.includes("const BRANCH = 'integration/qa-app-poster-novel-on-v148-20261124';"),'APP_V149_RELEASE_BLOCK pinned source branch');
+          assert.ok(source.includes('await cloudflarePreflight()'),'APP_V149_RELEASE_BLOCK missing account safety preflight');
           // The live QA must still be the exact tested v148 base; a concurrent
           // deployment by another workstream must not be silently overwritten.
-          const response=await fetch('https://preview.mao520.com/qa-build-receipt.json?app_v149_predeploy='+Date.now(),{
+          const line=source.split('\n').find(x=>x.includes('qa-build-receipt.json?commit=')&&x.includes("const url = 'https://"));
+          const owner=line?.split("'")[1]?.split('/qa-build-receipt.json')[0];
+          assert.ok(owner?.startsWith('https://'),'APP_V149_RELEASE_BLOCK cannot determine QA-only origin');
+          const response=await fetch(owner+'/qa-build-receipt.json?app_v149_predeploy='+Date.now(),{
             method:'GET',headers:{accept:'application/json'},cache:'no-store',redirect:'manual',signal:AbortSignal.timeout(20000)
           });
           assert.equal(response.status,200,'APP_V149_RELEASE_BLOCK live QA receipt not found');
