@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ${{ github.event.head_commit.message == 'VERIFY_FOOTPRINT_CONTRACT_V121_20261123' && 'd7d51ebe505a9e4d5a27be0bf64accd6370a6a30' || github.event.head_commit.message == 'VERIFY_FOOTPRINT_V120_INTEGRATION_20261123' && '3fd044e1fd6a856393bef0e189f0f148c98d6bca' || github.event.head_commit.message == 'VERIFY_CHARACTER_AI_ACTIVE_PROFILE_20261123' && 'b594bb18f26e80249fc0bd107ead9c7045704c51' || github.event.head_commit.message == 'VERIFY_MUSIC_QA_NODE_FINAL3_20261123' && 'e136fc74c879ae10a4048daa8d4e04f6ae209541' || github.event.head_commit.message == 'VERIFY_MUSIC_QA_NODE_FINAL2_20261123' && 'd2da3b571adcf31911012b6d1b15aa88d8580a4d' || github.event.head_commit.message == 'VERIFY_MUSIC_BUILD_BROWSER_R2_20261123' && '5468631242b5a2d2406332142c4fc2d360c2bd11' || github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_395_20261122' && '92b4785c91cc61149070d7ac7e62c86823ffd300' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_FINAL_395_20261122' && 'integration/qa-storage-395-20261122' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_CACHE_FINAL_395_20261122' && 'integration/qa-storage-395-20261122' || github.event.head_commit.message == 'VERIFY_STORAGE_AFTER_CHAT_EDIT_20261123' && 'integration/qa-storage-after-edit-20261123' || 'ad341afc481063c4a0943380650722e306f3ba20' }}
+          ref: ${{ github.event.head_commit.message == 'VERIFY_APP_FIRST_BATCH_20261124' && '9bba4a88fb9a83d05d44be9cbac816f1c2ba5e45' || github.event.head_commit.message == 'VERIFY_FOOTPRINT_CONTRACT_V121_20261123' && 'd7d51ebe505a9e4d5a27be0bf64accd6370a6a30' || github.event.head_commit.message == 'VERIFY_FOOTPRINT_V120_INTEGRATION_20261123' && '3fd044e1fd6a856393bef0e189f0f148c98d6bca' || github.event.head_commit.message == 'VERIFY_CHARACTER_AI_ACTIVE_PROFILE_20261123' && 'b594bb18f26e80249fc0bd107ead9c7045704c51' || github.event.head_commit.message == 'VERIFY_MUSIC_QA_NODE_FINAL3_20261123' && 'e136fc74c879ae10a4048daa8d4e04f6ae209541' || github.event.head_commit.message == 'VERIFY_MUSIC_QA_NODE_FINAL2_20261123' && 'd2da3b571adcf31911012b6d1b15aa88d8580a4d' || github.event.head_commit.message == 'VERIFY_MUSIC_BUILD_BROWSER_R2_20261123' && '5468631242b5a2d2406332142c4fc2d360c2bd11' || github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_395_20261122' && '92b4785c91cc61149070d7ac7e62c86823ffd300' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_FINAL_395_20261122' && 'integration/qa-storage-395-20261122' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_CACHE_FINAL_395_20261122' && 'integration/qa-storage-395-20261122' || github.event.head_commit.message == 'VERIFY_STORAGE_AFTER_CHAT_EDIT_20261123' && 'integration/qa-storage-after-edit-20261123' || 'ad341afc481063c4a0943380650722e306f3ba20' }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -45,9 +45,105 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected="${{ github.event.head_commit.message == 'VERIFY_FOOTPRINT_CONTRACT_V121_20261123' && 'd7d51ebe505a9e4d5a27be0bf64accd6370a6a30' || github.event.head_commit.message == 'VERIFY_FOOTPRINT_V120_INTEGRATION_20261123' && '3fd044e1fd6a856393bef0e189f0f148c98d6bca' || github.event.head_commit.message == 'VERIFY_CHARACTER_AI_ACTIVE_PROFILE_20261123' && 'b594bb18f26e80249fc0bd107ead9c7045704c51' || github.event.head_commit.message == 'VERIFY_MUSIC_QA_NODE_FINAL3_20261123' && 'e136fc74c879ae10a4048daa8d4e04f6ae209541' || github.event.head_commit.message == 'VERIFY_MUSIC_QA_NODE_FINAL2_20261123' && 'd2da3b571adcf31911012b6d1b15aa88d8580a4d' || github.event.head_commit.message == 'VERIFY_MUSIC_BUILD_BROWSER_R2_20261123' && '5468631242b5a2d2406332142c4fc2d360c2bd11' || github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_395_20261122' && '92b4785c91cc61149070d7ac7e62c86823ffd300' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_FINAL_395_20261122' && 'adaa0dc67bfa6759ded721a6618a7f8a9e08b4d1' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_CACHE_FINAL_395_20261122' && 'c67ffe4c21aca0f1de6a02ec066264fce7cf78f7' || github.event.head_commit.message == 'VERIFY_STORAGE_AFTER_CHAT_EDIT_20261123' && '08a3ab59f75df89caa6b56a3467ab8cbac9062f8' || 'ad341afc481063c4a0943380650722e306f3ba20' }}"
+          expected="${{ github.event.head_commit.message == 'VERIFY_APP_FIRST_BATCH_20261124' && '9bba4a88fb9a83d05d44be9cbac816f1c2ba5e45' || github.event.head_commit.message == 'VERIFY_FOOTPRINT_CONTRACT_V121_20261123' && 'd7d51ebe505a9e4d5a27be0bf64accd6370a6a30' || github.event.head_commit.message == 'VERIFY_FOOTPRINT_V120_INTEGRATION_20261123' && '3fd044e1fd6a856393bef0e189f0f148c98d6bca' || github.event.head_commit.message == 'VERIFY_CHARACTER_AI_ACTIVE_PROFILE_20261123' && 'b594bb18f26e80249fc0bd107ead9c7045704c51' || github.event.head_commit.message == 'VERIFY_MUSIC_QA_NODE_FINAL3_20261123' && 'e136fc74c879ae10a4048daa8d4e04f6ae209541' || github.event.head_commit.message == 'VERIFY_MUSIC_QA_NODE_FINAL2_20261123' && 'd2da3b571adcf31911012b6d1b15aa88d8580a4d' || github.event.head_commit.message == 'VERIFY_MUSIC_BUILD_BROWSER_R2_20261123' && '5468631242b5a2d2406332142c4fc2d360c2bd11' || github.event.head_commit.message == 'VERIFY_STORAGE_BASELINE_20261122' && 'a5415d7e28280fd07cea4d02e19e87d9ec36083e' || github.event.head_commit.message == 'VERIFY_STORAGE_395_20261122' && '2c0685d5b3dd39851c381a2231050827c6076bed' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_395_20261122' && '92b4785c91cc61149070d7ac7e62c86823ffd300' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_FINAL_395_20261122' && 'adaa0dc67bfa6759ded721a6618a7f8a9e08b4d1' || github.event.head_commit.message == 'VERIFY_STORAGE_QA_CACHE_FINAL_395_20261122' && 'c67ffe4c21aca0f1de6a02ec066264fce7cf78f7' || github.event.head_commit.message == 'VERIFY_STORAGE_AFTER_CHAT_EDIT_20261123' && '08a3ab59f75df89caa6b56a3467ab8cbac9062f8' || 'ad341afc481063c4a0943380650722e306f3ba20' }}"
           test "$(git -C candidate rev-parse HEAD)" = "$expected"
           cd candidate
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_APP_FIRST_BATCH_20261124' ]]; then
+            echo 'APP QA BATCH: pinned poster #468 and novel #471; verify only'
+            npm ci --no-audit --no-fund >"$RUNNER_TEMP/app-qa-install.log" 2>&1 || { echo 'FAIL APP npm ci'; exit 1; }
+            node --test --test-concurrency=1 tests/poster-visual-archive.test.mjs tests/novel-ai-channel.test.mjs >"$RUNNER_TEMP/app-qa-node.log" 2>&1 || {
+              echo 'FAIL APP Node';
+              grep -E '^not ok [0-9]+|^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/app-qa-node.log" | head -n 22 | cut -c1-160 || true
+              exit 1
+            }
+            grep -E '^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/app-qa-node.log" | tail -n 3 || true
+            npm run build >"$RUNNER_TEMP/app-qa-build.log" 2>&1 || {
+              echo 'FAIL APP full Vite build'
+              grep -Ei 'error during build|error:|could not resolve' "$RUNNER_TEMP/app-qa-build.log" | head -n 6 | cut -c1-160 || true
+              exit 1
+            }
+            for path in dist/poster/poster.html dist/novel/novel.html dist/novel/js/novel-ai.js dist/shared/js/phone/phone_storage.js dist/shared/js/phone/phone_api.js; do
+              test -f "$path" || { echo "FAIL APP missing required runtime asset"; exit 1; }
+            done
+            echo 'PASS APP Node + full Vite + runtime assets'
+            npx playwright install --with-deps chromium >"$RUNNER_TEMP/app-qa-chromium-install.log" 2>&1 || { echo 'FAIL APP Chromium setup'; exit 1; }
+            ./node_modules/.bin/vite preview --host 127.0.0.1 --port 3100 --strictPort >"$RUNNER_TEMP/app-qa-preview.log" 2>&1 &
+            preview_pid=$!
+            trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+            ready=0
+            for attempt in $(seq 1 40); do
+              if curl --silent --fail --output /dev/null http://127.0.0.1:3100/poster/poster.html; then ready=1; break; fi
+              sleep 1
+            done
+            test "$ready" = 1 || { echo 'FAIL APP Vite preview readiness'; exit 1; }
+            node --input-type=module <<'APP_QA_JS'
+          import { chromium } from 'playwright';
+          import assert from 'node:assert/strict';
+          const base = 'http://127.0.0.1:3100/';
+          const browser = await chromium.launch({ headless:true, args:['--no-sandbox'] });
+          let phase = 'initial';
+          let pageChecks=0;
+          try {
+            for (const width of [375,390,430]) {
+              const context = await browser.newContext({ viewport: { width, height:844 }, serviceWorkers:'block' });
+              const page = await context.newPage();
+              const faults = [];
+              page.on('pageerror', () => faults.push('runtime'));
+              await page.route('**/*', route => {
+                const url = route.request().url();
+                if(url.startsWith(base) || url.startsWith('data:') || url.startsWith('blob:')) return route.continue();
+                return route.abort();
+              });
+              phase='poster-'+width;
+              const response=await page.goto(base+'poster/poster.html',{waitUntil:'domcontentloaded'});
+              assert.equal(response?.status(),200,'poster route');
+              await page.locator('.item').first().waitFor();
+              assert.equal(await page.locator('.item').count(),6,'poster archive tiles');
+              await page.locator('.item').first().click();
+              await page.locator('#editTitle').fill('QA PERSISTENCE '+width);
+              await page.locator('#save').click();
+              await page.reload({waitUntil:'domcontentloaded'});
+              assert.equal(await page.locator('.item').count(),6,'poster reload count');
+              await page.locator('.item').first().click();
+              assert.equal(await page.locator('#editTitle').inputValue(),'QA PERSISTENCE '+width,'poster persisted');
+              assert.equal(faults.length,0,'poster JS errors');
+              pageChecks++;
+              for (const target of ['novel/novel.html','novel/novel-bible.html','novel/novel-continuity.html','novel/novel-editor.html','novel/novel-planning.html','novel/novel-readers.html','novel/novel-setup.html']) {
+                phase=target+'-'+width;
+                faults.length=0;
+                const response=await page.goto(base+target,{waitUntil:'domcontentloaded'});
+                assert.equal(response?.status(),200,'novel route');
+                await page.waitForFunction(()=>document.readyState==='complete',{timeout:10000});
+                const contract=await page.evaluate(()=>({
+                  ai:typeof window.novelAI,
+                  storage:typeof window.PhoneStorage?.getApiConfig,
+                  api:typeof window.PhoneAPI?.complete,
+                  overflow:document.documentElement.scrollWidth>window.innerWidth+2
+                }));
+                assert.equal(contract.ai,'function','novel adapter');
+                assert.equal(contract.storage,'function','shared config');
+                assert.equal(contract.api,'function','shared channel');
+                assert.equal(contract.overflow,false,'mobile horizontal overflow');
+                assert.equal(faults.length,0,'novel runtime errors');
+                pageChecks++;
+              }
+              phase='novel-no-paid-call-'+width;
+              const noKey=await page.evaluate(async()=>{
+                try {await window.novelAI('qa-system','qa-user');return 'UNEXPECTED_SUCCESS';}
+                catch (err) {return String(err?.message||err);}
+              });
+              assert.match(noKey,/请先打开「设置 → API 设置」/,'missing key must block request');
+              await context.close();
+            }
+            console.log('PASS APP Chromium 375/390/430 routes='+pageChecks+' no paid calls; no deployment');
+          } catch(e) {
+            console.error('FAIL APP Chromium phase='+phase+' kind='+String(e?.name||'unknown'));
+            process.exitCode=1;
+          } finally {await browser.close();}
+          APP_QA_JS
+            echo 'SUCCESS APP pinned Node + Vite + Chromium; QA verification only'
+            exit 0
+          fi
           if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_FOOTPRINT_CONTRACT_V121_20261123' ]]; then
             echo 'FOOTPRINT CONTRACT: reviewed test-only candidate, no deployment'
             npm ci --no-audit --no-fund >"$RUNNER_TEMP/foot-contract-install.log" 2>&1 || { echo 'FAIL footprint contract npm ci'; exit 1; }
