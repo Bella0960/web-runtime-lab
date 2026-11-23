@@ -879,7 +879,7 @@ jobs:
           expected='45897a6eb348c2d38eaf277201e134694fbb1f9c'
           expected_branch='integration/qa-hd-wallpaper-on-v144-20261123'
           if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_R2_RELEASE_459_20261123' ]]; then expected='7d204156cb27c45a91a027752119e66b34b5b1ef'; fi
-          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_ON_V145_RELEASE_459_20261123' ]]; then expected='7185e25233e86e2050f4bb72c67d2ddf53f58431'; expected_branch='integration/qa-hd-wallpaper-on-v145-20261123'; fi
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_QA_HD_WALLPAPER_ON_V145_RELEASE_459_20261123' ]]; then expected='b767d3cea8bb0861ba83c9022d258e52d22f480b'; expected_branch='integration/qa-hd-wallpaper-on-v145-20261123'; fi
           test "$(git -C candidate rev-parse HEAD)" = "$expected"
           test "$(git -C candidate branch --show-current)" = "$expected_branch"
           test -n "$CANDIDATE_READ_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN"
