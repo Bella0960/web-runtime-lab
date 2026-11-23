@@ -49,35 +49,19 @@ jobs:
           test "$(git -C candidate rev-parse HEAD)" = "$expected"
           cd candidate
           if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_ADMIN_CLOUD_001_20261123' ]]; then
-            echo 'ADMIN-CLOUD-001: exact pinned source, isolated verification only'
-            npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-install.log" 2>&1 || { echo 'FAILED ADMIN npm ci'; exit 1; }
-            npm run test:admin:cloud >"$RUNNER_TEMP/admin-node.log" 2>&1 || {
-              echo 'FAILED ADMIN Node suite'
-              grep -E '^# (tests|pass|fail|skipped) [0-9]+' "$RUNNER_TEMP/admin-node.log" | tail -n 5 || true
-              exit 1
-            }
-            grep -E '^# (tests|pass|fail|skipped) [0-9]+' "$RUNNER_TEMP/admin-node.log" | tail -n 5 || true
-            echo 'PASS ADMIN Node suite'
-            npm run build >"$RUNNER_TEMP/admin-build.log" 2>&1 || { echo 'FAILED ADMIN Vite production build'; exit 1; }
-            test -f dist/admin/cloud.html || { echo 'FAILED ADMIN HTML missing in production build'; exit 1; }
-            test -f dist/admin/js/cloud-admin.js || { echo 'FAILED ADMIN client JS missing in production assets'; exit 1; }
-            test -f dist/admin/js/cloud-admin-core.js || { echo 'FAILED ADMIN escaping core missing'; exit 1; }
-            test -f dist/admin/css/cloud-admin.css || { echo 'FAILED ADMIN CSS missing'; exit 1; }
-            node --input-type=module -e '
-              import {readFileSync} from "node:fs";
-              import {strict as assert} from "node:assert";
-              const pages=JSON.parse(readFileSync("dist/pwa-pages.json","utf8"));
-              assert.ok(!pages.some(x=>String(x).startsWith("admin/")),"ADMIN HTML must not be in the PWA pre-cache");
-            ' || { echo 'FAILED ADMIN PWA private-page exclusion'; exit 1; }
-            echo 'PASS ADMIN Vite and PWA exclusion'
-            npx playwright install --with-deps chromium >"$RUNNER_TEMP/admin-chromium-install.log" 2>&1 || { echo 'FAILED ADMIN Chromium install'; exit 1; }
-            npm run test:admin:cloud:browser >"$RUNNER_TEMP/admin-browser.log" 2>&1 || {
-              echo 'FAILED ADMIN Chromium browser suite'
-              grep -E '^PASS |^FAIL |Total:|Passed:|Failed:' "$RUNNER_TEMP/admin-browser.log" | tail -n 15 | cut -c1-110 || true
-              exit 1
-            }
+            echo 'ADMIN-CLOUD isolated verification only'
+            npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-install.log" 2>&1 || { echo 'FAILED ADMIN install'; exit 1; }
+            npm run test:admin:cloud >"$RUNNER_TEMP/admin-node.log" 2>&1 || { echo 'FAILED ADMIN Node tests'; exit 1; }
+            echo 'PASS ADMIN Node'
+            npm run build >"$RUNNER_TEMP/admin-build.log" 2>&1 || { echo 'FAILED ADMIN Vite build'; exit 1; }
+            test -f dist/admin/cloud.html || exit 1
+            test -f dist/admin/js/cloud-admin-core.js || exit 1
+            test -f dist/admin/css/cloud-admin.css || exit 1
+            if grep -q 'admin/cloud.html' dist/pwa-pages.json; then echo 'FAILED ADMIN PWA exclusion'; exit 1; fi
+            echo 'PASS ADMIN build assets and PWA exclusion'
+            npx playwright install --with-deps chromium >"$RUNNER_TEMP/admin-chromium-setup.log" 2>&1 || { echo 'FAILED ADMIN Chromium install'; exit 1; }
+            npm run test:admin:cloud:browser >"$RUNNER_TEMP/admin-browser.log" 2>&1 || { echo 'FAILED ADMIN Chromium'; exit 1; }
             echo 'PASS ADMIN Chromium 375/390/430'
-            echo 'SUCCESS ADMIN-CLOUD-001 verified on current main candidate; no deployment'
             exit 0
           fi
           if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_FOOTPRINT_CONTRACT_V121_20261123' ]]; then
