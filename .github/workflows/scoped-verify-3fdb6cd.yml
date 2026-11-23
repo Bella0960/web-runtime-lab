@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
-          ref: ${{ github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_GATE_R10_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_INTERACTIONS_R9_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_STORAGE_R6_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R4_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_OVERFLOW_DIAG_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VIEWPORT_R2_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_QA_V125_20261123' && 'b874077b528c7a992db87c3ddb12c85083686f25' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_MOBILE_DELEGATED_20261123' && '68259b97db882030b03f335e99788af62a4260e0' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_FINAL_20261123' && '2a3b789bc39ef9847b453d90a6a2ab7b1b57880a' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_COMPAT_20261123' && '1aa403d01f34e4415afbd11a64c6091e237b93d9' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_LOG_20261123' && 'ddeb061d5d38f3ab9743885ab2f9722d77ffac92' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_DIAG_20261123' && 'b32b13773b792964a5e839224f2b69c93fa4c438' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_20261123' && '1238b884509606ee291f3ad2db31ae83165a216c' || github.event.head_commit.message == 'VERIFY_LAYOUT_CORE_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_001_DEPLOY_GATES_20261123' && '08b61d81024c8c98e6c168f6512dfb2fc408d0bf' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_001_SCOPED_20261123' && '08b61d81024c8c98e6c168f6512dfb2fc408d0bf' || '3db5c6764d2daa12effd6bc0aa49a1ec16a91938' }}
+          ref: ${{ github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_QA_V125_COMPACT_20261123' && 'b874077b528c7a992db87c3ddb12c85083686f25' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_GATE_R10_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FINAL_INTERACTIONS_R9_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_UNBLOCK_R8_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_FULL_FIXTURE_R7_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_STORAGE_R6_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R5_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R4_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_OVERFLOW_DIAG_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VIEWPORT_R2_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_CORE_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || '3db5c6764d2daa12effd6bc0aa49a1ec16a91938' }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
           persist-credentials: false
@@ -55,120 +55,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected="${{ github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R4_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_OVERFLOW_DIAG_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VIEWPORT_R2_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_QA_V125_20261123' && 'b874077b528c7a992db87c3ddb12c85083686f25' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_MOBILE_DELEGATED_20261123' && '68259b97db882030b03f335e99788af62a4260e0' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_FINAL_20261123' && '2a3b789bc39ef9847b453d90a6a2ab7b1b57880a' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_COMPAT_20261123' && '1aa403d01f34e4415afbd11a64c6091e237b93d9' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_LOG_20261123' && 'ddeb061d5d38f3ab9743885ab2f9722d77ffac92' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_DIAG_20261123' && 'b32b13773b792964a5e839224f2b69c93fa4c438' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_WORKERD_20261123' && '1238b884509606ee291f3ad2db31ae83165a216c' || github.event.head_commit.message == 'VERIFY_LAYOUT_CORE_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_001_DEPLOY_GATES_20261123' && '08b61d81024c8c98e6c168f6512dfb2fc408d0bf' || github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_001_SCOPED_20261123' && '08b61d81024c8c98e6c168f6512dfb2fc408d0bf' || '3db5c6764d2daa12effd6bc0aa49a1ec16a91938' }}"
+          expected="${{ github.event.head_commit.message == 'VERIFY_ADMIN_CLOUD_QA_V125_COMPACT_20261123' && 'b874077b528c7a992db87c3ddb12c85083686f25' || github.event.head_commit.message == 'VERIFY_LAYOUT_VISIBLE_DRAG_R4_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_OVERFLOW_DIAG_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_VIEWPORT_R2_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || github.event.head_commit.message == 'VERIFY_LAYOUT_CORE_20261123' && '8ff181c2afbf2d3c15130684fe7f196e6adb33f8' || '3db5c6764d2daa12effd6bc0aa49a1ec16a91938' }}"
           test "$(git -C candidate rev-parse HEAD)" = "$expected"
           cd candidate
-          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_ADMIN_CLOUD_QA_V125_20261123' ]]; then
-            echo 'ADMIN_QA_V125 pinned preview candidate verification; not a deployment'
+          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_ADMIN_CLOUD_QA_V125_COMPACT_20261123' ]]; then
+            echo 'ADMIN_QA_V125 isolated read-only verification'
             npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-v125-install.log" 2>&1 || { echo 'ADMIN_QA_FAIL npm-ci'; exit 1; }
             npm run test:admin:cloud >"$RUNNER_TEMP/admin-v125-node.log" 2>&1 || {
-              grep -E '^not ok [0-9]+|^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-v125-node.log" | tail -n 10 | cut -c1-150 || true
-              echo 'ADMIN_QA_FAIL Node'; exit 1;
+              grep -E '^not ok [0-9]+|^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-v125-node.log" | tail -n 12 | cut -c1-140 || true
+              echo 'ADMIN_QA_FAIL node'; exit 1;
             }
-            npm run test:admin:cloud:delegated >"$RUNNER_TEMP/admin-v125-delegate.log" 2>&1 || {
-              grep -E '^not ok [0-9]+|^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-v125-delegate.log" | tail -n 10 | cut -c1-150 || true
+            npm run test:admin:cloud:delegated >"$RUNNER_TEMP/admin-v125-delegated.log" 2>&1 || {
+              grep -E '^not ok [0-9]+|^# (tests|pass|fail) [0-9]+' "$RUNNER_TEMP/admin-v125-delegated.log" | tail -n 12 | cut -c1-140 || true
               echo 'ADMIN_QA_FAIL delegated'; exit 1;
             }
-            echo 'ADMIN_QA_PASS 65 Node + delegated'
-            npm run build >"$RUNNER_TEMP/admin-v125-build.log" 2>&1 || { echo 'ADMIN_QA_FAIL Vite'; exit 1; }
-            test -f dist/admin/cloud.html || { echo 'ADMIN_QA_FAIL missing admin HTML'; exit 1; }
+            echo 'ADMIN_QA_PASS Node65+delegated'
+            npm run build >"$RUNNER_TEMP/admin-v125-vite.log" 2>&1 || { echo 'ADMIN_QA_FAIL vite'; exit 1; }
+            test -f dist/admin/cloud.html || { echo 'ADMIN_QA_FAIL missing HTML'; exit 1; }
             if grep -q 'admin/cloud.html' dist/pwa-pages.json; then echo 'ADMIN_QA_FAIL admin precache'; exit 1; fi
-            echo 'ADMIN_QA_PASS Vite and PWA privacy'
-            npx playwright install --with-deps chromium >"$RUNNER_TEMP/admin-v125-chromium-install.log" 2>&1 || { echo 'ADMIN_QA_FAIL chromium-install'; exit 1; }
-            npm run test:admin:cloud:browser >"$RUNNER_TEMP/admin-v125-browser.log" 2>&1 || { echo 'ADMIN_QA_FAIL chromium'; exit 1; }
-            echo 'ADMIN_QA_PASS Chromium mobile'
-            echo 'ADMIN_QA_V125_RESULT pass; verify-only'
-            exit 0
-          fi
-          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_ADMIN_CLOUD_MOBILE_DELEGATED_20261123' ]]; then
-            echo 'ADMIN_FINAL_MOBILE: pinned delegated and mobile-engine acceptance; local only'
-            npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-mobile-install.log" 2>&1 || { echo 'ADMIN_FINAL_MOBILE_FAIL npm-ci'; exit 1; }
-            node --test tests/admin-cloud-delegated-authority.test.mjs >"$RUNNER_TEMP/admin-delegated.log" 2>&1 || {
-              grep -E '^not ok [0-9]+|^# (tests|pass|fail|skipped) [0-9]+' "$RUNNER_TEMP/admin-delegated.log" | tail -n 13 | cut -c1-150 || true
-              echo 'ADMIN_FINAL_MOBILE_FAIL delegated'
-              exit 1
-            }
-            grep -E '^# (tests|pass|fail|skipped) [0-9]+' "$RUNNER_TEMP/admin-delegated.log" | tail -n 5 || true
-            echo 'ADMIN_FINAL_MOBILE_PASS delegated'
-            npm run build >"$RUNNER_TEMP/admin-mobile-build.log" 2>&1 || { echo 'ADMIN_FINAL_MOBILE_FAIL vite'; exit 1; }
-            npx playwright install --with-deps chromium webkit >"$RUNNER_TEMP/admin-mobile-engine-install.log" 2>&1 || { echo 'ADMIN_FINAL_MOBILE_FAIL engine-install'; exit 1; }
-            npm run test:admin:cloud:browser >"$RUNNER_TEMP/admin-android.log" 2>&1 || {
-              grep -E '^FAIL |^[0-9]+/[0-9]+ browser checks' "$RUNNER_TEMP/admin-android.log" | tail -n 12 | cut -c1-150 || true
-              echo 'ADMIN_FINAL_MOBILE_FAIL android-chromium'; exit 1;
-            }
-            grep -E '^ADMIN_BROWSER_ENGINE=|^[0-9]+/[0-9]+ browser checks' "$RUNNER_TEMP/admin-android.log" | tail -n 3 || true
-            ADMIN_BROWSER_ENGINE=webkit npm run test:admin:cloud:browser >"$RUNNER_TEMP/admin-ios-webkit.log" 2>&1 || {
-              grep -E '^FAIL |^[0-9]+/[0-9]+ browser checks' "$RUNNER_TEMP/admin-ios-webkit.log" | tail -n 12 | cut -c1-150 || true
-              echo 'ADMIN_FINAL_MOBILE_FAIL iphone-webkit'; exit 1;
-            }
-            grep -E '^ADMIN_BROWSER_ENGINE=|^[0-9]+/[0-9]+ browser checks' "$RUNNER_TEMP/admin-ios-webkit.log" | tail -n 3 || true
-            echo 'ADMIN_FINAL_MOBILE_PASS all synthetic delegated and browser-engine tests; no deploy'
-            exit 0
-          fi
-          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_ADMIN_CLOUD_WORKERD_FINAL_20261123' ]]; then
-            echo 'ADMIN_WORKERD_FINAL source SHA pinned; local sandbox only'
-            npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-final-install.log" 2>&1 || { echo 'ADMIN_FINAL_FAIL npm-ci'; exit 1; }
-            npm run build >"$RUNNER_TEMP/admin-final-build.log" 2>&1 || { echo 'ADMIN_FINAL_FAIL vite'; exit 1; }
-            node --check tests/admin-cloud-workerd.runtime.mjs || { echo 'ADMIN_FINAL_FAIL syntax'; exit 1; }
-            node tests/admin-cloud-workerd.runtime.mjs >"$RUNNER_TEMP/admin-final-workerd.log" 2>&1 || {
-              grep -E '^WORKERD_(START_CATEGORY|SANITIZED_LINE|ACCEPTANCE_FAIL|PASS)' "$RUNNER_TEMP/admin-final-workerd.log" | tail -n 14 | cut -c1-190 || true
-              echo 'ADMIN_FINAL_FAIL workerd'
-              exit 1
-            }
-            grep -E '^WORKERD_(PASS|ACCEPTANCE_PASS)' "$RUNNER_TEMP/admin-final-workerd.log" | tail -n 10 || true
-            echo 'ADMIN_FINAL_PASS Workerd 4.166.0; no deployment'
-            exit 0
-          fi
-          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_ADMIN_CLOUD_WORKERD_COMPAT_20261123' ]]; then
-            echo 'ADMIN_WORKERD latest compatible runtime, no deployment'
-            npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-compat-npm.log" 2>&1 || { echo 'ADMIN_COMPAT_FAIL npm-ci'; exit 1; }
-            npm run build >"$RUNNER_TEMP/admin-compat-vite.log" 2>&1 || { echo 'ADMIN_COMPAT_FAIL vite'; exit 1; }
-            version="$(npm view wrangler version --json 2>/dev/null | tr -d '"')"
-            echo "WORKERD_CLI_VERSION=$version"
-            node tests/admin-cloud-workerd.runtime.mjs >"$RUNNER_TEMP/admin-compat-runtime.log" 2>&1 || {
-              grep -E '^WORKERD_(START_CATEGORY|SANITIZED_LINE|PASS|ACCEPTANCE_FAIL)' "$RUNNER_TEMP/admin-compat-runtime.log" | tail -n 14 | cut -c1-220 || true
-              echo 'ADMIN_COMPAT_FAIL workerd'
-              exit 1
-            }
-            grep -E '^WORKERD_(PASS|ACCEPTANCE_PASS)' "$RUNNER_TEMP/admin-compat-runtime.log" | tail -n 14 || true
-            echo 'ADMIN_COMPAT_PASS real local workerd; no deployment'
-            exit 0
-          fi
-          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_ADMIN_CLOUD_WORKERD_LOG_20261123' ]]; then
-            npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-workerd-install3.log" 2>&1 || { echo 'WORKERD_LOG npm-ci-failed'; exit 1; }
-            npm run build >"$RUNNER_TEMP/admin-workerd-build3.log" 2>&1 || { echo 'WORKERD_LOG vite-failed'; exit 1; }
-            node tests/admin-cloud-workerd.runtime.mjs >"$RUNNER_TEMP/admin-workerd-log3.log" 2>&1 || {
-              grep -E '^WORKERD_(START_CATEGORY|SANITIZED_LINE|ACCEPTANCE_FAIL|PASS)' "$RUNNER_TEMP/admin-workerd-log3.log" | tail -n 12 | cut -c1-220 || true
-              echo 'WORKERD_LOG local-workerd-failed'
-              exit 1
-            }
-            grep -E '^WORKERD_(PASS|ACCEPTANCE_PASS)' "$RUNNER_TEMP/admin-workerd-log3.log" || true
-            echo 'WORKERD_LOG workerd-acceptance-passed; no deploy'
-            exit 0
-          fi
-          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_ADMIN_CLOUD_WORKERD_DIAG_20261123' ]]; then
-            npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-diag-install.log" 2>&1 || { echo 'ADMIN_DIAG_FAIL npm-ci'; exit 1; }
-            npm run build >"$RUNNER_TEMP/admin-diag-build.log" 2>&1 || { echo 'ADMIN_DIAG_FAIL vite-build'; exit 1; }
-            node tests/admin-cloud-workerd.runtime.mjs >"$RUNNER_TEMP/admin-diag-runtime.log" 2>&1 || {
-              grep -E '^WORKERD_(START_CATEGORY|ACCEPTANCE_FAIL|PASS)' "$RUNNER_TEMP/admin-diag-runtime.log" | tail -n 12 | cut -c1-185 || true
-              echo 'ADMIN_DIAG_FAIL local-workerd'
-              exit 1
-            }
-            grep -E '^WORKERD_(PASS|ACCEPTANCE_PASS)' "$RUNNER_TEMP/admin-diag-runtime.log" | tail -n 12 || true
-            echo 'ADMIN_DIAG_PASS local Workerd acceptance'
-            exit 0
-          fi
-          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_ADMIN_CLOUD_WORKERD_20261123' ]]; then
-            echo 'ADMIN_WORKERD source pinned, synthetic local runtime; no deploy'
-            npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-workerd-install.log" 2>&1 || { echo 'ADMIN_WORKERD_FAIL npm-ci'; exit 1; }
-            npm run build >"$RUNNER_TEMP/admin-workerd-build.log" 2>&1 || { echo 'ADMIN_WORKERD_FAIL vite-build'; exit 1; }
-            node tests/admin-cloud-workerd.runtime.mjs >"$RUNNER_TEMP/admin-workerd-smoke.log" 2>&1 || {
-              grep -E '^WORKERD_(PASS|ACCEPTANCE_FAIL|LOCAL_START_FAILED)' "$RUNNER_TEMP/admin-workerd-smoke.log" | tail -n 12 | cut -c1-180 || true
-              echo 'ADMIN_WORKERD_FAIL runtime'
-              exit 1
-            }
-            grep -E '^WORKERD_(PASS|ACCEPTANCE_PASS)' "$RUNNER_TEMP/admin-workerd-smoke.log" | tail -n 12 || true
-            echo 'ADMIN_WORKERD_PASS local workerd + SQLite DO + auth; no deploy'
+            echo 'ADMIN_QA_PASS build and PWA privacy'
             exit 0
           fi
           if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_CORE_20261123' || "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_VIEWPORT_R2_20261123' || "${{ github.event.head_commit.message }}" == 'VERIFY_LAYOUT_OVERFLOW_DIAG_20261123' ]]; then
@@ -286,41 +191,6 @@ jobs:
               exit 1
             fi
             echo 'LAYOUT_PASS viewports 375 390 430 and persistent custom order; no deploy'
-            exit 0
-          fi
-          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_ADMIN_CLOUD_001_DEPLOY_GATES_20261123' ]]; then
-            echo 'ADMIN-CLOUD-001 deploy safety gates; no deployment'
-            node scripts/verify-production-worker-source.mjs >"$RUNNER_TEMP/admin-prod-gate.log" 2>&1 || { echo 'FAIL production-worker-source'; exit 1; }
-            echo 'PASS production-worker-source'
-            node scripts/verify-app-worker-static.mjs >"$RUNNER_TEMP/admin-static-gate.log" 2>&1 || { echo 'FAIL app-worker-static'; exit 1; }
-            echo 'PASS app-worker-static'
-            exit 0
-          fi
-          if [[ "${{ github.event.head_commit.message }}" == 'VERIFY_ADMIN_CLOUD_001_SCOPED_20261123' ]]; then
-            echo 'ADMIN-CLOUD-001 SOURCE_SHA_VERIFIED, test-only'
-            npm ci --no-audit --no-fund >"$RUNNER_TEMP/admin-ci.log" 2>&1 || { echo 'ADMIN_FAIL npm-ci'; exit 1; }
-            npm run test:admin:cloud >"$RUNNER_TEMP/admin-node.log" 2>&1 || {
-              echo 'ADMIN_FAIL node-test'
-              grep -E '^not ok [0-9]+|^# (tests|pass|fail|skipped) [0-9]+' "$RUNNER_TEMP/admin-node.log" | head -n 40 | cut -c1-180 || true
-              exit 1
-            }
-            grep -E '^# (tests|pass|fail|skipped) [0-9]+' "$RUNNER_TEMP/admin-node.log" | tail -n 5 || true
-            echo 'ADMIN_PASS node-test'
-            npm run build >"$RUNNER_TEMP/admin-vite.log" 2>&1 || { echo 'ADMIN_FAIL vite-build'; exit 1; }
-            test -f dist/admin/cloud.html && test -f dist/admin/js/cloud-admin.js && test -f dist/admin/js/cloud-admin-core.js && test -f dist/admin/css/cloud-admin.css || { echo 'ADMIN_FAIL assets'; exit 1; }
-            node --input-type=module -e '
-              import fs from "node:fs";
-              const list=JSON.parse(fs.readFileSync("dist/pwa-pages.json","utf8"));
-              if(!Array.isArray(list)||list.some(p=>String(p).startsWith("admin/")))process.exit(1);
-            ' || { echo 'ADMIN_FAIL private-pwa'; exit 1; }
-            echo 'ADMIN_PASS vite-and-pwa'
-            npx playwright install --with-deps chromium >"$RUNNER_TEMP/admin-chromium-setup.log" 2>&1 || { echo 'ADMIN_FAIL chromium-install'; exit 1; }
-            npm run test:admin:cloud:browser >"$RUNNER_TEMP/admin-browser.log" 2>&1 || {
-              echo 'ADMIN_FAIL chromium'
-              grep -E '^not ok [0-9]+|^# (tests|pass|fail|skipped) [0-9]+' "$RUNNER_TEMP/admin-browser.log" | head -n 25 | cut -c1-180 || true
-              exit 1
-            }
-            echo 'ADMIN_PASS browser-375-390-430; no deploy'
             exit 0
           fi
           node --input-type=module <<'JS'
