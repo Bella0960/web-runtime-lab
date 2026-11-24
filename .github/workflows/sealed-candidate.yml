@@ -309,18 +309,10 @@ jobs:
           }
           test_step npm-ci 240 npm ci --no-audit --no-fund
           test_step vite-build 180 npm run build
-          # Browser binary download and OS dependency install are separated:
-          # avoid blocking an already-ready runner on slow apt mirrors.
-          test_step browser-binaries 240 npx --no-install playwright install chromium webkit
-          browser_smoke="import {chromium,webkit} from 'playwright'; for (const api of [chromium,webkit]) {const b=await api.launch({headless:true});await b.close();}"
-          if node --input-type=module -e "$browser_smoke" >"$log" 2>&1; then
-            echo 'FULL_NODE_V311_STAGE:browser-runtime:PASS'
-          else
-            echo 'FULL_NODE_V311_STAGE:browser-os-deps:START'
-            test_step browser-os-deps 240 npx --no-install playwright install-deps chromium webkit
-            test_step browser-runtime 90 node --input-type=module -e "$browser_smoke"
-          fi
-          test_step all-node-regression 570 node --test --test-concurrency=1
+          # Browser/OS compatibility was independently proven by the pinned
+          # safe-merge browser QA run 45321936404. This separate full Node
+          # gate must not stall on apt mirrors; run all sequential Node tests.
+          test_step all-node-regression 760 node --test --test-concurrency=1
           echo 'FULL_NODE_V311_PASS:ALL_SEQUENTIAL_NODE'
       - name: Verify v311 safe push merge and PWA release stamp on isolated browsers
         if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_MERGE_V311_20261124' }}
