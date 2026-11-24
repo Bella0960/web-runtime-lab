@@ -167,6 +167,12 @@ jobs:
             echo 'ANDROID_SMOKE_FAILED:preview-upload'; exit 1
           fi
           echo 'ANDROID_SMOKE_STAGE:preview-upload:PASS'
+          # Select the stable alias, not an immutable deployment URL.
+          # Keep this URL after preview secret put, which deploys secret changes.
+          url="$(grep -Eo 'https://android-v157-smoke-20261124-[a-z0-9.-]+[.]workers[.]dev' "$log" | head -n 1 || true)"
+          if [[ ! "$url" =~ ^https://android-v157-smoke-20261124-[a-z0-9.-]+[.]workers[.]dev$ ]]; then
+            echo 'ANDROID_SMOKE_FAILED:preview-url-missing'; exit 1
+          fi
           node --input-type=module <<'NODE'
           import { createECDH } from 'node:crypto';
           import { writeFileSync } from 'node:fs';
@@ -189,13 +195,7 @@ jobs:
             echo 'ANDROID_SMOKE_FAILED:preview-secret-subject'; exit 1
           fi
           echo 'ANDROID_SMOKE_STAGE:preview-secrets:PASS'
-          if ! timeout 150s npx --yes wrangler@4.135.0 preview --config wrangler.android-push-smoke.jsonc --name android-v157-smoke-20261124 --json >"$log" 2>&1; then
-            echo 'ANDROID_SMOKE_FAILED:preview-redeploy'; exit 1
-          fi
-          url="$(grep -Eo 'https://[a-z0-9.-]+[.]workers[.]dev' "$log" | head -n 1 || true)"
-          if [[ ! "$url" =~ ^https://[a-z0-9.-]+[.]workers[.]dev$ ]]; then
-            echo 'ANDROID_SMOKE_FAILED:preview-url-missing'; exit 1
-          fi
+
           health="$(curl -fsSL --max-time 25 "$url/api/health" || true)"
           if ! node -e "const v=JSON.parse(process.argv[1]);if(v.ok!==true||v.smokeOnly!==true||v.configured!==true||v.isolatedRateGate!==true)process.exit(1)" "$health" >"$log" 2>&1; then
             echo 'ANDROID_SMOKE_FAILED:remote-health'; exit 1
