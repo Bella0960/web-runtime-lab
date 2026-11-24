@@ -315,7 +315,8 @@ jobs:
             "$image" npm ci --no-audit --no-fund
           isolated=(docker run --rm --name "$name" --ipc=host --network none --mount "type=bind,src=$PWD,dst=/work" --workdir /work "$image")
           checked browser-launch 120 "${isolated[@]}" node --input-type=module -e 'import {chromium,webkit} from "playwright"; for (const type of [chromium,webkit]) { const b=await type.launch({headless:true}); const p=await b.newPage(); await p.goto("about:blank"); await b.close(); }'
-          checked vite-build 240 "${isolated[@]}" npm run build
+          # Vite postbuild invokes repository git tools unavailable in the browser image.
+          checked vite-build 240 npm run build
           # One complete Node run, rather than an extra file-by-file pass.
           # Only fixed stage labels and numeric failure counts leave the runner.
           if ! checked all-node-regression 1500 "${isolated[@]}" node --test --test-concurrency=1; then
