@@ -162,7 +162,22 @@ try {
         ['qa-http-smoke', /QA login document|QA login stylesheet|QA setup cannot accept|QA core is not reachable|QA status endpoint/],
         ['post-upload-check', /QA deployment version did not advance|QA latest deployment|QA identity authority|QA deployed|owner QA domain/]
       ];
-      const matched = safeCauses.find(([, pattern]) => pattern.test(sealedLog));
+      // Use the terminal failure line first; successful earlier tests may contain
+      // unrelated error strings. Only fixed labels may leave this runner.
+      const stopped = sealedLog.split(/\r?\n/).reverse().find(line =>
+        line.includes('QA release stopped:')) || '';
+      const precise = [
+        ['upload-command-failed', /QA release stopped: npx .*wrangler.*deploy.*failed/],
+        ['transient-network', /fetch failed|ETIMEDOUT|ECONNRESET|ENOTFOUND|EAI_AGAIN|AbortError|TimeoutError/],
+        ['identity-db-read-proof', /Cannot prove Cloudflare account query was read-only|incomplete SQL counts/],
+        ['identity-core-not-ready', /Refusing QA-only release until|Cannot verify QA identity core state/],
+        ['owner-origin-receipt', /owner QA domain|different QA build than the tested git SHA/],
+        ['qa-baseline-mismatch', /no longer matches the approved/],
+        ['qa-version-proof', /invalid deployed version|latest deployment|identity core changed unexpectedly/],
+        ['git-command-failed', /QA release stopped: git .*failed/]
+      ];
+      const matched = [...precise, ...safeCauses].find(([, pattern]) => pattern.test(stopped))
+        || safeCauses.find(([, pattern]) => pattern.test(sealedLog));
       console.error('Sanitized QA post-test safety category: ' +
         (matched ? matched[0] : 'other-guard'));
     }
