@@ -86,7 +86,7 @@ try {
     });
     const stages = [
       ['preflight', /Pinned existing QA Worker version before tests:/],
-      ['regression', /Validating original MAOMAO QA candidate/],
+      ['regression', /Validating original [A-Z]+ QA candidate/],
       ['post-test-guard', /Node, Vite and Chromium tests passed\./],
       ['upload', /QA-only release: identity core will remain untouched\./],
       ['origin-check', /Post-deployment QA HTTP readiness verified/]
