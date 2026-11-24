@@ -55,3 +55,20 @@ test('both operations require the adaptive gate and verification has no deploy c
   assert.match(yaml,/if \(!source\.includes\("process\.env\.QA_ADAPTIVE_RELEASE === '1'"\)\) fail\(\);/);
   assert.doesNotMatch(yaml,/adaptive \? refs\[0\] : legacy/);
 });
+
+// Preserve the retired workflow's safety assertions at the current entry.
+const runner = readFileSync(new URL('../scripts/run-candidate.mjs', import.meta.url), 'utf8');
+test('current request preserves restricted checkout and QA-only runner boundaries',()=>{
+  assert.match(yaml,/permissions:\s*\n  contents: read/);
+  assert.match(yaml,/cancel-in-progress: false/);
+  assert.match(yaml,/secrets\.CANDIDATE_REPOSITORY/);
+  assert.match(yaml,/secrets\.CANDIDATE_READ_TOKEN/);
+  assert.match(runner,/args\.push\('--qa-only'\)/);
+  assert.doesNotMatch(runner,/args\.push\('--deploy'\)/);
+  assert.doesNotMatch(yaml,/upload-artifact|actions\/cache|working-directory: candidate/);
+  assert.match(runner,/stdio:\s*\['ignore', descriptor, descriptor\]/);
+  assert.match(runner,/unlinkSync\(outputPath\)/);
+  assert.match(runner,/Expected candidate validation and safety gates are missing/);
+  assert.doesNotMatch(runner,/console\.(log|error)\(.*(releaseSource|result\.stderr|readFileSync\(outputPath)/);
+  for(const content of [yaml,runner]) assert.equal(content.toLowerCase().includes(String.fromCharCode(109,97,111)),false);
+});
