@@ -94,6 +94,7 @@ jobs:
           persist-credentials: ${{ !(github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_DESKTOP_STABILITY_P0_20261124') }}
           fetch-depth: 100
       # Verify-only P0 desktop stability candidate; no release credentials or artifacts.
+      # Recheck the same immutable candidate after the metadata guard stopped checkout.
       - name: Verify desktop stability in isolated Node and Chromium
         if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_DESKTOP_STABILITY_P0_20261124' }}
         shell: bash
