@@ -315,7 +315,27 @@ jobs:
           # Node discovery also contains real Chromium tests. Provision them on
           # the OS-supported runner before starting the complete suite.
           test_step browser-runtime 300 npx --no-install playwright install --with-deps chromium webkit
-          test_step all-node-regression 680 node --test --test-concurrency=1
+          if ! test_step all-node-regression 680 node --test --test-concurrency=1; then
+            # Print only ordinal file IDs: no private source path, test name
+            # or captured log is allowed into the public CI output.
+            node --input-type=module - "$log" <<'NODE'
+          import fs from 'node:fs';
+          import { execFileSync } from 'node:child_process';
+          const lines=fs.readFileSync(process.argv[2],'utf8').split(/\r?\n/);
+          const tracked=execFileSync('git',['ls-files','-z'],{encoding:'utf8'})
+            .split('\0').filter(x=>/\.test\.[cm]?js$/.test(x)).sort();
+          const failed=new Set();
+          for(const line of lines){
+            const m=/^not ok \d+ - (.*\.test\.[cm]?js)(?:\s*\(.*\))?\s*$/.exec(line);
+            if(!m)continue;
+            const suffix=m[1].replace(/\\/g,'/');
+            const index=tracked.findIndex(p=>suffix.endsWith(p));
+            if(index>=0)failed.add(index+1);
+          }
+          console.log('FULL_NODE_V311_FAILED_FILE_ORDINALS:'+([...failed].sort((a,b)=>a-b).join(',')||'unresolved'));
+          NODE
+            exit 1
+          fi
           echo 'FULL_NODE_V311_PASS:ALL_SEQUENTIAL_NODE'
       - name: Verify v311 safe push merge and PWA release stamp on isolated browsers
         if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_MERGE_V311_20261124' }}
