@@ -56,7 +56,8 @@ jobs:
     # No private deployment credentials enter an unapproved verify-only run.
     if: >-
       ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor == github.repository_owner) || (github.event_name == 'workflow_dispatch' && (inputs.candidate == 'sealed' || ((inputs.candidate == 'chat-p0-375' || inputs.candidate == 'batch1-p0-376' || inputs.candidate == 'role-list-v117' || inputs.candidate == 'role-editor-v118' || inputs.candidate == 'role-copy-v119') && github.actor == github.repository_owner)) && (inputs.operation == 'verify' || (inputs.operation == 'release' && github.actor == github.repository_owner && inputs.confirmation == 'qa-only'))) }}
-    runs-on: ubuntu-latest
+    # Pin only the full v311 test gate to a Playwright-supported runner.
+    runs-on: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_FULL_NODE_V311_20261124' && 'ubuntu-24.04' || 'ubuntu-latest' }}
     timeout-minutes: 90
     steps:
       - name: Checkout public guard scripts
@@ -310,10 +311,11 @@ jobs:
           }
           test_step npm-ci 240 npm ci --no-audit --no-fund
           test_step vite-build 180 npm run build
-          # Browser/OS compatibility was independently proven by the pinned
-          # safe-merge browser QA run 45321936404. This separate full Node
-          # gate must not stall on apt mirrors; run all sequential Node tests.
-          test_step all-node-regression 760 node --test --test-concurrency=1
+          # A separate green browser gate exists (#45321936404), but the full
+          # Node discovery also contains real Chromium tests. Provision them on
+          # the OS-supported runner before starting the complete suite.
+          test_step browser-runtime 300 npx --no-install playwright install --with-deps chromium webkit
+          test_step all-node-regression 680 node --test --test-concurrency=1
           echo 'FULL_NODE_V311_PASS:ALL_SEQUENTIAL_NODE'
       - name: Verify v311 safe push merge and PWA release stamp on isolated browsers
         if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_MERGE_V311_20261124' }}
