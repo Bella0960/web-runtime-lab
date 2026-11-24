@@ -1,5 +1,5 @@
 // Execute an isolated, credential-scoped validation without exposing source logs.
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, readSync, statSync, openSync, closeSync, unlinkSync, realpathSync } from 'node:fs';
 import { summarizeSealedFailure, summarizeSealedNodeFailures } from './sealed-failure-summary.mjs';
 import { assertApprovedQaTarget } from './qa-target-guard.mjs';
@@ -76,11 +76,56 @@ const outputPath = join(process.env.RUNNER_TEMP || tmpdir(), 'sealed-' + randomU
 let descriptor;
 try {
   descriptor = openSync(outputPath, 'w', 0o600);
-  const result = spawnSync(process.execPath, args, {
-    cwd: source,
-    env: environment,
-    stdio: ['ignore', descriptor, descriptor],
-    timeout: 75 * 60 * 1000
+  // Keep private logs on disk while exposing only a fixed, sanitized stage.
+  // No test titles, file names, private source, or subprocess output leave CI.
+  const result = await new Promise(resolveResult => {
+    const child = spawn(process.execPath, args, {
+      cwd: source,
+      env: environment,
+      stdio: ['ignore', descriptor, descriptor]
+    });
+    const stages = [
+      ['preflight', /Pinned existing QA Worker version before tests:/],
+      ['regression', /Validating original MAOMAO QA candidate/],
+      ['post-test-guard', /Node, Vite and Chromium tests passed\./],
+      ['upload', /QA-only release: identity core will remain untouched\./],
+      ['origin-check', /Post-deployment QA HTTP readiness verified/]
+    ];
+    let offset = 0, stage = -1, carry = '', timedOut = false;
+    const reader = openSync(outputPath, 'r');
+    const progress = () => {
+      try {
+        const size = statSync(outputPath).size;
+        while (offset < size) {
+          const data = Buffer.alloc(Math.min(size - offset, 65536));
+          const count = readSync(reader, data, 0, data.length, offset);
+          if (!count) break;
+          offset += count;
+          const input = carry + data.subarray(0, count).toString('utf8');
+          for (let i = stage + 1; i < stages.length; i++) {
+            if (stages[i][1].test(input)) {
+              stage = i;
+              console.log('SEALED_QA_STAGE:' + stages[i][0]);
+            }
+          }
+          carry = input.slice(-256);
+        }
+      } catch { /* progress output must never affect release safety */ }
+    };
+    const timer = setInterval(progress, 1000);
+    const timeout = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, 75 * 60 * 1000);
+    let finished = false;
+    const finish = result => {
+      if (finished) return;
+      finished = true;
+      clearInterval(timer);
+      clearTimeout(timeout);
+      progress();
+      closeSync(reader);
+      resolveResult(timedOut ? { ...result, error: { code: 'ETIMEDOUT' } } : result);
+    };
+    child.once('error', error => finish({ error, status: null }));
+    child.once('close', status => finish({ status }));
   });
   if (result.error || result.status !== 0) {
     // Read a bounded tail for safe diagnostics. Raw output never enters public logs.
