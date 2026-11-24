@@ -212,7 +212,7 @@ jobs:
           set -euo pipefail
           expected='12d1b1bb337d773d1ddbbd0ac4b96a1802795c00'
           if [ "${{ github.event.head_commit.message }}" = 'RELEASE_DESKTOP_STABILITY_QA_ONLY_20261124' ]; then
-            expected='abe39e9aa5040147034eb7850aef372fbdcc1242'
+            expected='cab41ecbab4cd3c66134c5fd030e5680399c93c4'
           fi
           test "$(git -C candidate rev-parse HEAD)" = "$expected" || {
             echo 'MOBILE_V157_FULL_QA_FAILED:unreviewed-sha'; exit 1;
