@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { summarizeSealedFailure, summarizeSealedNodeFailures } from '../scripts/sealed-failure-summary.mjs';
+import { summarizeSealedFailure, summarizeSealedNodeFailures, summarizeSealedBrowserFailure } from '../scripts/sealed-failure-summary.mjs';
 
 const source = `const TESTS = [
   ['npm', ['ci', '--no-audit']],
@@ -139,4 +139,13 @@ test('unknown regression failure stays distinct from initial safety failure', ()
   assert.equal(summarizeSealedFailure(source, 'QA release stopped: private failure'), 'initial-safety-gate');
   assert.equal(summarizeSealedFailure(source, 'QA_TEST_PLAN:standard\nNode, Vite and Chromium tests passed.\nQA release stopped: private failure'), 'post-test-safety-gate');
   assert.equal(summarizeSealedFailure(source, 'QA_TEST_PLAN:standard\nQA release stopped: npm run test:unit failed (exit 1)'), 'gate-2-of-5-tests');
+});
+
+
+test('browser diagnostic emits only fixed categories and approved numeric phases', () => {
+  assert.deepEqual(summarizeSealedBrowserFailure('hidden value\nSEALED_BROWSER_FAILURE:378:timeout\nsecret path'), {phase:378,code:'timeout'});
+  assert.deepEqual(summarizeSealedBrowserFailure('SEALED_BROWSER_FAILURE:1:browser-environment'), {phase:1,code:'browser-environment'});
+  assert.equal(summarizeSealedBrowserFailure('SEALED_BROWSER_FAILURE:999:assertion'), null);
+  assert.equal(summarizeSealedBrowserFailure('SEALED_BROWSER_FAILURE:375:private-value'), null);
+  assert.equal(summarizeSealedBrowserFailure('SEALED_BROWSER_FAILURE:375:timeout extra-private-data'), null);
 });

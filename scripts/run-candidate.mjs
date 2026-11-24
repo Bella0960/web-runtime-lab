@@ -1,7 +1,7 @@
 // Execute an isolated, credential-scoped validation without exposing source logs.
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, readSync, statSync, openSync, closeSync, unlinkSync, realpathSync } from 'node:fs';
-import { summarizeSealedFailure, summarizeSealedNodeFailures } from './sealed-failure-summary.mjs';
+import { summarizeSealedFailure, summarizeSealedNodeFailures, summarizeSealedBrowserFailure } from './sealed-failure-summary.mjs';
 import { assertApprovedQaTarget } from './qa-target-guard.mjs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -142,6 +142,10 @@ try {
     // Any failed Node-based gate may emit TAP failures, not only the full
     // Node suite at gate 18. Only allowlisted test paths and fixed codes
     // leave the ephemeral runner; never echo raw npm/Node logs.
+    if (stage === 'adaptive-browser-test' || /^gate-\d+-of-\d+-browser$/.test(stage)) {
+      const receipt = summarizeSealedBrowserFailure(sealedLog);
+      if (receipt) console.error('Sanitized browser failure: phase=' + receipt.phase + ' category=' + receipt.code);
+    }
     const gateReport = [...sealedLog.matchAll(/^QA_DIAGNOSTIC_FAILED_GATES:([0-9,]{1,80})$/gm)]
       .map(match => match[1]).at(-1);
     if (stage === 'multiple-required-test-gates' && gateReport) {
