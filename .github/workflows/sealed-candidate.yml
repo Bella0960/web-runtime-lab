@@ -307,7 +307,31 @@ jobs:
           }
           checked npm-ci 240 npm ci --no-audit --no-fund
           checked node-push-account 180 node --test tests/cloud-push-mobile-qa-integration.test.mjs tests/cloud-push-subscription-gesture.test.mjs tests/qa-cloud-settings-integration.test.mjs tests/push-transport-guards.test.mjs tests/push-real-empty-mode.test.mjs tests/account-storage-isolation.test.mjs tests/account-session-expiry.test.mjs
-          checked node-pwa-release 150 npm run test:pwa:navigation
+          # Classify each existing v311 PWA regression separately. Only
+          # numbered outcomes leave the runner; no private test logs.
+          pwa_failed=0
+          pwa_index=0
+          for spec in \
+            tests/pwa-navigation-cache.test.mjs \
+            tests/icon-presets-contract.test.mjs \
+            tests/account-fanwai-pwa-runtime.test.mjs \
+            tests/release-account-assets-gate.test.mjs \
+            tests/sw-navigation-cache-lifecycle.test.mjs \
+            tests/desktop-network-performance.test.mjs \
+            tests/pwa-release-stamp.test.mjs; do
+            pwa_index=$((pwa_index+1))
+            if timeout --signal=TERM --kill-after=10s 60s node --test "$spec" >"$log" 2>&1; then
+              echo "PUSH_V311_PWA_CASE:${pwa_index}:PASS"
+            else
+              echo "PUSH_V311_PWA_CASE:${pwa_index}:FAIL"
+              pwa_failed=$((pwa_failed+1))
+            fi
+          done
+          if [[ "$pwa_failed" -ne 0 ]]; then
+            echo "PUSH_MERGE_QA_FAIL:node-pwa-release:FAILED_CASES_${pwa_failed}"
+            exit 1
+          fi
+          echo 'PUSH_MERGE_QA_STAGE:node-pwa-release:PASS'
           checked build-vite 180 npm run build
           checked browser-install 360 npx --no-install playwright install --with-deps chromium webkit
           checked browser-push 150 node tests/cloud-push-mobile-qa.browser.mjs
