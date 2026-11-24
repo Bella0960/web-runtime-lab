@@ -317,6 +317,11 @@ jobs:
                   n=$((n+1))
                   if ! timeout 80s node --test "$filename" >/tmp/private-suite.log 2>&1; then
                     echo "FAIL_FILE:$n"
+                    # 91 is the frozen clock suite ordinal on this pinned candidate.
+                    # Emit only numeric assertion IDs; never expose private paths or logs.
+                    if [ "$n" -eq 91 ]; then
+                      { grep -Eo "CLOCK_REGRESSION_FAILURE:[0-9]+" /tmp/private-suite.log || true; } | sort -u | sed "s/CLOCK_REGRESSION_FAILURE:/CLOCK_ASSERT_FAIL:/"
+                    fi
                     fails=$((fails+1))
                     if [ "$fails" -ge 12 ]; then break; fi
                   fi
@@ -325,6 +330,7 @@ jobs:
                 echo "SUITES_PASS:$n"' >"$log" 2>&1; then
             found="$(sed -n -E 's/^FAIL_FILE:([0-9]+)$/\1/p' "$log" | paste -sd, -)"
             echo "FULL_NODE_V311_FILE_FAIL:$found"
+            grep -E "^CLOCK_ASSERT_FAIL:[0-9]+$" "$log" || true
             exit 1
           fi
           echo 'FULL_NODE_V311_STAGE:individual-suites:PASS'
