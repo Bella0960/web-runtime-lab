@@ -481,7 +481,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected='12d1b1bb337d773d1ddbbd0ac4b96a1802795c00'
+          expected='0eff4da2591410cff01d83ea33174c1896bc5f0a'
           if [ "${{ github.event.head_commit.message }}" = 'RELEASE_DESKTOP_STABILITY_QA_ONLY_20261124' ]; then
             expected='54f6c56ce1415a075727e472da806db446a686e6'
           fi
