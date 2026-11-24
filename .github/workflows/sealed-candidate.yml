@@ -96,6 +96,7 @@ jobs:
       - name: Verify mobile lockscreen privacy and safe inbox in Node, Vite, Chromium and WebKit
         if: ${{ github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_CLOUD_MOBILE_20261124' || github.event.head_commit.message == 'VERIFY_CLOUD_PREVIEW_20261124') }}
         shell: bash
+        timeout-minutes: 16
         run: |
           set -euo pipefail
           expected='12ea205d4a0a84304563eec78c94c798b071c188'
@@ -108,36 +109,32 @@ jobs:
           cd candidate
           log="${RUNNER_TEMP}/cloud-inbox-private.log"
           trap 'rm -f "$log"' EXIT
-          if ! npm ci --no-audit --no-fund >"$log" 2>&1; then
-            echo 'CLOUD_INBOX_QA_FAILED:npm-ci'; exit 1
-          fi
-          if ! npm run test:cloud:mobile >"$log" 2>&1; then
-            echo 'CLOUD_MOBILE_QA_FAILED:node-mobile'; exit 1
-          fi
-          if ! npm run test:cloud:push:restore >"$log" 2>&1; then
-            echo 'CLOUD_INBOX_QA_FAILED:node-push'; exit 1
-          fi
-          if ! npm run test:cloud:inbox >"$log" 2>&1; then
-            echo 'CLOUD_INBOX_QA_FAILED:node-inbox'; exit 1
-          fi
-          if ! npm run build >"$log" 2>&1; then
-            echo 'CLOUD_INBOX_QA_FAILED:vite-build'; exit 1
-          fi
-          if ! npm run test:pwa:navigation >"$log" 2>&1; then
-            echo 'CLOUD_INBOX_QA_FAILED:pwa-contract'; exit 1
-          fi
-          if ! npx playwright install --with-deps chromium webkit >"$log" 2>&1; then
-            echo 'CLOUD_INBOX_QA_FAILED:chromium-install'; exit 1
-          fi
-          if ! node tests/cloud-push-browser-qa.mjs >"$log" 2>&1; then
-            grep '^CLOUD_BROWSER_QA_STAGE:' "$log" | tail -n 1 || true
-            echo 'CLOUD_INBOX_QA_FAILED:chromium-synthetic'; exit 1
-          fi
-          if ! node tests/cloud-push-mobile-browser-qa.mjs >"$log" 2>&1; then
-            # Only fixed platform labels; no private browser stdout/stderr.
-            grep '^MOBILE_BROWSER_QA:PASS:' "$log" | tail -n 3 || true
-            echo 'CLOUD_MOBILE_QA_FAILED:webkit-android-synthetic'; exit 1
-          fi
+          # This existing sealed QA stage runs synthetic tests only.
+          # Public log emits fixed stage identifiers; private output is deleted.
+          run_checked() {
+            local stage="$1" seconds="$2" rc=0
+            shift 2
+            echo "CLOUD_MOBILE_QA_STAGE:${stage}:START"
+            timeout --signal=TERM --kill-after=10s "${seconds}s" "$@" >"$log" 2>&1 || rc=$?
+            if [[ "$rc" -ne 0 ]]; then
+              if [[ "$rc" -eq 124 || "$rc" -eq 137 ]]; then
+                echo "CLOUD_MOBILE_QA_FAILED:${stage}:TIMEOUT"
+              else
+                echo "CLOUD_MOBILE_QA_FAILED:${stage}:EXIT_${rc}"
+              fi
+              return 1
+            fi
+            echo "CLOUD_MOBILE_QA_STAGE:${stage}:PASS"
+          }
+          run_checked npm-ci 180 npm ci --no-audit --no-fund
+          run_checked node-mobile 90 npm run test:cloud:mobile
+          run_checked node-push 90 npm run test:cloud:push:restore
+          run_checked node-inbox 90 npm run test:cloud:inbox
+          run_checked vite-build 150 npm run build
+          run_checked pwa-contract 90 npm run test:pwa:navigation
+          run_checked browser-deps 360 npx --no-install playwright install --with-deps chromium webkit
+          run_checked chromium-synthetic 120 node tests/cloud-push-browser-qa.mjs
+          run_checked mobile-browser-synthetic 150 node tests/cloud-push-mobile-browser-qa.mjs
           echo 'CLOUD_MOBILE_QA_PASS:Node_Push_Mobile_Inbox_Vite_PWA_Chromium_WebKit'
       # Full pre-release QA: only the exact tested fast-forward child of v156.
       - name: Pin immutable v157 candidate and preserve current v156 source
