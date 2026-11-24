@@ -9,3 +9,5 @@ Ordinary work on `main` is intentionally not built on every change.
 
 Do not add credentials, account records, private source trees, or production environment variables.
 Integration into another repository must be reviewed and released by that repository's own checks.
+
+For integrated QA verification and deployment, use only the reusable request documented in the current README. Retired pinned or sealed workflow files must not be restored for new requests.
