@@ -45,7 +45,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: sealed-candidate
+  # Keep all release operations serialized. This credential-free preview
+  # verification has no publish step and must not wait behind a stuck release.
+  group: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_CLOUD_PREVIEW_20261124' && 'sealed-candidate-cloud-push-verify' || 'sealed-candidate' }}
   cancel-in-progress: false
 
 jobs:
