@@ -196,9 +196,28 @@ jobs:
           fi
           echo 'ANDROID_SMOKE_STAGE:preview-secrets:PASS'
 
-          health="$(curl -fsSL --max-time 25 "$url/api/health" || true)"
-          if ! node -e "const v=JSON.parse(process.argv[1]);if(v.ok!==true||v.smokeOnly!==true||v.configured!==true||v.isolatedRateGate!==true)process.exit(1)" "$health" >"$log" 2>&1; then
-            echo 'ANDROID_SMOKE_FAILED:remote-health'; exit 1
+          # Preview secret updates create a fresh deployment; allow bounded
+          # edge propagation rather than judging the first immediate response.
+          ready=0
+          status="000"
+          reason="unknown"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            status="$(curl -sSL --max-time 12 -o "${RUNNER_TEMP}/android-health.json" -w '%{http_code}' "$url/api/health" 2>"$log" || true)"
+            if [[ "$status" == "200" ]]; then
+              if node -e "const v=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));if(v.ok!==true||v.smokeOnly!==true||v.configured!==true||v.isolatedRateGate!==true)process.exit(1)" "${RUNNER_TEMP}/android-health.json" >"$log" 2>&1; then
+                ready=1
+                break
+              fi
+              reason="response-not-ready"
+            else
+              reason="HTTP_${status}"
+            fi
+            sleep 3
+          done
+          rm -f "${RUNNER_TEMP}/android-health.json"
+          if [[ "$ready" -ne 1 ]]; then
+            echo "ANDROID_SMOKE_FAILED:remote-health:${reason}"
+            exit 1
           fi
           echo 'ANDROID_SMOKE_STAGE:remote-health:PASS'
           echo "ANDROID_SMOKE_VERIFIED_URL:$url"
