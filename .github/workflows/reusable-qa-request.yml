@@ -2,7 +2,7 @@ name: Reusable isolated QA request
 on:
   pull_request:
     branches: [main]
-    paths: ['.github/workflows/reusable-qa-request.yml', 'tests/reusable-qa-request.test.mjs']
+    paths: ['.github/workflows/reusable-qa-request.yml', 'tests/reusable-qa-request.test.mjs', 'scripts/sealed-failure-summary.mjs', 'scripts/run-candidate.mjs', 'tests/sealed-failure-summary.test.mjs']
   workflow_dispatch:
     inputs:
       operation:
@@ -45,7 +45,7 @@ jobs:
         with:
           node-version: '22'
       - name: Test public request contract without private access
-        run: node --test tests/reusable-qa-request.test.mjs
+        run: node --test tests/reusable-qa-request.test.mjs tests/sealed-failure-summary.test.mjs
   request:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.actor == github.repository_owner
     runs-on: ubuntu-24.04
