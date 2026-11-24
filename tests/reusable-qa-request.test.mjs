@@ -43,7 +43,15 @@ test('invalid input cannot produce a release output',()=>{
 });
 test('PR validation cannot reach the existing release job',()=>{
   assert.match(yaml,/request-contract:\n\s+if: github.event_name == 'pull_request'/);
-  assert.match(yaml,/request:\n\s+if: github.ref == 'refs\/heads\/main' && github.actor == github.repository_owner/);
+  assert.match(yaml,/request:\n\s+if: github.event_name != 'pull_request' && github.ref == 'refs\/heads\/main' && github.actor == github.repository_owner/);
   const safeJob=yaml.split('  request-contract:')[1].split('\n  request:')[0];
   assert.doesNotMatch(safeJob,/secrets\.|run-candidate|path: candidate/);
+});
+
+test('both operations require the adaptive gate and verification has no deploy credentials',()=>{
+  const verify=yaml.split('      - name: Verify once without deployment credentials')[1].split('      - name: Automatically select scope')[0];
+  assert.match(verify,/QA_ADAPTIVE_RELEASE: '1'/);
+  assert.doesNotMatch(verify,/CLOUDFLARE_|CANDIDATE_RELEASE_ACK|secrets\./);
+  assert.match(yaml,/if \(!source\.includes\("process\.env\.QA_ADAPTIVE_RELEASE === '1'"\)\) fail\(\);/);
+  assert.doesNotMatch(yaml,/adaptive \? refs\[0\] : legacy/);
 });

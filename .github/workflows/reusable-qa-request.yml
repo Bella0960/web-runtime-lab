@@ -47,7 +47,7 @@ jobs:
       - name: Test public request contract without private access
         run: node --test tests/reusable-qa-request.test.mjs
   request:
-    if: github.ref == 'refs/heads/main' && github.actor == github.repository_owner
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.actor == github.repository_owner
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -82,6 +82,16 @@ jobs:
           }
           appendFileSync(env.GITHUB_OUTPUT, 'operation=' + request.operation + '\nsha=' + request.candidate + '\n');
           JS
+      - name: Mask restricted checkout metadata
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SOURCE_REPOSITORY" && test -n "$SOURCE_TOKEN"
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
       - name: Restricted private source checkout
         uses: actions/checkout@v4
         with:
@@ -107,13 +117,12 @@ jobs:
           try {
             if (git(['rev-parse','HEAD']) !== process.env.EXPECTED_SHA) fail();
             const source = readFileSync('candidate/scripts/qa-direct-release.mjs','utf8');
-            const legacy = source.match(/^const BRANCH = '([a-zA-Z0-9/_-]+)';$/m)?.[1];
-            const adaptive = source.includes("process.env.QA_ADAPTIVE_RELEASE === '1'");
+            if (!source.includes("process.env.QA_ADAPTIVE_RELEASE === '1'")) fail();
             const refs = git(['ls-remote','--heads','origin']).split('\n')
               .map(line => line.split('\t')).filter(([sha,ref]) =>
                 sha === process.env.EXPECTED_SHA && /^refs\/heads\/(integration|qa)\/[a-zA-Z0-9/_-]+$/.test(ref || ''))
               .map(([,ref]) => ref.slice('refs/heads/'.length)).sort();
-            const branch = adaptive ? refs[0] : legacy;
+            const branch = refs[0];
             if (!branch || !refs.includes(branch)) fail();
             git(['switch','-C',branch,process.env.EXPECTED_SHA]);
           } catch { fail(); }
@@ -121,6 +130,8 @@ jobs:
           JS
       - name: Verify once without deployment credentials
         if: steps.request.outputs.operation == 'verify'
+        env:
+          QA_ADAPTIVE_RELEASE: '1'
         run: node scripts/run-candidate.mjs verify
       - name: Automatically select scope, validate and publish QA once
         if: steps.request.outputs.operation == 'release'
