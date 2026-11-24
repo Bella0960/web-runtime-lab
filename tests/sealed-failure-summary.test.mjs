@@ -114,3 +114,29 @@ test('verify-only diagnostic reports multiple required gate failures without exp
   ]);
   assert.doesNotMatch(JSON.stringify(found), /private test title|second private name|private\//);
 });
+
+
+test('adaptive gates are classified without printing commands or paths', () => {
+  const prefix = 'QA_TEST_PLAN:presentation\n';
+  const cases = [
+    ['node tests/new-layout.browser.mjs','adaptive-browser-test'],
+    ['node tests/new-layout-browser.mjs','adaptive-browser-test'],
+    ['node tests/new-policy.test.mjs','adaptive-tests'],
+    ['node --test tests/new-policy.test.mjs','adaptive-tests'],
+    ['npm run test:new-module','adaptive-tests'],
+    ['npx playwright install --with-deps chromium','adaptive-browser-install'],
+    ['npm run build -- --mode qa','adaptive-build'],
+    ['npm ci --no-audit --no-fund','adaptive-dependencies']
+  ];
+  for (const [cmd, expected] of cases) {
+    const actual = summarizeSealedFailure(source, prefix + 'QA release stopped: ' + cmd + ' failed (exit 1): private-content');
+    assert.equal(actual, expected);
+    assert.doesNotMatch(actual,/new-layout|new-policy|private-content|chromium/);
+  }
+});
+test('unknown regression failure stays distinct from initial safety failure', () => {
+  assert.equal(summarizeSealedFailure(source, 'QA_TEST_PLAN:standard\nQA release stopped: private failure'), 'regression-unclassified');
+  assert.equal(summarizeSealedFailure(source, 'QA release stopped: private failure'), 'initial-safety-gate');
+  assert.equal(summarizeSealedFailure(source, 'QA_TEST_PLAN:standard\nNode, Vite and Chromium tests passed.\nQA release stopped: private failure'), 'post-test-safety-gate');
+  assert.equal(summarizeSealedFailure(source, 'QA_TEST_PLAN:standard\nQA release stopped: npm run test:unit failed (exit 1)'), 'gate-2-of-5-tests');
+});

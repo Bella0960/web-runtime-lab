@@ -174,6 +174,7 @@ try {
       }
     }
     if (/^gate-\d+-of-\d+-tests$/.test(stage) ||
+        stage === 'adaptive-tests' || stage === 'regression-unclassified' ||
         stage === 'multiple-required-test-gates') {
       const testDir = join(source, 'tests');
       const files = existsSync(testDir)
@@ -193,7 +194,7 @@ try {
     }
     // Emit only a fixed allowlisted reason for the QA post-test safety gate.
     // Never echo private logs, variable values, requests or account identifiers.
-    if (stage === 'post-test-safety-gate') {
+    if (stage === 'post-test-safety-gate' || stage === 'initial-safety-gate') {
       const safeCauses = [
         ['checkout-changed', /Tests altered the checkout|Checkout must be clean/],
         ['candidate-ref-moved', /Unexpected remote branch ref|Remote QA HEAD changed|QA snapshot|candidate HEAD/],
@@ -217,13 +218,14 @@ try {
         ['identity-db-read-proof', /Cannot prove Cloudflare account query was read-only|incomplete SQL counts/],
         ['identity-core-not-ready', /Refusing QA-only release until|Cannot verify QA identity core state/],
         ['owner-origin-receipt', /owner QA domain|different QA build than the tested git SHA/],
-        ['qa-baseline-mismatch', /no longer matches the approved/],
+        ['qa-baseline-mismatch', /no longer matches the approved|Candidate must include the currently deployed QA source/],
+        ['qa-baseline-receipt', /Current QA source receipt (?:unavailable|invalid)/],
         ['qa-version-proof', /invalid deployed version|latest deployment|identity core changed unexpectedly/],
         ['git-command-failed', /QA release stopped: git .*failed/]
       ];
       const matched = [...precise, ...safeCauses].find(([, pattern]) => pattern.test(stopped))
-        || safeCauses.find(([, pattern]) => pattern.test(sealedLog));
-      console.error('Sanitized QA post-test safety category: ' +
+        || (stage === 'post-test-safety-gate' && safeCauses.find(([, pattern]) => pattern.test(sealedLog)));
+      console.error('Sanitized QA ' + (stage === 'initial-safety-gate' ? 'initial' : 'post-test') + ' safety category: ' +
         (matched ? matched[0] : 'other-guard'));
     }
     throw new Error('Candidate validation stopped at ' + stage +

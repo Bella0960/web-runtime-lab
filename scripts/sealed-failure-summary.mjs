@@ -26,8 +26,22 @@ export function summarizeSealedFailure(releaseSource, sealedLog, { timedOut = fa
     return 'gate-' + (index + 1) + '-of-' + gates.length + '-' + category;
   }
   if (stopped) {
-    return String(sealedLog).includes('Node, Vite and Chromium tests passed.')
-      ? 'post-test-safety-gate' : 'initial-safety-gate';
+    if (String(sealedLog).includes('Node, Vite and Chromium tests passed.')) {
+      return 'post-test-safety-gate';
+    }
+    const regressionStarted = /^(?:Validating original .* QA candidate; production is never targeted\.|QA_TEST_PLAN:(?:standard|presentation|module))\s*$/m.test(String(sealedLog));
+    if (regressionStarted) {
+      // Dynamic module gates are not in the legacy fixed TESTS array.
+      // Return fixed categories only, never the terminal command or its paths.
+      const command = stopped.match(/QA release stopped: ((?:npm|node|npx) [^\r\n]{1,4096}) failed \(exit (?:[0-9]+|null)\)/)?.[1] || '';
+      if (/^npm ci(?: |$)/.test(command)) return 'adaptive-dependencies';
+      if (/^npm run build(?: |$)/.test(command)) return 'adaptive-build';
+      if (/^npx playwright install(?: |$)/.test(command)) return 'adaptive-browser-install';
+      if (/^node .*\btests\/[a-zA-Z0-9._-]*(?:browser|\.smoke)\.mjs(?: |$)/.test(command)) return 'adaptive-browser-test';
+      if (/^node --test(?: |$)|^node tests\/[a-zA-Z0-9._-]+\.test\.mjs(?: |$)|^npm run test:[a-zA-Z0-9:_-]+(?: |$)/.test(command)) return 'adaptive-tests';
+      return 'regression-unclassified';
+    }
+    return 'initial-safety-gate';
   }
   return 'unclassified-private-failure';
 }
