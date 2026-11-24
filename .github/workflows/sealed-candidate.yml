@@ -93,7 +93,7 @@ jobs:
           ref: ${{ (github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_FULL_NODE_V311_20261124') && '131507d675c0deb222bbcb4bd6f1d602a15a9847' || (github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_MERGE_V311_20261124') && 'a7492db9353b420ef8d3e6a0e0f5257bad6bda87' || (github.event_name == 'push' && github.event.head_commit.message == 'CHECK_ANDROID_SHORT_HOST_20261124') && 'a3f265a7f65825ff19c35684b1a9704bcfe4ff22' || (github.event_name == 'push' && github.event.head_commit.message == 'DEPLOY_ANDROID_LOCKSCREEN_SANDBOX_20261124') && 'a3f265a7f65825ff19c35684b1a9704bcfe4ff22' || (github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_DESKTOP_STABILITY_P0_20261124') && 'a27f5947a38ae42a1e5fa64cb15a9680fb5acc74' || (github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_LOCKSCREEN_V157_20261124') && '81a7ef157966ab8f6e001a83930fb5abe7f94aac' || (github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_CLOUD_PREVIEW_20261124') && '68439a129812bd7b2fb0ef3870c3d024b97d5e3e' || (github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_MOBILE_V157_QA_FULL_20261124' || github.event.head_commit.message == 'RELEASE_MOBILE_PRIVATE_V157_QA_ONLY_20261124' || github.event.head_commit.message == 'RELEASE_DESKTOP_STABILITY_QA_ONLY_20261124')) && 'integration/qa-mobile-push-private-on-v156-20261124' || (github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_CLOUD_MOBILE_V156_20261124') && '7dfcca785e935e7f2648fdc9816e0e384602a49f' || (github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_CLOUD_MOBILE_20261124') && '12ea205d4a0a84304563eec78c94c798b071c188' || (github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_THEME_STUDIO_BATCH12_ON_V146_20261124') && 'integration/qa-theme-studio-batch12-on-v146-20261124' || (github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_THEME_STUDIO_IMPORT_V145_20261123' || github.event.head_commit.message == 'RELEASE_THEME_STUDIO_IMPORT_V145_QA_ONLY_20261123')) && 'integration/qa-theme-studio-import-on-v144-20261123' || github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_VIRTUAL_USER_V124_20261123' && 'qa/virtual-user-v124-20261123' || (github.event.head_commit.message == 'VERIFY_ECO_V123_20261123' || github.event.head_commit.message == 'RELEASE_ECO_V124_QA_ONLY_20261123') && 'integration/qa-eco-v123-safe-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_API_UI_003_V123_20261123' || github.event.head_commit.message == 'RELEASE_API_UI_003_V123_QA_ONLY_20261123') && 'integration/qa-api-ui-003-v123-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_API_UI_411_V122_V121_20261123' || github.event.head_commit.message == 'RELEASE_API_UI_411_V122_V121_QA_ONLY_20261123') && 'integration/qa-api-ui-411-v122-on-v121-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_API_UI_411_V122_20261123' || github.event.head_commit.message == 'RELEASE_API_UI_411_V122_QA_ONLY_20261123') && 'integration/qa-api-ui-411-v122-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_FOOTPRINT_V121_QA_R2_20261123' || github.event.head_commit.message == 'RELEASE_FOOTPRINT_V121_QA_ONLY_20261123') && 'integration/qa-footprint-v121-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_API_CONFIG_V120_20261123' || github.event.head_commit.message == 'RELEASE_API_CONFIG_V120_QA_ONLY_20261123') && 'integration/qa-api-config-v120-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_CHARACTER_AI_ACTIVE_QA_20261123' || github.event.head_commit.message == 'RELEASE_CHARACTER_AI_ACTIVE_QA_ONLY_20261123') && 'integration/qa-character-ai-406-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_MUSIC_405_FINAL3_QA_ONLY_20261123' || github.event.head_commit.message == 'RELEASE_MUSIC_405_FINAL3_QA_ONLY_20261123') && 'integration/qa-music-405-final3-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_MUSIC_405_FINAL2_QA_ONLY_20261123' || github.event.head_commit.message == 'RELEASE_MUSIC_405_FINAL2_QA_ONLY_20261123') && 'integration/qa-music-405-final2-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_MUSIC_405_FINAL_QA_ONLY_20261123' || github.event.head_commit.message == 'RELEASE_MUSIC_405_FINAL_QA_ONLY_20261123') && 'integration/qa-music-405-final-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_MUSIC_405_QA_ONLY_20261123' || github.event.head_commit.message == 'RELEASE_MUSIC_405_QA_ONLY_20261123') && 'integration/qa-music-405-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_STORAGE_AFTER_EDIT_QA_ONLY_20261123' || github.event.head_commit.message == 'RELEASE_MUSIC_405_QA_ONLY_20261123' || github.event.head_commit.message == 'RELEASE_STORAGE_AFTER_EDIT_QA_ONLY_20261123') && 'integration/qa-storage-after-edit-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_CHAT_EDIT_ATOMIC_20261123' || github.event.head_commit.message == 'RELEASE_CHAT_EDIT_QA_ONLY_20261123') && 'integration/qa-chat-edit-20261123' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_CHAT_CLEAR_ATOMIC_20261122' || github.event.head_commit.message == 'RELEASE_CHAT_CLEAR_QA_ONLY_20261122') && 'integration/qa-chat-clear-20261122' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_CHAT_PLUS_FORWARD_20261122' || github.event.head_commit.message == 'RELEASE_CHAT_PLUS_FORWARD_QA_ONLY_20261122') && 'integration/qa-chat-plus-forward-20261122' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_CHAT_IMAGE_BATCH_20261122' || github.event.head_commit.message == 'RELEASE_CHAT_IMAGE_BATCH_QA_ONLY_20261122') && 'integration/qa-chat-image-batch-20261122' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_CHAT_PLUS_CARDS_20261122' || github.event.head_commit.message == 'RELEASE_CHAT_PLUS_CARDS_QA_ONLY_20261122') && 'integration/qa-chat-plus-cards-20261122' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_CHAT_UNSENT_DRAFT_V2_20261122' || github.event.head_commit.message == 'RELEASE_CHAT_UNSENT_DRAFT_V2_QA_ONLY_20261122') && 'integration/qa-chat-unsent-draft-v2-20261122' || github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_CHAT_UNSENT_DRAFT_20261122' && 'integration/qa-chat-unsent-draft-20261122' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_CHAT_SEARCH_INDEX_20261122' || github.event.head_commit.message == 'RELEASE_CHAT_SEARCH_INDEX_QA_ONLY_20261122') && 'integration/qa-chat-search-index-20261122' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_CHAT_FOLLOWUP_STOP_20261122' || github.event.head_commit.message == 'RELEASE_CHAT_FOLLOWUP_STOP_QA_ONLY_20261122') && 'integration/qa-chat-followup-stop-20261122' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_DOCK_CENTER_20261122' || github.event.head_commit.message == 'RELEASE_DOCK_CENTER_QA_ONLY_20261122') && 'integration/qa-dock-center-20261122' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_CHARACTER_AI_V2_20261122' || github.event.head_commit.message == 'RELEASE_CHARACTER_AI_V2_QA_ONLY_20261122') && 'integration/qa-character-ai-v2-20261122' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_CHARACTER_AI_STABILIZE_20261122' || github.event.head_commit.message == 'RELEASE_CHARACTER_AI_STABILIZE_QA_ONLY_20261122') && 'integration/qa-character-ai-stabilize-20261122' || github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_PORTRAIT_ARCHIVE_AI_20261122' || github.event.head_commit.message == 'RELEASE_PORTRAIT_ARCHIVE_AI_QA_ONLY_20261122') && 'integration/qa-portrait-archive-ai-20261122' || github.event_name == 'push' && 'integration/qa-role-copy-errors-20261122' || inputs.candidate == 'role-copy-v119' && 'integration/qa-role-copy-errors-20261122' || inputs.candidate == 'role-editor-v118' && 'integration/qa-role-editor-labels-v118-20261122' || inputs.candidate == 'role-list-v117' && 'integration/qa-role-list-v117-20261122' || inputs.candidate == 'batch1-p0-376' && 'integration/qa-batch1-376' || inputs.candidate == 'chat-p0-375' && 'integration/qa-single-chat-375' || secrets.CANDIDATE_REF }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           path: candidate
-          persist-credentials: ${{ !(github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_DESKTOP_STABILITY_P0_20261124') }}
+          persist-credentials: ${{ !(github.event_name == 'push' && (github.event.head_commit.message == 'VERIFY_DESKTOP_STABILITY_P0_20261124' || github.event.head_commit.message == 'VERIFY_PUSH_FULL_NODE_V311_20261124')) }}
           fetch-depth: 100
       # Verify-only P0 desktop stability candidate; no release credentials or artifacts.
       # Recheck the same immutable candidate after the metadata guard stopped checkout.
@@ -285,7 +285,7 @@ jobs:
       - name: Verify v311 full sequential Node gate without deployment
         if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_FULL_NODE_V311_20261124' }}
         shell: bash
-        timeout-minutes: 20
+        timeout-minutes: 50
         run: |
           set -euo pipefail
           test "$(git -C candidate rev-parse HEAD)" = '131507d675c0deb222bbcb4bd6f1d602a15a9847' || {
@@ -293,45 +293,39 @@ jobs:
           }
           cd candidate
           log="$RUNNER_TEMP/v311-private.log"
-          trap 'rm -f "$log"' EXIT
-          if ! timeout 180s npm ci --no-audit --no-fund >"$log" 2>&1; then
-            echo 'FULL_NODE_V311_FAIL:npm-ci'; exit 1
-          fi
-          echo 'FULL_NODE_V311_STAGE:npm-ci:PASS'
-          if ! timeout 180s npm run build >"$log" 2>&1; then
-            echo 'FULL_NODE_V311_FAIL:vite-build'; exit 1
-          fi
-          echo 'FULL_NODE_V311_STAGE:vite-build:PASS'
-          if ! timeout 240s docker pull mcr.microsoft.com/playwright:v1.64.1-noble >"$log" 2>&1; then
-            echo 'FULL_NODE_V311_FAIL:browser-image'; exit 1
-          fi
-          echo 'FULL_NODE_V311_STAGE:browser-image:PASS'
-          # File-by-file diagnosis prints only numeric ordinals, never source.
-          if ! timeout 600s docker run --rm --ipc=host --network bridge \
-              --mount "type=bind,src=$PWD,dst=/work" --workdir /work \
-              mcr.microsoft.com/playwright:v1.64.1-noble \
-              bash -lc 'set -euo pipefail
-                ordinal=0
-                while IFS= read -r -d "" testcase; do
-                  ordinal=$((ordinal+1))
-                  if ! timeout 70s node --test "$testcase" >/tmp/isolated-private.log 2>&1; then
-                    echo "FULL_NODE_V311_FAILED_FILE_ORDINAL:$ordinal"
-                    exit 12
-                  fi
-                done < <(find tests -type f -name "*.test.mjs" -print0 | LC_ALL=C sort -z)
-                echo "FULL_NODE_V311_DIAG_PASS:$ordinal"' >"$log" 2>&1; then
-            ordinal="$(sed -n -E 's/^FULL_NODE_V311_FAILED_FILE_ORDINAL:([0-9]+)$/\1/p' "$log" | tail -n 1)"
-            echo "FULL_NODE_V311_FAIL:individual-${ordinal:-unresolved}"
+          image=mcr.microsoft.com/playwright:v1.64.1-noble
+          name="sealed-v311-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          trap 'docker rm -f "$name" >/dev/null 2>&1 || true; rm -f "$log"' EXIT
+          checked() {
+            local stage="$1" seconds="$2" rc=0
+            shift 2
+            echo "FULL_NODE_V311_STAGE:$stage:START"
+            timeout --signal=TERM --kill-after=15s "${seconds}s" "$@" >"$log" 2>&1 || rc=$?
+            if [[ "$rc" -ne 0 ]]; then
+              echo "FULL_NODE_V311_FAIL:$stage:EXIT_$rc"
+              return 1
+            fi
+            echo "FULL_NODE_V311_STAGE:$stage:PASS"
+          }
+          checked browser-image 480 docker pull "$image"
+          # Install npm packages and execute every gate inside the same official
+          # image, not on the host. No host browser dependency installation.
+          checked npm-ci 360 docker run --rm --ipc=host --network bridge \
+            --mount "type=bind,src=$PWD,dst=/work" --workdir /work \
+            "$image" npm ci --no-audit --no-fund
+          isolated=(docker run --rm --name "$name" --ipc=host --network none --mount "type=bind,src=$PWD,dst=/work" --workdir /work "$image")
+          checked browser-launch 120 "${isolated[@]}" node --input-type=module -e 'import {chromium,webkit} from "playwright"; for (const type of [chromium,webkit]) { const b=await type.launch({headless:true}); const p=await b.newPage(); await p.goto("about:blank"); await b.close(); }'
+          checked vite-build 240 "${isolated[@]}" npm run build
+          # One complete Node run, rather than an extra file-by-file pass.
+          # Only fixed stage labels and numeric failure counts leave the runner.
+          if ! checked all-node-regression 1500 "${isolated[@]}" node --test --test-concurrency=1; then
+            grep -E '^# (tests|pass|fail|cancelled|skipped) [0-9]+$' "$log" | tail -n 5 || true
             exit 1
           fi
-          echo 'FULL_NODE_V311_STAGE:individual-suites:PASS'
-          if ! timeout 570s docker run --rm --ipc=host --network bridge \
-              --mount "type=bind,src=$PWD,dst=/work" --workdir /work \
-              mcr.microsoft.com/playwright:v1.64.1-noble \
-              node --test --test-concurrency=1 >"$log" 2>&1; then
-            echo 'FULL_NODE_V311_FAIL:all-node-discovery'; exit 1
-          fi
-          echo 'FULL_NODE_V311_PASS:ALL_SEQUENTIAL_NODE'
+          grep -E '^# (tests|pass|fail|cancelled|skipped) [0-9]+$' "$log" | tail -n 5 || true
+          checked browser-push 180 "${isolated[@]}" node tests/cloud-push-mobile-qa.browser.mjs
+          checked browser-pwa-upgrade 180 "${isolated[@]}" node tests/pwa-cross-release-upgrade.browser.mjs
+          echo 'FULL_NODE_V311_PASS:ALL_SEQUENTIAL_NODE_AND_BROWSER'
       - name: Verify v311 safe push merge and PWA release stamp on isolated browsers
         if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_MERGE_V311_20261124' }}
         shell: bash
