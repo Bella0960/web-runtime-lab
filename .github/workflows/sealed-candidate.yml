@@ -123,8 +123,13 @@ jobs:
             echo 'CLOUD_INBOX_QA_FAILED:chromium-install'; exit 1
           fi
           if ! node tests/cloud-push-browser-qa.mjs >"$log" 2>&1; then
-            # Only bounded numeric stage markers can leave the sealed private log.
-            stage="$(grep -E '^CLOUD_BROWSER_QA_STAGE:(375|390|430):[1-7]
+            stage="$(grep 'CLOUD_BROWSER_QA_STAGE:' "$log" | tail -n 1 || true)"
+            case "$stage" in
+              CLOUD_BROWSER_QA_STAGE:375:[1-7]|CLOUD_BROWSER_QA_STAGE:390:[1-7]|CLOUD_BROWSER_QA_STAGE:430:[1-7])
+                echo "$stage" ;;
+            esac
+            echo 'CLOUD_INBOX_QA_FAILED:chromium-synthetic'; exit 1
+          fi
           echo 'CLOUD_INBOX_QA_PASS:Node_Push_Inbox_Vite_PWA_Chromium375_390_430'
       - name: Pin theme-studio batch 1+2 on live v146 and restrict diff
         if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_THEME_STUDIO_BATCH12_ON_V146_20261124' }}
