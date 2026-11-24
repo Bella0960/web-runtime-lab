@@ -1,5 +1,8 @@
 name: Reusable isolated QA request
 on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/reusable-qa-request.yml', 'tests/reusable-qa-request.test.mjs']
   workflow_dispatch:
     inputs:
       operation:
@@ -26,10 +29,23 @@ permissions:
 # All publishing requests share the legacy primary release lock.
 # Read-only verification never takes that lock or cancels a release.
 concurrency:
-  group: ${{ (github.event_name == 'workflow_dispatch' && inputs.operation == 'verify') && format('reusable-verify-{0}', inputs.candidate) || 'sealed-candidate' }}
+  group: ${{ github.event_name == 'pull_request' && format('request-contract-{0}', github.event.pull_request.number) || (github.event_name == 'workflow_dispatch' && inputs.operation == 'verify') && format('reusable-verify-{0}', inputs.candidate) || 'sealed-candidate' }}
   cancel-in-progress: false
 
 jobs:
+  request-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test public request contract without private access
+        run: node --test tests/reusable-qa-request.test.mjs
   request:
     if: github.ref == 'refs/heads/main' && github.actor == github.repository_owner
     runs-on: ubuntu-24.04
@@ -60,7 +76,7 @@ jobs:
           if (!request || typeof request !== 'object' || Array.isArray(request) ||
               Object.keys(request).some(key => !['operation','candidate','confirmation'].includes(key)) ||
               !['verify','release'].includes(request.operation) ||
-              !/^[0-9a-f]{40}$/.test(request.candidate || '') ||
+              typeof request.candidate !== 'string' || !/^[0-9a-f]{40}$/.test(request.candidate) ||
               (request.operation === 'release' && request.confirmation !== 'qa-only')) {
             throw new Error('Invalid immutable QA request');
           }
