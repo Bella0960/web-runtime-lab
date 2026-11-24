@@ -315,6 +315,51 @@ jobs:
           # Playwright image with preinstalled Chromium/WebKit and OS libraries.
           # The mounted candidate stays on this temporary private runner only.
           test_step browser-image 420 docker pull mcr.microsoft.com/playwright:v1.64.1-noble
+          # Diagnose individual source-test files without leaking filenames.
+          # This runs only in the private source checkout and emits numeric IDs.
+          if ! test_step diagnose-suites 680 docker run --rm --network bridge --ipc=host \
+              --mount "type=bind,src=$PWD,dst=/work" --workdir /work \
+              mcr.microsoft.com/playwright:v1.64.1-noble \
+              bash -lc 'set -euo pipefail
+                i=0
+                while IFS= read -r -d "" testcase; do
+                  i=$((i+1))
+                  if ! timeout 90s node --test "$testcase" >/tmp/private-test-output.log 2>&1; then
+                    echo "FULL_NODE_V311_FAILED_FILE_ORDINAL:$i"
+                    exit 17
+                  fi
+                done < <(find tests -type f -name "*.test.mjs" -print0 | sort -z)
+                echo "FULL_NODE_V311_DIAGNOSE_PASS:$i"'; then
+            grep -E '^FULL_NODE_V311_FAILED_FILE_ORDINAL:[0-9]+
+          if ! test_step all-node-regression 680 docker run --rm --network bridge --ipc=host \
+              --mount "type=bind,src=$PWD,dst=/work" --workdir /work \
+              mcr.microsoft.com/playwright:v1.64.1-noble \
+              node --test --test-concurrency=1; then
+            # Print only ordinal file IDs: no private source path, test name
+            # or captured log is allowed into the public CI output.
+            node --input-type=module - "$log" <<'NODE'
+          import fs from 'node:fs';
+          import { execFileSync } from 'node:child_process';
+          const lines=fs.readFileSync(process.argv[2],'utf8').split(/\r?\n/);
+          const tracked=execFileSync('git',['ls-files','-z'],{encoding:'utf8'})
+            .split('\0').filter(x=>/\.test\.[cm]?js$/.test(x)).sort();
+          const failed=new Set();
+          for(const line of lines){
+            const m=/^not ok \d+ - (.*\.test\.[cm]?js)(?:\s*\(.*\))?\s*$/.exec(line);
+            if(!m)continue;
+            const suffix=m[1].replace(/\\/g,'/');
+            const index=tracked.findIndex(p=>suffix.endsWith(p));
+            if(index>=0)failed.add(index+1);
+          }
+          console.log('FULL_NODE_V311_FAILED_FILE_ORDINALS:'+([...failed].sort((a,b)=>a-b).join(',')||'unresolved'));
+          NODE
+            exit 1
+          fi
+          echo 'FULL_NODE_V311_PASS:ALL_SEQUENTIAL_NODE'
+ "$log" | tail -n 1 || true
+            exit 1
+          fi
+          echo 'FULL_NODE_V311_STAGE:individual-suites:PASS'
           if ! test_step all-node-regression 680 docker run --rm --network bridge --ipc=host \
               --mount "type=bind,src=$PWD,dst=/work" --workdir /work \
               mcr.microsoft.com/playwright:v1.64.1-noble \
