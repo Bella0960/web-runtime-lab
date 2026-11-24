@@ -1,4 +1,5 @@
 name: Sealed candidate verification
+# Release gate: verified exact candidate 0eff4da2591410cff01d83ea33174c1896bc5f0a at public 46-gate run #45331930508 (success); QA-only v157, no production.
 # API-UI-003: v123 QA-only release after full public verification #45072859923; candidate SHA 844ff812ecf1e216a57be74045dbbe33ea644138.
 # Owner-approved v122 API UI QA-only deployment after public verify run 45070504276; frozen source c4dfbcc79a4fe288293584ff38296ce4e31f37fb.
 # QA-only post-test failures emit a fixed sanitized category; never raw logs.
