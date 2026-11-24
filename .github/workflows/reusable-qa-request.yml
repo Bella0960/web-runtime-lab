@@ -1,0 +1,150 @@
+name: Reusable isolated QA request
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/reusable-qa-request.yml', 'tests/reusable-qa-request.test.mjs']
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Verify or publish to the existing QA target
+        type: choice
+        options: [verify, release]
+        required: true
+        default: verify
+      candidate:
+        description: Exact reviewed 40-character candidate commit
+        type: string
+        required: true
+      confirmation:
+        description: For release enter qa-only
+        type: string
+        required: false
+  push:
+    branches: [main]
+    paths: ['.github/qa-release-request.json']
+
+permissions:
+  contents: read
+
+# All publishing requests share the legacy primary release lock.
+# Read-only verification never takes that lock or cancels a release.
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('request-contract-{0}', github.event.pull_request.number) || (github.event_name == 'workflow_dispatch' && inputs.operation == 'verify') && format('reusable-verify-{0}', inputs.candidate) || 'sealed-candidate' }}
+  cancel-in-progress: false
+
+jobs:
+  request-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test public request contract without private access
+        run: node --test tests/reusable-qa-request.test.mjs
+  request:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.actor == github.repository_owner
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public content guard
+        run: node scripts/public-content-check.mjs
+      - name: Validate immutable request
+        id: request
+        env:
+          EVENT: ${{ github.event_name }}
+          OPERATION: ${{ inputs.operation }}
+          CANDIDATE: ${{ inputs.candidate }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync, appendFileSync} from 'node:fs';
+          const env = process.env;
+          const request = env.EVENT === 'push'
+            ? JSON.parse(readFileSync('.github/qa-release-request.json', 'utf8'))
+            : {operation: env.OPERATION, candidate: env.CANDIDATE, confirmation: env.CONFIRMATION};
+          if (!request || typeof request !== 'object' || Array.isArray(request) ||
+              Object.keys(request).some(key => !['operation','candidate','confirmation'].includes(key)) ||
+              !['verify','release'].includes(request.operation) ||
+              typeof request.candidate !== 'string' || !/^[0-9a-f]{40}$/.test(request.candidate) ||
+              (request.operation === 'release' && request.confirmation !== 'qa-only')) {
+            throw new Error('Invalid immutable QA request');
+          }
+          appendFileSync(env.GITHUB_OUTPUT, 'operation=' + request.operation + '\nsha=' + request.candidate + '\n');
+          JS
+      - name: Mask restricted checkout metadata
+        env:
+          SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
+          SOURCE_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SOURCE_REPOSITORY" && test -n "$SOURCE_TOKEN"
+          echo "::add-mask::$SOURCE_REPOSITORY"
+          echo "::add-mask::${SOURCE_REPOSITORY##*/}"
+      - name: Restricted private source checkout
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.CANDIDATE_REPOSITORY }}
+          token: ${{ secrets.CANDIDATE_READ_TOKEN }}
+          ref: ${{ steps.request.outputs.sha }}
+          path: candidate
+          fetch-depth: 64
+          persist-credentials: true
+      - name: Validate candidate and approved branch without exposing private paths
+        env:
+          EXPECTED_SHA: ${{ steps.request.outputs.sha }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          import {spawnSync} from 'node:child_process';
+          const fail = () => { throw new Error('Candidate SHA or approved branch mismatch'); };
+          const git = args => {
+            const result = spawnSync('git',args,{cwd:'candidate',encoding:'utf8',timeout:60000});
+            if (result.status !== 0 || result.error) fail();
+            return result.stdout.trim();
+          };
+          try {
+            if (git(['rev-parse','HEAD']) !== process.env.EXPECTED_SHA) fail();
+            const source = readFileSync('candidate/scripts/qa-direct-release.mjs','utf8');
+            if (!source.includes("process.env.QA_ADAPTIVE_RELEASE === '1'")) fail();
+            const refs = git(['ls-remote','--heads','origin']).split('\n')
+              .map(line => line.split('\t')).filter(([sha,ref]) =>
+                sha === process.env.EXPECTED_SHA && /^refs\/heads\/(integration|qa)\/[a-zA-Z0-9/_-]+$/.test(ref || ''))
+              .map(([,ref]) => ref.slice('refs/heads/'.length)).sort();
+            const branch = refs[0];
+            if (!branch || !refs.includes(branch)) fail();
+            git(['switch','-C',branch,process.env.EXPECTED_SHA]);
+          } catch { fail(); }
+          console.log('Immutable candidate and approved branch confirmed.');
+          JS
+      - name: Verify once without deployment credentials
+        if: steps.request.outputs.operation == 'verify'
+        env:
+          QA_ADAPTIVE_RELEASE: '1'
+        run: node scripts/run-candidate.mjs verify
+      - name: Automatically select scope, validate and publish QA once
+        if: steps.request.outputs.operation == 'release'
+        env:
+          QA_ADAPTIVE_RELEASE: '1'
+          CANDIDATE_RELEASE_ACK: qa-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
+        run: node scripts/run-candidate.mjs release
+      - name: Clear persisted private checkout credentials
+        if: always()
+        shell: bash
+        run: |
+          if test -d candidate/.git; then
+            git -C candidate config --local --unset-all http.https://github.com/.extraheader || true
+          fi
