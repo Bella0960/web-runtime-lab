@@ -97,3 +97,13 @@ export function summarizeSealedNodeFailures(sealedLog, allowedTestFiles = []) {
     failures.map(item => [item.file + ':' + item.line + ':' + item.code, item])
   ).values()];
 }
+
+// A bounded, allowlisted receipt emitted by browser tests. Never return arbitrary log text.
+export function summarizeSealedBrowserFailure(log) {
+  const matches = [...String(log).matchAll(/^SEALED_BROWSER_FAILURE:([0-9]{1,3}):(timeout|assertion|browser-environment|local-server|other)\s*$/gm)];
+  const last = matches.at(-1);
+  if (!last) return null;
+  const phase = Number(last[1]);
+  const allowed = [0, 1, ...[375,390,430].flatMap(w => Array.from({length:8},(_,i)=>w+i))];
+  return allowed.includes(phase) ? {phase, code:last[2]} : null;
+}
