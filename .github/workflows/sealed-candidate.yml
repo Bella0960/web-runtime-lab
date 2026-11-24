@@ -48,7 +48,8 @@ concurrency:
   # Keep all release operations serialized. This credential-free preview
   # verification has no publish step and must not wait behind a stuck release.
   group: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_FULL_NODE_V311_20261124' && 'sealed-push-v311-full-node' || github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_MERGE_V311_20261124' && 'sealed-candidate-push-v311' || github.event_name == 'push' && github.event.head_commit.message == 'CHECK_ANDROID_SHORT_HOST_20261124' && 'short-host-https-check' || github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_DESKTOP_STABILITY_P0_20261124' && 'sealed-candidate-desktop-stability' || github.event_name == 'push' && github.event.head_commit.message == 'DEPLOY_ANDROID_LOCKSCREEN_SANDBOX_20261124' && 'sealed-android-lockscreen-preview' || github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_LOCKSCREEN_V157_20261124' && 'sealed-candidate-v157-preview-verify' || github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_CLOUD_PREVIEW_20261124' && 'sealed-candidate-cloud-push-verify' || 'sealed-candidate' }}
-  cancel-in-progress: false
+  # Only superseded test-only SHA checks may be cancelled; releases never are.
+  cancel-in-progress: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_FULL_NODE_V311_20261124' }}
 
 jobs:
   candidate:
