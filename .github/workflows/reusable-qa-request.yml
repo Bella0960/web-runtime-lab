@@ -73,7 +73,7 @@ jobs:
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
           ref: ${{ steps.request.outputs.sha }}
           path: candidate
-          fetch-depth: 1
+          fetch-depth: 64
           persist-credentials: true
       - name: Validate candidate and approved branch without exposing private paths
         env:
@@ -91,10 +91,14 @@ jobs:
           try {
             if (git(['rev-parse','HEAD']) !== process.env.EXPECTED_SHA) fail();
             const source = readFileSync('candidate/scripts/qa-direct-release.mjs','utf8');
-            const branch = source.match(/^const BRANCH = '([a-zA-Z0-9/_-]+)';$/m)?.[1];
-            if (!branch || !/^(integration|qa)\/[a-zA-Z0-9/_-]+$/.test(branch)) fail();
-            const remote = git(['ls-remote','--heads','origin','refs/heads/'+branch]);
-            if (remote !== process.env.EXPECTED_SHA+'\trefs/heads/'+branch) fail();
+            const legacy = source.match(/^const BRANCH = '([a-zA-Z0-9/_-]+)';$/m)?.[1];
+            const adaptive = source.includes("process.env.QA_ADAPTIVE_RELEASE === '1'");
+            const refs = git(['ls-remote','--heads','origin']).split('\n')
+              .map(line => line.split('\t')).filter(([sha,ref]) =>
+                sha === process.env.EXPECTED_SHA && /^refs\/heads\/(integration|qa)\/[a-zA-Z0-9/_-]+$/.test(ref || ''))
+              .map(([,ref]) => ref.slice('refs/heads/'.length)).sort();
+            const branch = adaptive ? refs[0] : legacy;
+            if (!branch || !refs.includes(branch)) fail();
             git(['switch','-C',branch,process.env.EXPECTED_SHA]);
           } catch { fail(); }
           console.log('Immutable candidate and approved branch confirmed.');
@@ -102,9 +106,10 @@ jobs:
       - name: Verify once without deployment credentials
         if: steps.request.outputs.operation == 'verify'
         run: node scripts/run-candidate.mjs verify
-      - name: Validate and publish once using existing protected QA runner
+      - name: Automatically select scope, validate and publish QA once
         if: steps.request.outputs.operation == 'release'
         env:
+          QA_ADAPTIVE_RELEASE: '1'
           CANDIDATE_RELEASE_ACK: qa-only
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CANDIDATE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CANDIDATE_DEPLOY_TOKEN }}
