@@ -307,6 +307,7 @@ jobs:
           }
           checked npm-ci 240 npm ci --no-audit --no-fund
           checked node-push-account 180 node --test tests/cloud-push-mobile-qa-integration.test.mjs tests/cloud-push-subscription-gesture.test.mjs tests/qa-cloud-settings-integration.test.mjs tests/push-transport-guards.test.mjs tests/push-real-empty-mode.test.mjs tests/account-storage-isolation.test.mjs tests/account-session-expiry.test.mjs
+          checked build-vite 180 npm run build
           # Classify each existing v311 PWA regression separately. Only
           # numbered outcomes leave the runner; no private test logs.
           pwa_failed=0
@@ -332,7 +333,6 @@ jobs:
             exit 1
           fi
           echo 'PUSH_MERGE_QA_STAGE:node-pwa-release:PASS'
-          checked build-vite 180 npm run build
           checked browser-install 360 npx --no-install playwright install --with-deps chromium webkit
           checked browser-push 150 node tests/cloud-push-mobile-qa.browser.mjs
           checked browser-pwa-upgrade 150 node tests/pwa-cross-release-upgrade.browser.mjs
