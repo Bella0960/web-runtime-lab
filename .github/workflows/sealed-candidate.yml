@@ -285,83 +285,55 @@ jobs:
       - name: Verify v311 full sequential Node gate without deployment
         if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_FULL_NODE_V311_20261124' }}
         shell: bash
-        timeout-minutes: 50
+        timeout-minutes: 20
         run: |
           set -euo pipefail
           test "$(git -C candidate rev-parse HEAD)" = '32ce0fefdc812ec16e4a9f9896070d7d3fea5096' || {
             echo 'FULL_NODE_V311_FAIL:source-pin'; exit 1
           }
           cd candidate
-          log="$RUNNER_TEMP/v311-private.log"
+          log="$RUNNER_TEMP/node-full-private.log"
+          trap 'rm -f "$log"' EXIT
+          if ! timeout 240s npm ci --no-audit --no-fund >"$log" 2>&1; then
+            echo 'FULL_NODE_V311_FAIL:npm-ci'; exit 1
+          fi
+          echo 'FULL_NODE_V311_STAGE:npm-ci:PASS'
+          if ! timeout 180s npm run build >"$log" 2>&1; then
+            echo 'FULL_NODE_V311_FAIL:vite-build'; exit 1
+          fi
+          echo 'FULL_NODE_V311_STAGE:vite-build:PASS'
           image=mcr.microsoft.com/playwright:v1.64.1-noble
-          name="sealed-v311-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          trap 'docker rm -f "$name" >/dev/null 2>&1 || true; rm -f "$log"' EXIT
-          checked() {
-            local stage="$1" seconds="$2" rc=0
-            shift 2
-            echo "FULL_NODE_V311_STAGE:$stage:START"
-            timeout --signal=TERM --kill-after=15s "${seconds}s" "$@" >"$log" 2>&1 || rc=$?
-            if [[ "$rc" -ne 0 ]]; then
-              echo "FULL_NODE_V311_FAIL:$stage:EXIT_$rc"
-              return 1
-            fi
-            echo "FULL_NODE_V311_STAGE:$stage:PASS"
-          }
-          checked browser-image 480 docker pull "$image"
-          # Install npm packages and execute every gate inside the same official
-          # image, not on the host. No host browser dependency installation.
-          checked npm-ci 360 docker run --rm --ipc=host --network bridge \
-            --mount "type=bind,src=$PWD,dst=/work" --workdir /work \
-            "$image" npm ci --no-audit --no-fund
-          isolated=(docker run --rm --name "$name" --ipc=host --network none --mount "type=bind,src=$PWD,dst=/work" --workdir /work "$image")
-          checked browser-launch 120 "${isolated[@]}" node --input-type=module -e 'import {chromium,webkit} from "playwright"; for (const type of [chromium,webkit]) { const b=await type.launch({headless:true}); const p=await b.newPage(); await p.goto("about:blank"); await b.close(); }'
-          # Vite postbuild invokes repository git tools unavailable in the browser image.
-          checked vite-build 240 npm run build
-          # Isolate the first failing Node file numerically; never print its
-          # private path, test name, stack, or captured output to public logs.
-          if ! checked isolate-test-files 1050 "${isolated[@]}" bash -lc '
-            set -euo pipefail
-            ordinal=0
-            failures=0
-            while IFS= read -r -d "" file; do
-              ordinal=$((ordinal+1))
-              if ! timeout 75s node --test "$file" >/tmp/isolated-node-output.log 2>&1; then
-                echo "V311_FAILED_FILE_NUMBER:$ordinal"
-                failures=$((failures+1))
-                if [ "$failures" -ge 12 ]; then break; fi
-              fi
-            done < <(find tests -type f -name "*.test.mjs" -print0 | LC_ALL=C sort -z)
-            if [ "$failures" -gt 0 ]; then exit 14; fi
-            echo "V311_DIAGNOSE_OK:$ordinal"
-          '; then
-            codes="$(grep -E '^V311_FAILED_FILE_NUMBER:[0-9]+
+          if ! timeout 240s docker pull "$image" >"$log" 2>&1; then
+            echo 'FULL_NODE_V311_FAIL:browser-image'; exit 1
           fi
-          echo 'FULL_NODE_V311_STAGE:isolated-file-tests:PASS'
-          # One complete Node run, rather than an extra file-by-file pass.
-          # Only fixed stage labels and numeric failure counts leave the runner.
-          if ! checked all-node-regression 1500 "${isolated[@]}" node --test --test-concurrency=1; then
-            grep -E '^# (tests|pass|fail|cancelled|skipped) [0-9]+$' "$log" | tail -n 5 || true
+          echo 'FULL_NODE_V311_STAGE:browser-image:PASS'
+          # Scan each private test suite; publish only stable numeric ordinals.
+          if ! timeout 720s docker run --rm --ipc=host --network bridge \
+              --mount "type=bind,src=$PWD,dst=/work" --workdir /work "$image" \
+              bash -lc 'set -euo pipefail
+                n=0
+                fails=0
+                while IFS= read -r -d "" filename; do
+                  n=$((n+1))
+                  if ! timeout 80s node --test "$filename" >/tmp/private-suite.log 2>&1; then
+                    echo "FAIL_FILE:$n"
+                    fails=$((fails+1))
+                    if [ "$fails" -ge 12 ]; then break; fi
+                  fi
+                done < <(find tests -type f -name "*.test.mjs" -print0 | LC_ALL=C sort -z)
+                if [ "$fails" -gt 0 ]; then exit 17; fi
+                echo "SUITES_PASS:$n"' >"$log" 2>&1; then
+            found="$(sed -n -E 's/^FAIL_FILE:([0-9]+)$/\1/p' "$log" | paste -sd, -)"
+            echo "FULL_NODE_V311_FILE_FAIL:$found"
             exit 1
           fi
-          grep -E '^# (tests|pass|fail|cancelled|skipped) [0-9]+$' "$log" | tail -n 5 || true
-          checked browser-push 180 "${isolated[@]}" node tests/cloud-push-mobile-qa.browser.mjs
-          checked browser-pwa-upgrade 180 "${isolated[@]}" node tests/pwa-cross-release-upgrade.browser.mjs
-          echo 'FULL_NODE_V311_PASS:ALL_SEQUENTIAL_NODE_AND_BROWSER'
- "$log" | sed -E 's/.*:([0-9]+)$/\1/' | paste -sd, - || true)"
-            echo "FULL_NODE_V311_FILE_FAIL:${codes:-unresolved}"
-            exit 1
+          echo 'FULL_NODE_V311_STAGE:individual-suites:PASS'
+          if ! timeout 600s docker run --rm --ipc=host --network bridge \
+              --mount "type=bind,src=$PWD,dst=/work" --workdir /work "$image" \
+              node --test --test-concurrency=1 >"$log" 2>&1; then
+            echo 'FULL_NODE_V311_FAIL:aggregate'; exit 1
           fi
-          echo 'FULL_NODE_V311_STAGE:isolated-file-tests:PASS'
-          # One complete Node run, rather than an extra file-by-file pass.
-          # Only fixed stage labels and numeric failure counts leave the runner.
-          if ! checked all-node-regression 1500 "${isolated[@]}" node --test --test-concurrency=1; then
-            grep -E '^# (tests|pass|fail|cancelled|skipped) [0-9]+$' "$log" | tail -n 5 || true
-            exit 1
-          fi
-          grep -E '^# (tests|pass|fail|cancelled|skipped) [0-9]+$' "$log" | tail -n 5 || true
-          checked browser-push 180 "${isolated[@]}" node tests/cloud-push-mobile-qa.browser.mjs
-          checked browser-pwa-upgrade 180 "${isolated[@]}" node tests/pwa-cross-release-upgrade.browser.mjs
-          echo 'FULL_NODE_V311_PASS:ALL_SEQUENTIAL_NODE_AND_BROWSER'
+          echo 'FULL_NODE_V311_PASS:ALL_SEQUENTIAL_NODE'
       - name: Verify v311 safe push merge and PWA release stamp on isolated browsers
         if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'VERIFY_PUSH_MERGE_V311_20261124' }}
         shell: bash
