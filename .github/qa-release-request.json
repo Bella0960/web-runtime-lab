@@ -1,5 +1,4 @@
 {
-  "operation": "release",
-  "candidate": "91da83d60033adef2da0d071c71d19bd18a737f9",
-  "confirmation": "qa-only"
+  "operation": "verify",
+  "candidate": "96822eb9a4a303f9f501db5b0c6e0000ef33ab3e"
 }
