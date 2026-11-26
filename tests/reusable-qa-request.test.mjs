@@ -75,13 +75,13 @@ test('current request preserves restricted checkout and QA-only runner boundarie
 
 test('request-file verify is candidate-scoped and does not share the release concurrency lock', () => {
   assert.doesNotMatch(yaml, /^concurrency:/m);
-  const preflight = yaml.split('  preflight:')[1].split('\n  request:')[0];
+  const preflight = yaml.split('  preflight:')[1].split('\\n  request:')[0];
   const request = yaml.split('  request:')[1];
-  assert.match(preflight, /outputs:\s*\n\s+operation: \$\{\{ steps\.request\.outputs\.operation \}\}/);
-  assert.match(preflight, /outputs:\s*\n\s+sha: \$\{\{ steps\.request\.outputs\.sha \}\}/);
-  assert.match(request, /needs: preflight/);
-  assert.match(request, /concurrency:\s*\n\s+group: \$\{\{ needs\.preflight\.outputs\.operation == 'release' && 'sealed-candidate' \|\| format\('reusable-verify-\{0\}', needs\.preflight\.outputs\.sha\) \}\}/);
-  assert.match(request, /if: needs\.preflight\.outputs\.operation == 'verify'/);
-  assert.match(request, /if: needs\.preflight\.outputs\.operation == 'release'/);
-  assert.match(request, /cancel-in-progress: false/);
+  assert.ok(preflight.includes('operation: ${{ steps.request.outputs.operation }}'));
+  assert.ok(preflight.includes('sha: ${{ steps.request.outputs.sha }}'));
+  assert.ok(request.includes('needs: preflight'));
+  assert.ok(request.includes("group: ${{ needs.preflight.outputs.operation == 'release' && 'sealed-candidate' || format('reusable-verify-{0}', needs.preflight.outputs.sha) }}"));
+  assert.ok(request.includes("if: needs.preflight.outputs.operation == 'verify'"));
+  assert.ok(request.includes("if: needs.preflight.outputs.operation == 'release'"));
+  assert.ok(request.includes('cancel-in-progress: false'));
 });
