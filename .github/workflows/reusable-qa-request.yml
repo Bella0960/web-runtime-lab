@@ -45,8 +45,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
-      operation: ${{ needs.preflight.outputs.operation }}
-      sha: ${{ needs.preflight.outputs.sha }}
+      operation: ${{ steps.request.outputs.operation }}
+      sha: ${{ steps.request.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -142,12 +142,12 @@ jobs:
           console.log('Immutable candidate and approved branch confirmed.');
           JS
       - name: Verify once without deployment credentials
-        if: steps.request.outputs.operation == 'verify'
+        if: needs.preflight.outputs.operation == 'verify'
         env:
           QA_ADAPTIVE_RELEASE: '1'
         run: node scripts/run-candidate.mjs verify
       - name: Automatically select scope, validate and publish QA once
-        if: steps.request.outputs.operation == 'release'
+        if: needs.preflight.outputs.operation == 'release'
         env:
           QA_ADAPTIVE_RELEASE: '1'
           CANDIDATE_RELEASE_ACK: qa-only
