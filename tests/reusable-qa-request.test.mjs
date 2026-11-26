@@ -43,7 +43,7 @@ test('invalid input cannot produce a release output',()=>{
 });
 test('PR validation cannot reach the existing release job',()=>{
   assert.match(yaml,/request-contract:\n\s+if: github.event_name == 'pull_request'/);
-  assert.match(yaml,/request:\n\s+if: github.event_name != 'pull_request' && github.ref == 'refs\/heads\/main' && github.actor == github.repository_owner/);
+  assert.match(yaml,/request:\n\s+needs: preflight\n\s+if: needs\.preflight\.result == 'success' && github.event_name != 'pull_request' && github.ref == 'refs\/heads\/main' && github.actor == github.repository_owner/);
   const safeJob=yaml.split('  request-contract:')[1].split('\n  request:')[0];
   assert.doesNotMatch(safeJob,/secrets\.|run-candidate|path: candidate/);
 });
@@ -71,4 +71,17 @@ test('current request preserves restricted checkout and QA-only runner boundarie
   assert.match(runner,/Expected candidate validation and safety gates are missing/);
   assert.doesNotMatch(runner,/console\.(log|error)\(.*(releaseSource|result\.stderr|readFileSync\(outputPath)/);
   for(const content of [yaml,runner]) assert.equal(content.toLowerCase().includes(String.fromCharCode(109,97,111)),false);
+});
+
+test('request-file verify is candidate-scoped and does not share the release concurrency lock', () => {
+  assert.doesNotMatch(yaml, /^concurrency:/m);
+  const preflight = yaml.split('  preflight:')[1].split('\\n  request:')[0];
+  const request = yaml.split('  request:')[1];
+  assert.ok(preflight.includes('operation: ${{ steps.request.outputs.operation }}'));
+  assert.ok(preflight.includes('sha: ${{ steps.request.outputs.sha }}'));
+  assert.ok(request.includes('needs: preflight'));
+  assert.ok(request.includes("group: ${{ needs.preflight.outputs.operation == 'release' && 'sealed-candidate' || format('reusable-verify-{0}', needs.preflight.outputs.sha) }}"));
+  assert.ok(request.includes("if: needs.preflight.outputs.operation == 'verify'"));
+  assert.ok(request.includes("if: needs.preflight.outputs.operation == 'release'"));
+  assert.ok(request.includes('cancel-in-progress: false'));
 });

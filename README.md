@@ -8,6 +8,8 @@ Use `.github/workflows/reusable-qa-request.yml` via the owner-authorized request
 
 The reusable entry is the sole active QA release path. All legacy sealed and pinned release entries are retired. Fix the reusable entry if a request fails; do not revert to old workflows. Read the latest active policy before each release. Do not edit workflow files to request a new version or create more one-off pinned workflows. Do not use historical candidate IDs as current release requests.
 
+Concurrency is resolved after a credential-free request preflight: all release operations share one non-cancelling release lock, while read-only verify operations use a candidate-SHA-scoped lock and do not occupy the release lock. For an unchanged candidate that is ready for QA publication, use one release request rather than running verify and then repeating the same suite in release.
+
 The `qa-candidate` branch has a separate opt-in generic experiment verification workflow. Ordinary changes to main do not request a release unless the request file changes.
 
 ```sh
