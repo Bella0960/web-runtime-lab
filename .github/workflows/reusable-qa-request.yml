@@ -26,12 +26,6 @@ on:
 permissions:
   contents: read
 
-# All publishing requests share the legacy primary release lock.
-# Read-only verification never takes that lock or cancels a release.
-concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('request-contract-{0}', github.event.pull_request.number) || (github.event_name == 'workflow_dispatch' && inputs.operation == 'verify') && format('reusable-verify-{0}', inputs.candidate) || 'sealed-candidate' }}
-  cancel-in-progress: false
-
 jobs:
   request-contract:
     if: github.event_name == 'pull_request'
@@ -46,10 +40,13 @@ jobs:
           node-version: '22'
       - name: Test public request contract without private access
         run: node --test tests/reusable-qa-request.test.mjs tests/sealed-failure-summary.test.mjs
-  request:
+  preflight:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.actor == github.repository_owner
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 5
+    outputs:
+      operation: ${{ needs.preflight.outputs.operation }}
+      sha: ${{ needs.preflight.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,8 +54,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Public content guard
-        run: node scripts/public-content-check.mjs
       - name: Validate immutable request
         id: request
         env:
@@ -82,6 +77,24 @@ jobs:
           }
           appendFileSync(env.GITHUB_OUTPUT, 'operation=' + request.operation + '\nsha=' + request.candidate + '\n');
           JS
+  request:
+    needs: preflight
+    if: needs.preflight.result == 'success' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.actor == github.repository_owner
+    # Only releases share the global serial lock. Read-only verification is scoped to its candidate SHA.
+    concurrency:
+      group: ${{ needs.preflight.outputs.operation == 'release' && 'sealed-candidate' || format('reusable-verify-{0}', needs.preflight.outputs.sha) }}
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Public content guard
+        run: node scripts/public-content-check.mjs
       - name: Mask restricted checkout metadata
         env:
           SOURCE_REPOSITORY: ${{ secrets.CANDIDATE_REPOSITORY }}
@@ -97,13 +110,13 @@ jobs:
         with:
           repository: ${{ secrets.CANDIDATE_REPOSITORY }}
           token: ${{ secrets.CANDIDATE_READ_TOKEN }}
-          ref: ${{ steps.request.outputs.sha }}
+          ref: ${{ needs.preflight.outputs.sha }}
           path: candidate
           fetch-depth: 64
           persist-credentials: true
       - name: Validate candidate and approved branch without exposing private paths
         env:
-          EXPECTED_SHA: ${{ steps.request.outputs.sha }}
+          EXPECTED_SHA: ${{ needs.preflight.outputs.sha }}
         run: |
           node --input-type=module <<'JS'
           import {readFileSync} from 'node:fs';
