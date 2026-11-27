@@ -107,3 +107,21 @@ export function summarizeSealedBrowserFailure(log) {
   const allowed = [0, 1, ...[375,390,430].flatMap(w => Array.from({length:8},(_,i)=>w+i))];
   return allowed.includes(phase) ? {phase, code:last[2]} : null;
 }
+
+
+// Resolve the failing browser script from the terminal gate line, but only
+// return a basename that exists in the candidate's tests/ directory and has
+// an explicitly browser-oriented filename. Never echo the raw command/log.
+export function summarizeSealedBrowserTestFailure(sealedLog, allowedBrowserFiles = []) {
+  const allowed = new Set(allowedBrowserFiles.filter(name =>
+    /^[a-z0-9][a-z0-9._-]{0,90}(?:\.browser|-browser|\.smoke)\.mjs$/i.test(name)
+  ));
+  if (!allowed.size) return null;
+  const stopped = String(sealedLog).split(/\r?\n/)
+    .reverse().find(line => line.includes('QA release stopped:')) || '';
+  const match = stopped.match(
+    /^QA release stopped: node tests\/([a-z0-9][a-z0-9._-]{0,90}\.mjs) failed \(exit (?:[0-9]+|null)\):/i
+  );
+  if (!match || !allowed.has(match[1])) return null;
+  return { file: match[1], code: 'BROWSER_TEST_FAILED' };
+}

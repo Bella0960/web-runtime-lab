@@ -1,7 +1,7 @@
 // Execute an isolated, credential-scoped validation without exposing source logs.
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, readSync, statSync, openSync, closeSync, unlinkSync, realpathSync } from 'node:fs';
-import { summarizeSealedFailure, summarizeSealedNodeFailures, summarizeSealedBrowserFailure } from './sealed-failure-summary.mjs';
+import { summarizeSealedFailure, summarizeSealedNodeFailures, summarizeSealedBrowserFailure, summarizeSealedBrowserTestFailure } from './sealed-failure-summary.mjs';
 import { assertApprovedQaTarget } from './qa-target-guard.mjs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -145,6 +145,16 @@ try {
     if (stage === 'adaptive-browser-test' || /^gate-\d+-of-\d+-browser$/.test(stage)) {
       const receipt = summarizeSealedBrowserFailure(sealedLog);
       if (receipt) console.error('Sanitized browser failure: phase=' + receipt.phase + ' category=' + receipt.code);
+      const testDir = join(source, 'tests');
+      const browserFiles = existsSync(testDir)
+        ? readdirSync(testDir, { withFileTypes: true })
+            .filter(item => item.isFile()).map(item => item.name)
+        : [];
+      const failedBrowserTest = summarizeSealedBrowserTestFailure(sealedLog, browserFiles);
+      if (failedBrowserTest) {
+        console.error('Sanitized failing browser test: tests/' +
+          failedBrowserTest.file + ' [' + failedBrowserTest.code + ']');
+      }
     }
     const gateReport = [...sealedLog.matchAll(/^QA_DIAGNOSTIC_FAILED_GATES:([0-9,]{1,80})$/gm)]
       .map(match => match[1]).at(-1);

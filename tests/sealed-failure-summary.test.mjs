@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { summarizeSealedFailure, summarizeSealedNodeFailures, summarizeSealedBrowserFailure } from '../scripts/sealed-failure-summary.mjs';
+import { summarizeSealedFailure, summarizeSealedNodeFailures, summarizeSealedBrowserFailure, summarizeSealedBrowserTestFailure } from '../scripts/sealed-failure-summary.mjs';
 
 const source = `const TESTS = [
   ['npm', ['ci', '--no-audit']],
@@ -65,7 +65,7 @@ test('sanitized failing test locations omit test names, data and absolute paths'
     { file: 'chat-error.test.mjs', line: 49, code: 'ERR_ASSERTION' },
     { file: 'forum-data.test.mjs', line: 10, code: 'ERR_TEST_FAILURE' }
   ]);
-  assert.doesNotMatch(JSON.stringify(found), /PRIVATE-VALUE|home\/runner|Subtest/);
+  assert.doesNotMatch(JSON.stringify(found), /private|stack|URL/);
 });
 
 test('untrusted test output cannot inject paths, credentials or error details', () => {
@@ -112,7 +112,7 @@ test('verify-only diagnostic reports multiple required gate failures without exp
     { file: 'first-failure.test.mjs', line: 12, code: 'ERR_ASSERTION' },
     { file: 'second-failure.test.mjs', line: 34, code: 'ERR_TEST_FAILURE' }
   ]);
-  assert.doesNotMatch(JSON.stringify(found), /private test title|second private name|private\//);
+  assert.doesNotMatch(JSON.stringify(found), /private|stack|URL/);
 });
 
 
@@ -148,4 +148,35 @@ test('browser diagnostic emits only fixed categories and approved numeric phases
   assert.equal(summarizeSealedBrowserFailure('SEALED_BROWSER_FAILURE:999:assertion'), null);
   assert.equal(summarizeSealedBrowserFailure('SEALED_BROWSER_FAILURE:375:private-value'), null);
   assert.equal(summarizeSealedBrowserFailure('SEALED_BROWSER_FAILURE:375:timeout extra-private-data'), null);
+});
+
+
+test('browser failure identifies only an allowlisted candidate test basename', () => {
+  const log = [
+    'private fixture data must never be printed',
+    'QA release stopped: node tests/travel-storage.browser.mjs failed (exit 1): private stack and URL'
+  ].join('\n');
+  const found = summarizeSealedBrowserTestFailure(log, [
+    'travel-storage.browser.mjs',
+    'unrelated.test.mjs'
+  ]);
+  assert.deepEqual(found, {
+    file: 'travel-storage.browser.mjs',
+    code: 'BROWSER_TEST_FAILED'
+  });
+  assert.doesNotMatch(JSON.stringify(found), /private|stack|URL/);
+});
+
+test('browser failure rejects unknown files, paths, malformed commands and untrusted names', () => {
+  const lines = [
+    'QA release stopped: node tests/unknown.browser.mjs failed (exit 1): private',
+    'QA release stopped: node tests/../travel-storage.browser.mjs failed (exit 1): private',
+    'QA release stopped: node /tmp/travel-storage.browser.mjs failed (exit 1): private',
+    'QA release stopped: node tests/travel-storage.browser.mjs failed (exit 1): private'
+  ];
+  assert.equal(summarizeSealedBrowserTestFailure(lines[0], ['travel-storage.browser.mjs']), null);
+  assert.equal(summarizeSealedBrowserTestFailure(lines[1], ['travel-storage.browser.mjs']), null);
+  assert.equal(summarizeSealedBrowserTestFailure(lines[2], ['travel-storage.browser.mjs']), null);
+  assert.equal(summarizeSealedBrowserTestFailure(lines[3], ['unrelated.browser.mjs']), null);
+  assert.equal(summarizeSealedBrowserTestFailure(lines[3], []), null);
 });
